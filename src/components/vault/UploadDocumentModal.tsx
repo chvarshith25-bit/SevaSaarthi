@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { X, UploadCloud, FileText, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { X, UploadCloud, FileText, CheckCircle2, AlertCircle, Sparkles, Minimize2 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { DocumentType } from "@/types";
 import { toast } from "sonner";
+import { DocumentCompressorModal } from "@/components/vault/DocumentCompressorModal";
 
 interface UploadDocumentModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSuccess }: UploadDocume
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [isCompressorOpen, setIsCompressorOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -229,7 +231,31 @@ export function UploadDocumentModal({ isOpen, onClose, onSuccess }: UploadDocume
             )}
           </button>
         </div>
+
+        {/* Portal Size Limit Alert & Compressor Shortcut */}
+        <div className="mt-4 p-3 bg-indigo-50/70 border border-indigo-100/90 rounded-2xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-indigo-950">
+            <Minimize2 className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span>Need a smaller file for portal size limits (e.g. max 50KB or 200KB)?</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsCompressorOpen(true)}
+            className="px-3 py-1.5 bg-white hover:bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl text-[11px] font-bold shadow-2xs transition-colors shrink-0 flex items-center gap-1"
+          >
+            <span>Compress File</span>
+            <span>→</span>
+          </button>
+        </div>
       </div>
+
+      {/* Document Compressor Modal */}
+      {isCompressorOpen && (
+        <DocumentCompressorModal
+          isOpen={isCompressorOpen}
+          onClose={() => setIsCompressorOpen(false)}
+        />
+      )}
     </div>
   );
 }

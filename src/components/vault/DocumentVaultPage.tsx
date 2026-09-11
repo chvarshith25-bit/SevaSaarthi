@@ -13,12 +13,14 @@ import {
   FileText,
   Clock,
   Sparkles,
+  Minimize2,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { DocumentRow, DocumentStatus } from "@/types";
 import { cn, formatDate } from "@/lib/utils";
 import { UploadDocumentModal } from "@/components/vault/UploadDocumentModal";
 import { FieldConfirmationModal } from "@/components/vault/FieldConfirmationModal";
+import { DocumentCompressorModal } from "@/components/vault/DocumentCompressorModal";
 
 export function DocumentVaultPage() {
   const { documents, extractedFields, deleteDocument, retryOcr } = useSevaSaarthi();
@@ -26,6 +28,8 @@ export function DocumentVaultPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [reviewingDoc, setReviewingDoc] = useState<DocumentRow | null>(null);
+  const [isCompressorOpen, setIsCompressorOpen] = useState(false);
+  const [selectedDocForCompression, setSelectedDocForCompression] = useState<DocumentRow | null>(null);
 
   // Filter documents
   const filteredDocs = documents.filter((doc) => {
@@ -91,13 +95,29 @@ export function DocumentVaultPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => setIsUploadOpen(true)}
-          className="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm shadow-indigo-200 transition-all self-start sm:self-auto"
-        >
-          <UploadCloud className="w-4 h-4" />
-          <span>Upload Document</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <button
+            onClick={() => {
+              setSelectedDocForCompression(null);
+              setIsCompressorOpen(true);
+            }}
+            className="py-2.5 px-4 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 rounded-xl text-xs font-bold flex items-center gap-2 shadow-xs transition-all hover:border-indigo-300"
+          >
+            <Minimize2 className="w-4 h-4 text-indigo-600" />
+            <span>Reduce Document Size</span>
+            <span className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-extrabold border border-indigo-100">
+              Portal Limits
+            </span>
+          </button>
+
+          <button
+            onClick={() => setIsUploadOpen(true)}
+            className="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm shadow-indigo-200 transition-all"
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span>Upload Document</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -248,6 +268,17 @@ export function DocumentVaultPage() {
                   )}
 
                   <button
+                    onClick={() => {
+                      setSelectedDocForCompression(doc);
+                      setIsCompressorOpen(true);
+                    }}
+                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors shrink-0"
+                    title="Reduce file size for portal limits (e.g. 50KB/200KB)"
+                  >
+                    <Minimize2 className="w-4 h-4" />
+                  </button>
+
+                  <button
                     onClick={() => deleteDocument(doc.id)}
                     className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors shrink-0"
                     title="Delete document"
@@ -270,6 +301,18 @@ export function DocumentVaultPage() {
           document={reviewingDoc}
           isOpen={!!reviewingDoc}
           onClose={() => setReviewingDoc(null)}
+        />
+      )}
+
+      {/* Document Compressor Modal */}
+      {isCompressorOpen && (
+        <DocumentCompressorModal
+          isOpen={isCompressorOpen}
+          initialDocument={selectedDocForCompression}
+          onClose={() => {
+            setIsCompressorOpen(false);
+            setSelectedDocForCompression(null);
+          }}
         />
       )}
     </div>

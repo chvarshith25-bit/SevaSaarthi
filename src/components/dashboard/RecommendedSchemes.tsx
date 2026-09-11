@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { GraduationCap, Home, Wallet, CreditCard, ChevronRight } from "lucide-react";
+import { GraduationCap, Home, Wallet, CreditCard, ChevronRight, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { ApplyPanModal } from "./ApplyPanModal";
@@ -116,22 +116,33 @@ export function RecommendedSchemes() {
                 </div>
                 {scheme.id === "s004" ? (
                   <div className="space-y-1.5">
-                    <button
-                      type="button"
-                      onClick={() => setIsPanModalOpen(true)}
+                    <a
+                      href="https://www.onlineservices.nsdl.com/paam/endUserRegisterContact.html"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={cn(
-                        "w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center block transition-colors min-h-[38px] flex items-center justify-center",
+                        "w-full py-2.5 px-3 rounded-xl text-xs font-semibold text-center transition-colors min-h-[38px] flex items-center justify-center gap-1.5",
                         scheme.buttonStyle
                       )}
                     >
-                      {scheme.buttonText}
-                    </button>
-                    <Link
-                      href="/applications/PAN-2026-0001/status"
-                      className="text-[11px] font-semibold text-indigo-600 hover:underline text-center block"
-                    >
-                      Track Live (PAN-0001) →
-                    </Link>
+                      <span>Apply on Official Website</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <div className="flex items-center justify-between text-[11px] px-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsPanModalOpen(true)}
+                        className="font-medium text-slate-500 hover:text-indigo-600 hover:underline"
+                      >
+                        Auto-Fill
+                      </button>
+                      <Link
+                        href="/applications/PAN-2026-0001/status"
+                        className="font-semibold text-indigo-600 hover:underline"
+                      >
+                        Track (PAN-0001) →
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   <Link

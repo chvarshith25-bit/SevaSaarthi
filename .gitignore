@@ -38,6 +38,7 @@ yarn-error.log*
 # Operating System Files
 .DS_Store
 *.pem
+*.zip
 Thumbs.db
 
 # IDE & Editor files

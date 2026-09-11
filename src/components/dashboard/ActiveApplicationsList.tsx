@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { GraduationCap, CreditCard, Home, ChevronRight, ArrowRight, Loader2 } from "lucide-react";
+import { GraduationCap, CreditCard, Home, ChevronRight, ArrowRight, Loader2, ExternalLink } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 
 export function ActiveApplicationsList() {
@@ -82,8 +82,24 @@ export function ActiveApplicationsList() {
                     <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
-                      {title}
+                    <div className="flex items-center gap-2">
+                      <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
+                        {title}
+                      </div>
+                      {title.toLowerCase().includes("pan") && (
+                        <span
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.open("https://www.onlineservices.nsdl.com/paam/endUserRegisterContact.html", "_blank", "noopener,noreferrer");
+                          }}
+                          className="text-[10px] text-blue-600 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded font-bold inline-flex items-center gap-1 cursor-pointer"
+                          title="Open official PAN portal (Protean/NSDL)"
+                        >
+                          <span>Official Portal</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </span>
+                      )}
                     </div>
                     <div className="text-[10px] sm:text-[11px] font-medium text-slate-400 truncate">
                       Application ID: {appId}

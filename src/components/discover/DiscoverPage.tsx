@@ -22,6 +22,7 @@ import {
   ChevronUp,
   X,
   BookOpen,
+  CreditCard,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,7 @@ export function DiscoverPage() {
     "Skill & Employment",
     "Healthcare & Social Security",
     "Housing & Urban Affairs",
+    "Identity & Tax",
   ];
 
   const filteredSchemes = useMemo(() => {
@@ -90,6 +92,8 @@ export function DiscoverPage() {
         return { icon: Home, bg: "bg-emerald-50 text-emerald-600 border-emerald-100" };
       case "SKILL":
         return { icon: Wrench, bg: "bg-amber-50 text-amber-600 border-amber-100" };
+      case "TAX":
+        return { icon: CreditCard, bg: "bg-blue-50 text-blue-600 border-blue-100" };
       default:
         return { icon: Compass, bg: "bg-blue-50 text-blue-600 border-blue-100" };
     }

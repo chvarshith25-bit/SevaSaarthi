@@ -321,6 +321,40 @@ export const REAL_GOVERNMENT_SCHEMES: GovernmentScheme[] = [
       { step: 4, title: "Direct Transfer", description: "Annual allowance of ₹12,000 credited to student's bank account via PFMS." },
     ],
   },
+  {
+    id: "s004",
+    title: "New PAN Card (Form 49A) Online Application",
+    shortCode: "PAN-49A",
+    category: "Identity & Tax",
+    ministry: "Income Tax Department / Central Board of Direct Taxes (CBDT)",
+    benefitAmount: "Statutory 10-Digit Permanent Account Number & e-PAN Card",
+    applicationDeadline: "Always Active",
+    status: "ALWAYS_ACTIVE",
+    description: "Official online application for allocation of Permanent Account Number (PAN) under Section 139A of Income Tax Act via Protean eGov Technologies (formerly NSDL).",
+    officialPortal: "Protean eGov (NSDL) Official Portal",
+    portalDomain: "onlineservices.nsdl.com",
+    officialUrl: "https://www.onlineservices.nsdl.com/paam/endUserRegisterContact.html",
+    iconType: "TAX",
+    requiredDocuments: [
+      "Proof of Identity (Aadhaar Card)",
+      "Proof of Address (Aadhaar / Utility Bill / Passport)",
+      "Proof of Date of Birth (Aadhaar / Matriculation Marksheet)",
+      "Applicant Color Photo (max 50 KB, 200 DPI JPEG)",
+      "Applicant Signature Scan (max 50 KB, 200 DPI JPEG)",
+    ],
+    docRequirementSummary: "Aadhaar Card, Photo (≤50KB), Signature (≤50KB)",
+    eligibilityRules: {
+      allowedCategories: ["ALL"],
+      allowedGenders: ["ANY"],
+    },
+    processSteps: [
+      { step: 1, title: "Register on Protean/NSDL", description: "Select Application Type 'FORM 49A', Category 'Individual', and enter applicant details." },
+      { step: 2, title: "Token Number & e-KYC", description: "Receive temporary token number and complete Paperless e-KYC via Aadhaar OTP." },
+      { step: 3, title: "Upload Photo & Signature", description: "Upload compressed photograph (≤50KB) and signature (≤50KB)." },
+      { step: 4, title: "Statutory Fee Payment", description: "Pay nominal statutory fee (~₹107 for physical card or ₹66 for e-PAN)." },
+      { step: 5, title: "PAN Issuance & Tracking", description: "15-digit acknowledgement number is generated; e-PAN delivered in 48 hours to email." },
+    ],
+  },
 ];
 
 // ----------------------------------------------------------------------

@@ -2,13 +2,15 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { FileCheck, FileWarning, FileQuestion, UploadCloud } from "lucide-react";
+import { FileCheck, FileWarning, FileQuestion, UploadCloud, Minimize2 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { UploadDocumentModal } from "@/components/vault/UploadDocumentModal";
+import { DocumentCompressorModal } from "@/components/vault/DocumentCompressorModal";
 
 export function DocumentVaultCard() {
   const { stats } = useSevaSaarthi();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isCompressorOpen, setIsCompressorOpen] = useState(false);
 
   return (
     <>
@@ -53,19 +55,37 @@ export function DocumentVaultCard() {
             </div>
           </div>
 
-          {/* Upload Button */}
-          <button
-            onClick={() => setIsUploadOpen(true)}
-            className="w-full sm:w-auto py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100/80 text-indigo-600 border border-indigo-200/70 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shrink-0 shadow-2xs min-h-[40px]"
-          >
-            <UploadCloud className="w-4 h-4" />
-            <span>Upload Document</span>
-          </button>
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={() => setIsCompressorOpen(true)}
+              className="w-full sm:w-auto py-2.5 px-3.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200/90 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shrink-0 shadow-2xs min-h-[40px] hover:border-indigo-300"
+              title="Reduce document size for portal limits"
+            >
+              <Minimize2 className="w-4 h-4 text-indigo-600" />
+              <span>Reduce Size</span>
+            </button>
+            <button
+              onClick={() => setIsUploadOpen(true)}
+              className="w-full sm:w-auto py-2.5 px-4 bg-indigo-50 hover:bg-indigo-100/80 text-indigo-600 border border-indigo-200/70 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-colors shrink-0 shadow-2xs min-h-[40px]"
+            >
+              <UploadCloud className="w-4 h-4" />
+              <span>Upload Document</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Upload Modal */}
       {isUploadOpen && <UploadDocumentModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />}
+
+      {/* Document Compressor Modal */}
+      {isCompressorOpen && (
+        <DocumentCompressorModal
+          isOpen={isCompressorOpen}
+          onClose={() => setIsCompressorOpen(false)}
+        />
+      )}
     </>
   );
 }

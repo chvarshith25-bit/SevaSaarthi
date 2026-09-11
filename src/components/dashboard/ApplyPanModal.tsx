@@ -10,6 +10,8 @@ import {
   ArrowRight,
   Sparkles,
   FileCheck2,
+  ExternalLink,
+  Copy,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { toast } from "sonner";
@@ -42,6 +44,20 @@ export function ApplyPanModal({ isOpen, onClose }: ApplyPanModalProps) {
   const city = "Hyderabad";
   const state = "Telangana";
   const pincode = "500081";
+
+  const copyCitizenData = () => {
+    const dataStr = `Applicant Details for PAN Form 49A:
+Full Name: ${fullName}
+Father's Name: Suresh Kumar
+Date of Birth: ${dob}
+Gender: ${gender}
+Mobile: ${phone}
+Email: ${email}
+Aadhaar Number: ${aadhaar}
+Address: ${address}, ${city}, ${state} - ${pincode}`;
+    navigator.clipboard.writeText(dataStr);
+    toast.success("Profile details copied! You can paste them into the official NSDL form.");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,6 +132,39 @@ export function ApplyPanModal({ isOpen, onClose }: ApplyPanModalProps) {
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
+          {/* Official Government Website Direct Redirect Banner */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-blue-950">
+                <ExternalLink className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>Original Government Application Website</span>
+              </div>
+              <p className="text-[11px] text-blue-700 mt-0.5">
+                Official PAN Form 49A portal hosted by Protean eGov (formerly NSDL).
+              </p>
+            </div>
+            <div className="flex items-center gap-2 self-stretch sm:self-auto">
+              <button
+                type="button"
+                onClick={copyCitizenData}
+                className="px-3 py-2 bg-white hover:bg-slate-50 border border-blue-200 text-blue-900 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors shrink-0"
+                title="Copy details to paste into official portal"
+              >
+                <Copy className="w-3.5 h-3.5 text-blue-600" />
+                <span>Copy Data</span>
+              </button>
+              <a
+                href="https://www.onlineservices.nsdl.com/paam/endUserRegisterContact.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors shrink-0 whitespace-nowrap"
+              >
+                <span>Go to Official NSDL Portal</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+
           {/* Pre-filled Citizen Data summary */}
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2.5">
             <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
