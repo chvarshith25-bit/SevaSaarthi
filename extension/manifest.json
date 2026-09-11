@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Formly — Citizen Application & Portal Autofill Assistant",
+  "version": "1.0.2",
+  "description": "Autonomous auto-filling and human-in-the-loop submission for government schemes, PAN card (Protean/NSDL), scholarships, and welfare portals.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*",
+    "https://*.gov.in/*",
+    "https://*.nic.in/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Formly Citizen Assistant"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*",
+        "https://*.gov.in/*",
+        "https://*.nic.in/*"
+      ],
+      "exclude_matches": [
+        "*://*.google.com/recaptcha/*",
+        "*://*.recaptcha.net/*",
+        "*://*.hcaptcha.com/*",
+        "*://challenges.cloudflare.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "commands": {
+    "autofill_page": {
+      "suggested_key": {
+        "default": "Alt+Shift+F",
+        "mac": "Alt+Shift+F"
+      },
+      "description": "Autofill current page with Formly"
+    }
+  }
+}
