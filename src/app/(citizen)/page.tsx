@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   FileText,
   CheckCircle2,
@@ -25,14 +26,18 @@ import { YourProfileCard } from "@/components/dashboard/YourProfileCard";
 import { RecommendedSchemes } from "@/components/dashboard/RecommendedSchemes";
 import { NeedHelpCard } from "@/components/dashboard/NeedHelpCard";
 import { BottomBanner } from "@/components/dashboard/BottomBanner";
+import { SaarthiVoiceAssistantModal } from "@/components/assistant/SaarthiVoiceAssistantModal";
 import { CITIZEN_APPLICATIONS } from "@/lib/mock-data/citizen-applications";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function CitizenDashboardPage() {
+  const router = useRouter();
   const { user, documents, easyMode, t } = useSevaSaarthi();
   const [statusFilter, setStatusFilter] = useState<"ALL" | "IN_PROGRESS" | "ACTION_REQUIRED" | "COMPLETED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [voiceInitialPrompt, setVoiceInitialPrompt] = useState("");
 
   const fullName = user?.name || "Chiluveri Varshith";
   const firstName = fullName.split(" ")[0] || "Varshith";
@@ -75,9 +80,23 @@ export default function CitizenDashboardPage() {
   const urgentApp = applications.find((a) => a.statusCategory === "ACTION_REQUIRED");
 
   const handleVoiceChip = (promptText: string) => {
-    toast.info(`Voice Assistant: "${promptText}"`, {
-      description: "Opening relevant government service for you...",
-    });
+    if (promptText === "Track My Scholarship") {
+      router.push("/track/NSP-2026-8812");
+    } else if (promptText === "Apply for PM Kisan") {
+      router.push("/checklist?service=s004");
+    } else if (promptText === "My Aadhaar Card") {
+      router.push("/vault");
+    } else if (promptText === "Get Help") {
+      router.push("/help");
+    } else {
+      setVoiceInitialPrompt(promptText);
+      setIsVoiceModalOpen(true);
+    }
+  };
+
+  const handleOpenVoiceModal = () => {
+    setVoiceInitialPrompt("");
+    setIsVoiceModalOpen(true);
   };
 
   return (
@@ -111,14 +130,20 @@ export default function CitizenDashboardPage() {
 
       {/* 2. Prominent Voice Assistant Prompt Card */}
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 rounded-3xl p-5 sm:p-6 text-white shadow-lg shadow-blue-500/15 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shrink-0 ring-2 ring-white/20">
+        <div
+          onClick={handleOpenVoiceModal}
+          className="flex items-center gap-4 cursor-pointer group"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Enter" && handleOpenVoiceModal()}
+        >
+          <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shrink-0 ring-2 ring-white/20 group-hover:scale-105 group-hover:bg-white/25 transition-all">
             <Mic className="w-6 h-6 animate-pulse" />
           </div>
           <div>
-            <div className="font-bold text-sm sm:text-base flex items-center gap-2">
+            <div className="font-bold text-sm sm:text-base flex items-center gap-2 group-hover:text-blue-100 transition-colors">
               <span>Tell Seva Saarthi what you need</span>
-              <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold">Multilingual Voice</span>
+              <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold">Tap to Speak 🎙️</span>
             </div>
             <p className="text-xs text-blue-100 mt-0.5">
               Speak or tap any prompt to check status, upload documents, or find benefits.
@@ -137,9 +162,10 @@ export default function CitizenDashboardPage() {
               key={prompt}
               type="button"
               onClick={() => handleVoiceChip(prompt)}
-              className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-colors border border-white/20 cursor-pointer min-h-[38px]"
+              className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition-all border border-white/20 hover:scale-105 cursor-pointer min-h-[38px] flex items-center gap-1.5"
             >
-              🎙️ {prompt}
+              <span>🎙️</span>
+              <span>{prompt}</span>
             </button>
           ))}
         </div>
@@ -437,6 +463,13 @@ export default function CitizenDashboardPage() {
           <NeedHelpCard />
         </div>
       </div>
+
+      {/* Interactive Saarthi Voice Assistant Modal */}
+      <SaarthiVoiceAssistantModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        initialPrompt={voiceInitialPrompt}
+      />
     </div>
   );
 }
