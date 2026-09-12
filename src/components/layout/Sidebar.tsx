@@ -32,6 +32,8 @@ export function Sidebar() {
 
   const navItems: NavItem[] = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
+    { label: "Discover Services", href: "/discover", icon: Compass },
     { 
       label: "My Applications", 
       href: "/applications", 
@@ -39,10 +41,7 @@ export function Sidebar() {
       badge: stats.activeApplications > 0 ? stats.activeApplications : undefined, 
       badgeColor: "bg-blue-100 text-blue-700" 
     },
-    { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
-    { label: "Discover Services", href: "/discover", icon: Compass },
     { label: "Documents", href: "/vault", icon: FolderOpen },
-    { label: "My Profile", href: "/profile", icon: User },
     { 
       label: "Tasks & Reminders", 
       href: "/tasks", 
@@ -57,6 +56,7 @@ export function Sidebar() {
       badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined, 
       badgeColor: "bg-rose-100 text-rose-700" 
     },
+    { label: "My Profile", href: "/profile", icon: User },
     { label: "Help & Support", href: "/help", icon: HelpCircle },
   ];
 
@@ -149,6 +149,8 @@ export function MobileNavDrawer({
 
   const navItems: NavItem[] = [
     { label: "Home", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
+    { label: "Discover Services", href: "/discover", icon: Compass },
     { 
       label: "My Applications", 
       href: "/applications", 
@@ -156,10 +158,7 @@ export function MobileNavDrawer({
       badge: stats.activeApplications > 0 ? stats.activeApplications : undefined, 
       badgeColor: "bg-blue-100 text-blue-700" 
     },
-    { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
-    { label: "Discover Services", href: "/discover", icon: Compass },
     { label: "Documents", href: "/vault", icon: FolderOpen },
-    { label: "My Profile", href: "/profile", icon: User },
     { 
       label: "Tasks & Reminders", 
       href: "/tasks", 
@@ -174,6 +173,7 @@ export function MobileNavDrawer({
       badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined, 
       badgeColor: "bg-rose-100 text-rose-700" 
     },
+    { label: "My Profile", href: "/profile", icon: User },
     { label: "Help & Support", href: "/help", icon: HelpCircle },
   ];
 
