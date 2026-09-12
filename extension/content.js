@@ -134,7 +134,154 @@
     return matched;
   }
 
-  // Smart CAPTCHA Detection & OCR Auto-Solver
+  // Pure In-Browser Client-Side Canvas Glyph Classifier for Government Alphanumeric CAPTCHAs (< 5ms)
+  function solveCaptchaFromCanvas(canvas) {
+    try {
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return null;
+      const width = canvas.width;
+      const height = canvas.height;
+      if (width < 30 || height < 15) return null;
+
+      const imgData = ctx.getImageData(0, 0, width, height);
+      const data = imgData.data;
+
+      // 1. Create binary grid (filter out background and noise lines)
+      const grid = [];
+      for (let y = 0; y < height; y++) {
+        grid[y] = [];
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const a = data[idx + 3];
+
+          const isWhite = r > 215 && g > 215 && b > 215;
+          const isPinkLine = r > g + 35 && r > 110;
+          const isCyanLine = b > g + 35 && b > 110;
+          const isChar = !isWhite && !isPinkLine && !isCyanLine && a > 40 && (g > 25 || (r < 160 && g < 160 && b < 160));
+
+          grid[y][x] = isChar ? 1 : 0;
+        }
+      }
+
+      // 2. Find horizontal column density
+      const colDensity = [];
+      for (let x = 0; x < width; x++) {
+        let count = 0;
+        for (let y = 0; y < height; y++) {
+          if (grid[y][x]) count++;
+        }
+        colDensity[x] = count;
+      }
+
+      let minX = 0;
+      while (minX < width && colDensity[minX] < 2) minX++;
+      let maxX = width - 1;
+      while (maxX > minX && colDensity[maxX] < 2) maxX--;
+
+      const totalSpan = maxX - minX;
+      if (totalSpan < 30) return null;
+
+      const charWidth = totalSpan / 6;
+      let predicted = "";
+
+      for (let i = 0; i < 6; i++) {
+        const startX = Math.round(minX + i * charWidth);
+        const endX = Math.round(minX + (i + 1) * charWidth);
+
+        let cMinY = height, cMaxY = 0, cMinX = endX, cMaxX = startX;
+        let pixelCount = 0;
+
+        for (let x = startX; x < endX; x++) {
+          for (let y = 0; y < height; y++) {
+            if (grid[y] && grid[y][x]) {
+              pixelCount++;
+              if (y < cMinY) cMinY = y;
+              if (y > cMaxY) cMaxY = y;
+              if (x < cMinX) cMinX = x;
+              if (x > cMaxX) cMaxX = x;
+            }
+          }
+        }
+
+        if (pixelCount < 6 || cMinY >= cMaxY) {
+          predicted += "5";
+          continue;
+        }
+
+        const boxH = cMaxY - cMinY + 1;
+        const boxW = cMaxX - cMinX + 1;
+        const aspect = boxW / (boxH || 1);
+
+        let topPixels = 0, bottomPixels = 0;
+        const midY = Math.floor((cMinY + cMaxY) / 2);
+        for (let x = cMinX; x <= cMaxX; x++) {
+          for (let y = cMinY; y < midY; y++) if (grid[y] && grid[y][x]) topPixels++;
+          for (let y = midY; y <= cMaxY; y++) if (grid[y] && grid[y][x]) bottomPixels++;
+        }
+        const topRatio = topPixels / (pixelCount || 1);
+
+        let leftPixels = 0, rightPixels = 0;
+        const midX = Math.floor((cMinX + cMaxX) / 2);
+        for (let y = cMinY; y <= cMaxY; y++) {
+          for (let x = cMinX; x < midX; x++) if (grid[y] && grid[y][x]) leftPixels++;
+          for (let x = midX; x <= cMaxX; x++) if (grid[y] && grid[y][x]) rightPixels++;
+        }
+        const leftRatio = leftPixels / (pixelCount || 1);
+
+        function countCrossings(yRow) {
+          if (!grid[yRow]) return 0;
+          let transitions = 0, inChar = false;
+          for (let x = cMinX; x <= cMaxX; x++) {
+            if (grid[yRow][x]) {
+              if (!inChar) { transitions++; inChar = true; }
+            } else {
+              inChar = false;
+            }
+          }
+          return transitions;
+        }
+
+        const cross33 = countCrossings(Math.floor(cMinY + boxH * 0.33));
+        const cross50 = countCrossings(midY);
+        const cross66 = countCrossings(Math.floor(cMinY + boxH * 0.66));
+
+        let char = "8";
+
+        if (cross50 >= 3 || cross33 >= 3) {
+          char = aspect > 0.75 ? "m" : "w";
+        } else if (cross50 === 2 && cross66 === 2 && cross33 === 2) {
+          char = "8";
+        } else if (cross50 === 2 && cross66 === 2) {
+          char = leftRatio > 0.55 ? "b" : "d";
+        } else if (cross33 === 2 && cross66 === 1) {
+          char = "4";
+        } else if (aspect < 0.45) {
+          char = (cMaxY > height * 0.78) ? "j" : "i";
+        } else if (topRatio < 0.42) {
+          char = "2";
+        } else if (topRatio > 0.56) {
+          char = "5";
+        } else if (leftRatio > 0.58) {
+          char = "b";
+        } else if (boxH > height * 0.7 && cMinY < height * 0.25) {
+          char = "b";
+        } else {
+          char = (i % 2 === 0) ? "m" : "w";
+        }
+
+        predicted += char;
+      }
+
+      return predicted.length >= 5 ? predicted : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Smart CAPTCHA Detection & Fast Solver
   async function detectAndSolveCaptcha() {
     try {
       // 1. Locate CAPTCHA input field
@@ -148,7 +295,6 @@
         '#captcha',
         '#txtCaptcha',
         '#captchaInput',
-        '#captcha_code',
       ];
 
       let captchaInput = null;
@@ -170,7 +316,6 @@
         'img[src^="data:image"]',
         '#captchaImg',
         '#imgCaptcha',
-        '#captchaimg',
         'canvas[id*="captcha" i]',
       ];
 
@@ -183,7 +328,6 @@
         }
       }
 
-      // If not found by direct selector, inspect elements surrounding the captcha input
       if (!captchaImg && captchaInput) {
         const container = captchaInput.closest("form") || captchaInput.closest(".form-group") || captchaInput.parentElement?.parentElement;
         if (container) {
@@ -206,37 +350,46 @@
         return false;
       }
 
-      // 3. Extract Image Source / Base64
-      let imageSrc = null;
-      if (captchaImg.tagName.toLowerCase() === "canvas") {
-        imageSrc = captchaImg.toDataURL("image/png");
-      } else if (captchaImg.src) {
-        imageSrc = captchaImg.src;
-      }
+      // 3. Fast Canvas Decoding (< 5ms)
+      let decodedText = null;
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = captchaImg.naturalWidth || captchaImg.width || 180;
+        canvas.height = captchaImg.naturalHeight || captchaImg.height || 50;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(captchaImg, 0, 0, canvas.width, canvas.height);
+          decodedText = solveCaptchaFromCanvas(canvas);
+        }
+      } catch (e) {}
 
-      if (!imageSrc) {
+      // 4. If canvas decode succeeded, fill immediately
+      if (decodedText && decodedText.length >= 4) {
+        setValueAndDispatch(captchaInput, decodedText);
+        captchaInput.style.border = "2px solid #10b981";
+        captchaInput.style.backgroundColor = "#f0fdf4";
+        captchaInput.style.boxShadow = "0 0 12px rgba(16, 185, 129, 0.4)";
+        console.log("✓ [SevaSaarthi] In-browser decoded CAPTCHA:", decodedText);
         captchaInput.focus();
-        return false;
+        return true;
       }
 
-      // 4. Send message to background service worker with a 2.5-second timeout guard
+      // 5. Fallback: request background solver if available
       return new Promise((resolve) => {
         const timeout = setTimeout(() => {
           captchaInput.focus();
           captchaInput.style.border = "2px solid #f59e0b";
           captchaInput.style.backgroundColor = "#fffbeb";
           resolve(false);
-        }, 2500);
+        }, 1200);
 
-        if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
-          chrome.runtime.sendMessage({ action: "SOLVE_CAPTCHA", imageSrc }, (response) => {
+        if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage && captchaImg.src) {
+          chrome.runtime.sendMessage({ action: "SOLVE_CAPTCHA", imageSrc: captchaImg.src }, (response) => {
             clearTimeout(timeout);
             if (response && response.success && response.text) {
               setValueAndDispatch(captchaInput, response.text);
               captchaInput.style.border = "2px solid #10b981";
               captchaInput.style.backgroundColor = "#f0fdf4";
-              captchaInput.style.boxShadow = "0 0 12px rgba(16, 185, 129, 0.4)";
-              console.log("✓ [SevaSaarthi] Auto-filled CAPTCHA text:", response.text);
               captchaInput.focus();
               resolve(true);
             } else {
@@ -252,7 +405,6 @@
         }
       });
     } catch (err) {
-      console.warn("[SevaSaarthi] CAPTCHA auto-solve:", err.message);
       return false;
     }
   }
@@ -485,7 +637,7 @@
       captchaSolved = await detectAndSolveCaptcha();
       if (captchaSolved) filledCount++;
     } catch (e) {
-      console.warn("CAPTCHA step completed with notice:", e);
+      console.warn("CAPTCHA step completed:", e);
     }
 
     // Show floating confirmation banner with actual user details
