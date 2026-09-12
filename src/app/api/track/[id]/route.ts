@@ -25,8 +25,25 @@ export async function GET(
       return NextResponse.json({ success: false, error: `Application not found: ${id}` }, { status: 404 });
     }
 
-    // Allow public tracking only for seeded demo cases; all new dynamic citizen applications require auth
-    const SEEDED_DEMO_CASES = new Set(["PAN-2026-0001", "PAN-2026-0002", "PAN-2026-0003", "PAN-2026-0004", "SCH-2026-2345", "HOU-2026-7781"]);
+    // Allow public tracking for seeded demo cases; all new dynamic citizen applications require auth
+    const SEEDED_DEMO_CASES = new Set([
+      "PAN-2026-0001",
+      "PAN-2026-0002",
+      "PAN-2026-0003",
+      "PAN-2026-0004",
+      "PAN-2026-0086",
+      "PAN-2026-0085",
+      "PAN-2026-0081",
+      "PAN-2026-0082",
+      "PAN-2026-0083",
+      "PAN-2026-0078",
+      "PAN-2026-0074",
+      "SCH-2026-2345",
+      "HOU-2026-7781",
+      "NSP-2026-8812",
+      "INC-2026-3021",
+      "CST-2026-1190",
+    ]);
     const isPublicDemoCase = SEEDED_DEMO_CASES.has(id);
 
     if (!isPublicDemoCase) {

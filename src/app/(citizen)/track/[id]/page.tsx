@@ -238,15 +238,17 @@ export default function PanTrackerPage() {
               <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Track Demo Case:</span>
               <select
                 value={appId}
-                onChange={(e) => router.push(`/applications/${e.target.value}/status`)}
+                onChange={(e) => router.push(`/track/${e.target.value}`)}
                 className="text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-800 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
               >
-                <option value="PAN-2026-0001">PAN-2026-0001 (Sai Sankeerth - Standard)</option>
-                <option value="SCH-2026-2345">SCH-2026-2345 (Sai Sankeerth - Scholarship)</option>
-                <option value="HOU-2026-7781">HOU-2026-7781 (Sai Sankeerth - PM Housing)</option>
-                <option value="PAN-2026-0002">PAN-2026-0002 (Anjali - API Retry)</option>
-                <option value="PAN-2026-0003">PAN-2026-0003 (Rahul - DOB Conflict)</option>
-                <option value="PAN-2026-0004">PAN-2026-0004 (Priya - Returned for Fix)</option>
+                <option value="HOU-2026-7781">HOU-2026-7781 (PM Housing Subsidy - Action Required)</option>
+                <option value="NSP-2026-8812">NSP-2026-8812 (Post-Matric Scholarship - In Progress)</option>
+                <option value="INC-2026-3021">INC-2026-3021 (Income Certificate - Delivered)</option>
+                <option value="CST-2026-1190">CST-2026-1190 (Caste Certificate - Delivered)</option>
+                <option value="PAN-2026-0001">PAN-2026-0001 (PAN Card - Officer Review)</option>
+                <option value="PAN-2026-0002">PAN-2026-0002 (PAN Card - API Retry)</option>
+                <option value="PAN-2026-0003">PAN-2026-0003 (PAN Card - DOB Conflict)</option>
+                <option value="PAN-2026-0004">PAN-2026-0004 (PAN Card - Returned for Fix)</option>
               </select>
             </div>
           </div>
