@@ -10,6 +10,7 @@ import {
   Search,
   ChevronDown,
   Sparkles,
+  X,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { IndiaMonumentsBanner } from "@/components/ui/IndiaMonumentsBanner";
@@ -25,15 +26,15 @@ import { CITIZEN_APPLICATIONS, CitizenTrackedApplication } from "@/lib/mock-data
 import { cn } from "@/lib/utils";
 
 export default function CitizenDashboardPage() {
-  const { user } = useSevaSaarthi();
+  const { user, stats, documents } = useSevaSaarthi();
   const [activeTab, setActiveTab] = useState<"APPLICATIONS" | "HISTORY">("APPLICATIONS");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "IN_PROGRESS" | "ACTION_REQUIRED" | "COMPLETED" | "DRAFTS">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceFilter, setServiceFilter] = useState("ALL");
 
   // Determine user first name & time-of-day greeting
-  const fullName = user?.name || "Sai Sankeerth";
-  const firstName = fullName.split(" ")[0];
+  const fullName = user?.name || "Chiluveri Varshith";
+  const firstName = fullName.split(" ")[0] || "Varshith";
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -79,6 +80,7 @@ export default function CitizenDashboardPage() {
   const inProgressCount = applications.filter((a) => a.statusCategory === "IN_PROGRESS").length;
   const actionRequiredCount = applications.filter((a) => a.statusCategory === "ACTION_REQUIRED").length;
   const completedCount = applications.filter((a) => a.statusCategory === "COMPLETED").length;
+  const docsCount = documents && documents.length > 0 ? documents.length : 12;
 
   return (
     <div className="space-y-6 pb-12 w-full min-w-0">
@@ -131,7 +133,7 @@ export default function CitizenDashboardPage() {
         />
         <StatCard
           title="Saved Documents"
-          count={12}
+          count={docsCount}
           icon={FolderOpen}
           href="/vault"
           iconBgColor="bg-rose-50"
@@ -150,9 +152,12 @@ export default function CitizenDashboardPage() {
               <div className="flex items-center gap-6">
                 <button
                   type="button"
-                  onClick={() => setActiveTab("APPLICATIONS")}
+                  onClick={() => {
+                    setActiveTab("APPLICATIONS");
+                    setStatusFilter("ALL");
+                  }}
                   className={cn(
-                    "text-sm font-bold pb-2 relative transition-colors",
+                    "text-sm font-bold pb-2 relative transition-colors cursor-pointer",
                     activeTab === "APPLICATIONS"
                       ? "text-blue-600 border-b-2 border-blue-600"
                       : "text-slate-500 hover:text-slate-900"
@@ -162,9 +167,12 @@ export default function CitizenDashboardPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveTab("HISTORY")}
+                  onClick={() => {
+                    setActiveTab("HISTORY");
+                    setStatusFilter("COMPLETED");
+                  }}
                   className={cn(
-                    "text-sm font-bold pb-2 relative transition-colors",
+                    "text-sm font-bold pb-2 relative transition-colors cursor-pointer",
                     activeTab === "HISTORY"
                       ? "text-blue-600 border-b-2 border-blue-600"
                       : "text-slate-500 hover:text-slate-900"
@@ -177,14 +185,23 @@ export default function CitizenDashboardPage() {
               {/* Search & Service Filter */}
               <div className="flex items-center gap-2">
                 <div className="relative flex-1 sm:w-56">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="Search your applications..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                    className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
 
                 <div className="relative">
@@ -211,7 +228,7 @@ export default function CitizenDashboardPage() {
                   type="button"
                   onClick={() => setStatusFilter("ALL")}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer",
                     statusFilter === "ALL"
                       ? "bg-blue-600 text-white shadow-xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -223,7 +240,7 @@ export default function CitizenDashboardPage() {
                   type="button"
                   onClick={() => setStatusFilter("IN_PROGRESS")}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer",
                     statusFilter === "IN_PROGRESS"
                       ? "bg-blue-600 text-white shadow-xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -235,7 +252,7 @@ export default function CitizenDashboardPage() {
                   type="button"
                   onClick={() => setStatusFilter("ACTION_REQUIRED")}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer",
                     statusFilter === "ACTION_REQUIRED"
                       ? "bg-rose-600 text-white shadow-xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -247,7 +264,7 @@ export default function CitizenDashboardPage() {
                   type="button"
                   onClick={() => setStatusFilter("COMPLETED")}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer",
                     statusFilter === "COMPLETED"
                       ? "bg-emerald-600 text-white shadow-xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -259,7 +276,7 @@ export default function CitizenDashboardPage() {
                   type="button"
                   onClick={() => setStatusFilter("DRAFTS")}
                   className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all",
+                    "px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer",
                     statusFilter === "DRAFTS"
                       ? "bg-slate-700 text-white shadow-xs"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -284,7 +301,7 @@ export default function CitizenDashboardPage() {
             </div>
           </div>
 
-          {/* Recommended Schemes with PAN card & official redirect */}
+          {/* Recommended Schemes */}
           <RecommendedSchemes />
 
           {/* Bottom Banner */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   CreditCard,
@@ -9,13 +9,18 @@ import {
   FileText,
   Award,
   Check,
-  AlertCircle,
   MoreVertical,
   ArrowRight,
+  ExternalLink,
+  Copy,
+  Clock,
 } from "lucide-react";
+import { toast } from "sonner";
 import { CitizenTrackedApplication } from "@/lib/mock-data/citizen-applications";
 
 export function CitizenApplicationTrackerCard({ app }: { app: CitizenTrackedApplication }) {
+  const [showMenu, setShowMenu] = useState(false);
+
   const getIcon = () => {
     switch (app.iconType) {
       case "pan":
@@ -80,9 +85,15 @@ export function CitizenApplicationTrackerCard({ app }: { app: CitizenTrackedAppl
     }
   };
 
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(app.id);
+    toast.success(`Application ID ${app.id} copied to clipboard!`);
+    setShowMenu(false);
+  };
+
   return (
-    <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4 hover:border-slate-300 transition-all">
-      {/* Top Header: Icon, Titles, Live Status, Action button */}
+    <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4 hover:border-slate-300 transition-all relative">
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
         <div className="flex items-center gap-3 min-w-0">
           <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${getIconBg()}`}>
@@ -113,24 +124,64 @@ export function CitizenApplicationTrackerCard({ app }: { app: CitizenTrackedAppl
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
 
-          <button
-            aria-label="Application options"
-            className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors"
-          >
-            <MoreVertical className="w-4 h-4" />
-          </button>
+          {/* 3-dots Menu with Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowMenu(!showMenu)}
+              aria-label="Application options"
+              className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+
+            {showMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-30"
+                  onClick={() => setShowMenu(false)}
+                  aria-hidden="true"
+                />
+                <div className="absolute right-0 mt-1 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-40 animate-in fade-in slide-in-from-top-1">
+                  <Link
+                    href={app.trackingUrl}
+                    onClick={() => setShowMenu(false)}
+                    className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Track Live Status</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleCopyId}
+                    className="w-full text-left flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Copy Application ID</span>
+                  </button>
+                  <a
+                    href="https://www.onlineservices.nsdl.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowMenu(false)}
+                    className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Official Portal</span>
+                  </a>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Horizontal Multi-Step Progress Tracker matching Image 2 */}
+      {/* Horizontal Multi-Step Progress Tracker */}
       <div className="pt-2 overflow-x-auto no-scrollbar">
         <div className="min-w-[540px] px-2 py-2">
           <div className="relative flex items-center justify-between">
             {app.steps.map((step, index) => {
               const isFirst = index === 0;
-              const isLast = index === app.steps.length - 1;
-              const prevStep = index > 0 ? app.steps[index - 1] : null;
-              const isConnectedCompleted = prevStep && prevStep.status === "COMPLETED";
 
               return (
                 <div key={index} className="flex-1 flex flex-col items-center relative group">
