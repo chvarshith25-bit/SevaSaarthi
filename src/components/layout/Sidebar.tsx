@@ -28,56 +28,59 @@ interface NavItem {
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { stats, unreadNotificationsCount } = useSevaSaarthi();
+  const { stats, unreadNotificationsCount, easyMode, t } = useSevaSaarthi();
 
   const navItems: NavItem[] = [
-    { label: "Home", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
-    { label: "Discover Services", href: "/discover", icon: Compass },
+    { label: t("home"), href: "/dashboard", icon: LayoutDashboard },
+    { label: t("apply_for_service"), href: "/checklist", icon: FilePlus2 },
+    { label: t("discover_services"), href: "/discover", icon: Compass },
     { 
-      label: "My Applications", 
+      label: t("my_applications"), 
       href: "/applications", 
       icon: FileCheck2, 
       badge: stats.activeApplications > 0 ? stats.activeApplications : undefined, 
       badgeColor: "bg-blue-100 text-blue-700" 
     },
-    { label: "Documents", href: "/vault", icon: FolderOpen },
+    { label: t("documents"), href: "/vault", icon: FolderOpen },
     { 
-      label: "Tasks & Reminders", 
+      label: t("tasks_reminders"), 
       href: "/tasks", 
       icon: ListTodo, 
       badge: stats.pendingTasks > 0 ? stats.pendingTasks : undefined, 
       badgeColor: "bg-amber-100 text-amber-700" 
     },
     { 
-      label: "Notifications", 
+      label: t("notifications"), 
       href: "/notifications", 
       icon: Bell, 
       badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined, 
       badgeColor: "bg-rose-100 text-rose-700" 
     },
-    { label: "My Profile", href: "/profile", icon: User },
-    { label: "Help & Support", href: "/help", icon: HelpCircle },
+    { label: t("my_profile"), href: "/profile", icon: User },
+    { label: t("help_support"), href: "/help", icon: HelpCircle },
   ];
 
   return (
-    <aside className="hidden md:flex md:w-64 bg-white border-r border-slate-100 flex-col justify-between h-screen sticky top-0 px-4 py-5 select-none z-30 shrink-0 overflow-y-auto">
+    <aside className={cn(
+      "hidden md:flex bg-white border-r border-slate-200 flex-col justify-between h-screen sticky top-0 px-4 py-5 select-none z-30 shrink-0 overflow-y-auto",
+      easyMode ? "w-72" : "w-64"
+    )}>
       <div>
         {/* Brand Logo & Tagline */}
         <Link href="/dashboard" className="flex items-center gap-3 px-2 mb-6 group">
-          <LotusLogo className="w-9 h-9 shrink-0 group-hover:scale-105 transition-transform" />
+          <LotusLogo className={cn("shrink-0 group-hover:scale-105 transition-transform", easyMode ? "w-11 h-11" : "w-9 h-9")} />
           <div className="min-w-0">
-            <div className="text-lg font-black tracking-tight text-slate-900 leading-tight">
-              Seva Saarthi
+            <div className={cn("font-black tracking-tight text-slate-900 leading-tight", easyMode ? "text-xl" : "text-lg")}>
+              {t("app_title")}
             </div>
-            <div className="text-[11px] font-medium text-slate-400 leading-tight">
-              One Form. A Smarter India.
+            <div className={cn("font-medium text-slate-500 leading-tight", easyMode ? "text-xs mt-0.5" : "text-[11px]")}>
+              {t("app_subtitle")}
             </div>
           </div>
         </Link>
 
         {/* Navigation Links */}
-        <nav className="space-y-1">
+        <nav className="space-y-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -91,23 +94,25 @@ export function Sidebar() {
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-xs transition-all duration-150",
+                  "flex items-center justify-between rounded-xl font-bold transition-all duration-150 min-h-[48px]",
+                  easyMode ? "px-4 py-3 text-base" : "px-3.5 py-2.5 text-xs",
                   isActive
-                    ? "bg-blue-600 text-white shadow-xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                    : "text-slate-700 hover:text-slate-900 hover:bg-slate-100"
                 )}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <Icon className={cn("w-4 h-4 shrink-0", isActive ? "text-white" : "text-slate-400")} />
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Icon className={cn("shrink-0", easyMode ? "w-5 h-5" : "w-4 h-4", isActive ? "text-white" : "text-slate-500")} />
                   <span className="truncate">{item.label}</span>
                 </div>
                 {item.badge !== undefined && (
                   <span
                     className={cn(
-                      "px-2 py-0.5 text-[11px] font-bold rounded-full shrink-0",
+                      "font-bold rounded-full shrink-0",
+                      easyMode ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-[11px]",
                       isActive
-                        ? "bg-white/20 text-white"
-                        : item.badgeColor || "bg-slate-100 text-slate-600"
+                        ? "bg-white/25 text-white"
+                        : item.badgeColor || "bg-slate-100 text-slate-700"
                     )}
                   >
                     {item.badge}
@@ -120,13 +125,13 @@ export function Sidebar() {
       </div>
 
       {/* Bottom Section: Digital India Footer */}
-      <div className="pt-4 border-t border-slate-100">
-        <div className="flex items-center justify-between text-[10px] text-slate-400">
+      <div className="pt-4 border-t border-slate-200">
+        <div className="flex items-center justify-between text-xs text-slate-500">
           <div className="flex items-center gap-2">
-            <span className="text-base leading-none">🇮🇳</span>
+            <span className="text-lg leading-none">🇮🇳</span>
             <div className="leading-tight">
-              <div className="font-bold text-slate-700">A Digital India Initiative</div>
-              <div>For a Brighter Tomorrow</div>
+              <div className="font-bold text-slate-800">A Digital India Initiative</div>
+              <div className="text-[10px] text-slate-500">For Every Indian Citizen</div>
             </div>
           </div>
           <span className="font-mono text-slate-400 text-[10px]">v2.0.0</span>
@@ -144,37 +149,36 @@ export function MobileNavDrawer({
   onClose: () => void;
 }) {
   const pathname = usePathname();
-
-  const { stats, unreadNotificationsCount } = useSevaSaarthi();
+  const { stats, unreadNotificationsCount, easyMode, t } = useSevaSaarthi();
 
   const navItems: NavItem[] = [
-    { label: "Home", href: "/dashboard", icon: LayoutDashboard },
-    { label: "Apply for a Service", href: "/checklist", icon: FilePlus2 },
-    { label: "Discover Services", href: "/discover", icon: Compass },
+    { label: t("home"), href: "/dashboard", icon: LayoutDashboard },
+    { label: t("apply_for_service"), href: "/checklist", icon: FilePlus2 },
+    { label: t("discover_services"), href: "/discover", icon: Compass },
     { 
-      label: "My Applications", 
+      label: t("my_applications"), 
       href: "/applications", 
       icon: FileCheck2, 
       badge: stats.activeApplications > 0 ? stats.activeApplications : undefined, 
       badgeColor: "bg-blue-100 text-blue-700" 
     },
-    { label: "Documents", href: "/vault", icon: FolderOpen },
+    { label: t("documents"), href: "/vault", icon: FolderOpen },
     { 
-      label: "Tasks & Reminders", 
+      label: t("tasks_reminders"), 
       href: "/tasks", 
       icon: ListTodo, 
       badge: stats.pendingTasks > 0 ? stats.pendingTasks : undefined, 
       badgeColor: "bg-amber-100 text-amber-700" 
     },
     { 
-      label: "Notifications", 
+      label: t("notifications"), 
       href: "/notifications", 
       icon: Bell, 
       badge: unreadNotificationsCount > 0 ? unreadNotificationsCount : undefined, 
       badgeColor: "bg-rose-100 text-rose-700" 
     },
-    { label: "My Profile", href: "/profile", icon: User },
-    { label: "Help & Support", href: "/help", icon: HelpCircle },
+    { label: t("my_profile"), href: "/profile", icon: User },
+    { label: t("help_support"), href: "/help", icon: HelpCircle },
   ];
 
   useEffect(() => {
@@ -198,22 +202,31 @@ export function MobileNavDrawer({
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-2xl z-[110] flex flex-col justify-between p-4 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto select-none",
+          "fixed inset-y-0 left-0 w-80 max-w-[88vw] bg-white shadow-2xl z-[110] flex flex-col justify-between p-5 transition-transform duration-300 ease-in-out md:hidden overflow-y-auto select-none",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
         role="dialog"
         aria-modal="true"
       >
         <div>
-          <div className="flex items-center gap-3 px-2 mb-6">
-            <LotusLogo className="w-8 h-8 shrink-0" />
-            <div>
-              <div className="text-base font-black tracking-tight text-slate-900">Seva Saarthi</div>
-              <div className="text-[10px] font-medium text-slate-400">One Form. A Smarter India.</div>
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+            <div className="flex items-center gap-3">
+              <LotusLogo className="w-9 h-9 shrink-0" />
+              <div>
+                <div className="text-base font-black tracking-tight text-slate-900">{t("app_title")}</div>
+                <div className="text-[11px] font-medium text-slate-500">{t("app_subtitle")}</div>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Close menu"
+            >
+              ✕
+            </button>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive =
@@ -227,21 +240,22 @@ export function MobileNavDrawer({
                   href={item.href}
                   onClick={onClose}
                   className={cn(
-                    "flex items-center justify-between px-3 py-2.5 rounded-xl font-semibold text-xs transition-all",
+                    "flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all min-h-[50px]",
+                    easyMode ? "text-base" : "text-sm",
                     isActive
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                      : "text-slate-700 hover:text-slate-900 hover:bg-slate-100"
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={cn("w-4 h-4", isActive ? "text-white" : "text-slate-400")} />
+                  <div className="flex items-center gap-3.5">
+                    <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-slate-500")} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge !== undefined && (
                     <span
                       className={cn(
-                        "px-2 py-0.5 text-[10px] font-bold rounded-full",
-                        isActive ? "bg-white/20 text-white" : item.badgeColor || "bg-slate-100 text-slate-600"
+                        "px-2.5 py-0.5 font-bold rounded-full text-xs",
+                        isActive ? "bg-white/25 text-white" : item.badgeColor || "bg-slate-100 text-slate-700"
                       )}
                     >
                       {item.badge}
@@ -253,11 +267,75 @@ export function MobileNavDrawer({
           </nav>
         </div>
 
-        <div className="pt-4 border-t border-slate-100 text-[10px] text-slate-400 flex items-center justify-between">
-          <span>🇮🇳 A Digital India Initiative</span>
-          <span>v2.0.0</span>
+        <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span>🇮🇳</span>
+            <span className="font-semibold text-slate-700">Digital India Initiative</span>
+          </div>
+          <span className="font-mono text-slate-400 text-[10px]">v2.0.0</span>
         </div>
       </aside>
     </>
+  );
+}
+
+export function MobileBottomNav() {
+  const pathname = usePathname();
+  const { easyMode, t, stats } = useSevaSaarthi();
+
+  const items = [
+    { label: t("home"), href: "/dashboard", icon: LayoutDashboard },
+    { label: t("apply_for_service"), href: "/checklist", icon: FilePlus2 },
+    { 
+      label: t("my_applications"), 
+      href: "/applications", 
+      icon: FileCheck2,
+      badge: stats.activeApplications > 0 ? stats.activeApplications : undefined,
+    },
+    { label: t("documents"), href: "/vault", icon: FolderOpen },
+    { label: t("my_profile"), href: "/profile", icon: User },
+  ];
+
+  return (
+    <nav 
+      aria-label="Mobile Bottom Navigation"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-2 py-1.5 flex items-center justify-around shadow-lg"
+    >
+      {items.map((item) => {
+        const Icon = item.icon;
+        const isActive =
+          pathname === item.href ||
+          (item.href === "/dashboard" && pathname === "/") ||
+          (item.href === "/applications" && pathname.startsWith("/track")) ||
+          (item.href === "/vault" && pathname === "/documents");
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all min-h-[50px] relative",
+              isActive ? "text-blue-600 font-bold" : "text-slate-500 hover:text-slate-800"
+            )}
+          >
+            <div className="relative">
+              <Icon className={cn(easyMode ? "w-6 h-6" : "w-5 h-5", isActive ? "text-blue-600 stroke-[2.5]" : "text-slate-500")} />
+              {item.badge !== undefined && (
+                <span className="absolute -top-1 -right-2 bg-blue-600 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center">
+                  {item.badge}
+                </span>
+              )}
+            </div>
+            <span className={cn(
+              "truncate max-w-[70px] text-center mt-0.5",
+              easyMode ? "text-xs font-bold" : "text-[10px] font-medium",
+              isActive ? "text-blue-600 font-bold" : "text-slate-600"
+            )}>
+              {item.label}
+            </span>
+          </Link>
+        );
+      })}
+    </nav>
   );
 }

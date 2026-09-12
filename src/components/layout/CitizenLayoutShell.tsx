@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
-import { Sidebar, MobileNavDrawer } from "@/components/layout/Sidebar";
+import { Sidebar, MobileNavDrawer, MobileBottomNav } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
 
 export function CitizenLayoutShell({ children }: { children: React.ReactNode }) {
@@ -54,18 +54,21 @@ export function CitizenLayoutShell({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen flex bg-slate-50/50 w-full max-w-full overflow-x-hidden relative">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden pb-16 md:pb-0">
         <Header onOpenMobileNav={() => setIsMobileNavOpen(true)} />
         <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl w-full mx-auto box-border overflow-x-hidden">
           {children}
         </main>
       </div>
 
-      {/* Mobile Drawer placed at root of shell for guaranteed stacking above all components */}
+      {/* Mobile Drawer placed at root of shell */}
       <MobileNavDrawer
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}
       />
+
+      {/* Mobile Bottom Persistent Navigation Bar */}
+      <MobileBottomNav />
     </div>
   );
 }

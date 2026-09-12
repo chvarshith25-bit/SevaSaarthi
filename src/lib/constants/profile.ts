@@ -28,6 +28,7 @@ export interface ProfileFieldDefinition {
   type?: "text" | "date" | "number" | "select";
   category: ProfileCategoryKey;
   isKeyField?: boolean;
+  required?: boolean;
   options?: string[];
   helpText?: string;
   portalTags?: string[]; // e.g. ["PAN", "PASSPORT", "NSP", "VOTER", "SARATHI", "EDISTRICT", "UPSC"]

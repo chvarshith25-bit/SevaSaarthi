@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { ManualResolveModal } from "@/components/checklist/ManualResolveModal";
 import { UploadDocumentModal } from "@/components/vault/UploadDocumentModal";
 import { AutofillAssistant } from "@/components/assistant/AutofillAssistant";
+import { DataSharingConsentModal } from "@/components/consent/DataSharingConsentModal";
 import {
   DOCUMENT_PROCUREMENT_GUIDES,
   getSchemeWorkflow,
@@ -56,12 +57,15 @@ export function ReadinessChecklistPage() {
     setActiveServiceId,
     checklistSummary,
     unmarkRequirementResolved,
+    easyMode,
+    t,
   } = useSevaSaarthi();
 
   const [selectedReqForResolve, setSelectedReqForResolve] = useState<ServiceRequirement | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [uploadDocType, setUploadDocType] = useState<DocumentType | string>("AADHAAR");
   const [isAutofillAssistantOpen, setIsAutofillAssistantOpen] = useState(false);
+  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const [showProcessRoadmap, setShowProcessRoadmap] = useState(false);
   const [expandedGuidance, setExpandedGuidance] = useState<Record<string, boolean>>({});
 
@@ -835,6 +839,24 @@ export function ReadinessChecklistPage() {
           onClose={() => setIsAutofillAssistantOpen(false)}
         />
       )}
+
+      {/* SIH 26129 Data Sharing Consent Modal */}
+      <DataSharingConsentModal
+        isOpen={isConsentModalOpen}
+        onClose={() => setIsConsentModalOpen(false)}
+        serviceTitle={service.name}
+        departmentName={service.official_domain}
+        requestedFields={items
+          .filter((i) => i.requirement.requirement_type === "PERSONAL_INFORMATION")
+          .map((i) => i.requirement.label)}
+        requestedDocuments={items
+          .filter((i) => i.requirement.requirement_type !== "PERSONAL_INFORMATION")
+          .map((i) => i.requirement.label)}
+        purpose={`Verification of citizen eligibility and direct application submission for ${service.name}.`}
+        onConsentGranted={() => {
+          setIsAutofillAssistantOpen(true);
+        }}
+      />
     </div>
   );
 }

@@ -65,10 +65,19 @@ const QUICK_SEARCH_ITEMS = [
 
 export function Header({ onOpenMobileNav }: HeaderProps = {}) {
   const router = useRouter();
-  const { user, logout, unreadNotificationsCount } = useSevaSaarthi();
+  const {
+    user,
+    logout,
+    unreadNotificationsCount,
+    easyMode,
+    toggleEasyMode,
+    currentLanguage,
+    setLanguage,
+    t,
+  } = useSevaSaarthi();
+
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
-  const [selectedLang, setSelectedLang] = useState("EN");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -88,6 +97,8 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
   const initials = getInitials(user?.name || "Chiluveri Varshith");
   const displayName = user?.name || "Chiluveri Varshith";
   const displayEmail = user?.email || "chiluverivarshithsahs@gmail.com";
+
+  const currentLangObj = LANGUAGES.find((l) => l.code.toLowerCase() === currentLanguage.toLowerCase()) || LANGUAGES[0];
 
   // Filter search results
   const searchResults = React.useMemo(() => {
@@ -161,7 +172,7 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
           <button
             onClick={onOpenMobileNav}
             aria-label="Open navigation menu"
-            className="w-9 h-9 rounded-xl text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-10 h-10 rounded-xl text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -174,18 +185,34 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Mobile Search Button */}
+          {/* Mobile Easy Mode Toggle */}
           <button
-            onClick={() => setShowMobileSearch(!showMobileSearch)}
-            aria-label="Search"
-            className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            onClick={toggleEasyMode}
+            aria-label="Toggle Easy Mode"
+            className={cn(
+              "px-2.5 py-1.5 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+              easyMode
+                ? "bg-amber-500 text-white border-amber-600 shadow-xs"
+                : "bg-slate-100 text-slate-700 border-slate-200"
+            )}
+            title="Toggle Easy Mode (Larger fonts & simple controls)"
           >
-            <Search className="w-4 h-4" />
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>{easyMode ? "Easy: ON" : "Easy Mode"}</span>
+          </button>
+
+          {/* Mobile Language Selector */}
+          <button
+            onClick={() => setShowLangMenu(!showLangMenu)}
+            aria-label="Select language"
+            className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer border border-slate-200 text-xs font-bold"
+          >
+            {currentLangObj.code}
           </button>
 
           <Link
             href="/notifications"
-            className="relative w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+            className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
           >
             <Bell className="w-4 h-4" />
             {unreadNotificationsCount > 0 && (
@@ -203,6 +230,52 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
         </div>
       </header>
 
+      {/* Mobile Language Modal Dropdown */}
+      {showLangMenu && (
+        <div className="md:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-blue-600" />
+                <h3 className="text-base font-bold text-slate-900">Select Language / భాష</h3>
+              </div>
+              <button
+                onClick={() => setShowLangMenu(false)}
+                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {LANGUAGES.map((lang) => {
+                const isSel = currentLanguage.toLowerCase() === lang.code.toLowerCase();
+                return (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code.toLowerCase() as any);
+                      setShowLangMenu(false);
+                    }}
+                    className={cn(
+                      "p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer",
+                      isSel
+                        ? "bg-blue-600 text-white border-blue-600 shadow-md"
+                        : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800"
+                    )}
+                  >
+                    <div className="text-sm font-bold">{lang.label}</div>
+                    <div className={cn("text-[11px]", isSel ? "text-blue-100" : "text-slate-500")}>
+                      {lang.name}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Search Overlay Input */}
       {showMobileSearch && (
         <div className="md:hidden px-4 py-2 bg-white border-b border-slate-200 z-30 shadow-md">
@@ -212,7 +285,7 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
               <input
                 type="text"
                 autoFocus
-                placeholder="Search schemes (PAN, Scholarship...)"
+                placeholder="What are you looking for? (e.g. Scholarship, PAN)"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -239,20 +312,20 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
 
       {/* 2. DESKTOP HEADER (>= 768px) */}
       <header className="hidden md:flex items-center justify-between px-6 py-3.5 border-b border-slate-100 bg-white/95 backdrop-blur-md sticky top-0 z-20 gap-4">
-        {/* Global Search Bar */}
+        {/* Global Citizen Search Bar */}
         <div ref={searchContainerRef} className="relative flex-1 max-w-xl">
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <button
               type="submit"
               aria-label="Submit search"
-              className="w-8 h-8 absolute left-1 top-1/2 -translate-y-1/2 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+              className="w-9 h-9 absolute left-1 top-1/2 -translate-y-1/2 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
             >
               <Search className="w-4 h-4" />
             </button>
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Search for schemes, services & documents (e.g. PAN, Scholarship...)"
+              placeholder="What are you looking for? (e.g. Scholarship, Income Certificate, PAN Card...)"
               value={searchQuery}
               onFocus={() => setIsSearchOpen(true)}
               onChange={(e) => {
@@ -284,7 +357,7 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
           {isSearchOpen && (
             <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 max-h-[75vh] flex flex-col">
               <div className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 flex items-center justify-between">
-                <span>{searchQuery ? "Search Results" : "Quick Services & Navigation"}</span>
+                <span>{searchQuery ? "Search Results" : "Quick Citizen Services & Navigation"}</span>
                 <span className="text-[9px] font-normal lowercase">press Enter to view all</span>
               </div>
 
@@ -349,7 +422,23 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
 
         {/* Right Controls */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Language Selector */}
+          {/* Easy Mode Switch Button */}
+          <button
+            type="button"
+            onClick={toggleEasyMode}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all border cursor-pointer",
+              easyMode
+                ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-xs"
+                : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/80"
+            )}
+            title="Toggle Easy Mode: Enlarged text, high readability and simplified guidance"
+          >
+            <Sparkles className={cn("w-3.5 h-3.5", easyMode ? "text-white" : "text-amber-500")} />
+            <span>{easyMode ? "Easy Mode: Active" : "Easy Mode"}</span>
+          </button>
+
+          {/* Multilingual Selector */}
           <div className="relative">
             <button
               type="button"
@@ -359,8 +448,8 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
               }}
               className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-2xl text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
             >
-              <Globe className="w-3.5 h-3.5 text-slate-500" />
-              <span>{selectedLang}</span>
+              <Globe className="w-3.5 h-3.5 text-blue-600" />
+              <span>{currentLangObj.label}</span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
             </button>
 
@@ -371,27 +460,30 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
                   onClick={() => setShowLangMenu(false)}
                   aria-hidden="true"
                 />
-                <div className="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in slide-in-from-top-2">
-                  <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50">
-                    Select Language
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in slide-in-from-top-2">
+                  <div className="px-3.5 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50">
+                    Select Language / భాష
                   </div>
-                  {LANGUAGES.map((lang) => (
-                    <button
-                      key={lang.code}
-                      type="button"
-                      onClick={() => {
-                        setSelectedLang(lang.code);
-                        setShowLangMenu(false);
-                      }}
-                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-between cursor-pointer transition-colors"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold">{lang.code}</span>
-                        <span className="text-slate-500">({lang.label})</span>
-                      </div>
-                      {selectedLang === lang.code && <Check className="w-3.5 h-3.5 text-blue-600" />}
-                    </button>
-                  ))}
+                  {LANGUAGES.map((lang) => {
+                    const isSelected = currentLanguage.toLowerCase() === lang.code.toLowerCase();
+                    return (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => {
+                          setLanguage(lang.code.toLowerCase() as any);
+                          setShowLangMenu(false);
+                        }}
+                        className="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-between cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold">{lang.label}</span>
+                          <span className="text-slate-400">({lang.name})</span>
+                        </div>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -455,7 +547,7 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
                     onClick={() => setShowUserMenu(false)}
                     className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
                   >
-                    <CheckCircle className="w-4 h-4 text-slate-400" /> Document Vault
+                    <CheckCircle className="w-4 h-4 text-slate-400" /> My Documents
                   </Link>
                   <div className="my-1 border-t border-slate-100" />
                   <button

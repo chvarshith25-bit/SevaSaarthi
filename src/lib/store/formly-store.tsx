@@ -29,6 +29,10 @@ import {
   getProfileCompleteness,
   generateSampleProfileData,
 } from "@/lib/constants/profile";
+import {
+  SupportedLanguage,
+  getTranslation,
+} from "@/lib/constants/translations";
 
 export interface UserSession {
   id: string;
@@ -49,13 +53,47 @@ export interface AppNotification {
   read: boolean;
 }
 
+export interface DataSharingConsentRecord {
+  id: string;
+  department: string;
+  purpose: string;
+  documentsRequested: string[];
+  accessDuration: string;
+  status: "ALLOWED" | "DENIED" | "PENDING";
+  date: string;
+  serviceId?: string;
+  serviceName?: string;
+}
+
 interface SevaSaarthiContextType {
   user: UserSession | null;
   isAuthenticated: boolean;
   isLoadingAuth: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (name: string, email: string, password: string, phone?: string) => Promise<boolean>;
-  logout: () => Promise<void>;
+  login: (emailOrPhone: string, pass: string) => Promise<boolean>;
+  signup: (name: string, emailOrPhone: string, pass: string, phone?: string) => Promise<boolean>;
+  logout: () => Promise<void> | void;
+
+  // Easy Mode Accessibility
+  easyMode: boolean;
+  toggleEasyMode: () => void;
+  setEasyMode: (enabled: boolean) => void;
+
+  // Language & Translations
+  currentLanguage: SupportedLanguage;
+  setLanguage: (lang: SupportedLanguage) => void;
+  t: (key: string, fallback?: string) => string;
+
+  // SIH 26129 Consent Management
+  consentRecords: DataSharingConsentRecord[];
+  recordConsentAction: (consentId: string, allowed: boolean) => void;
+  addConsentRecord: (record: {
+    serviceName: string;
+    department: string;
+    dataFields: string[];
+    documents: string[];
+    purpose: string;
+    status: "ALLOWED" | "DENIED" | "PENDING";
+  }) => void;
 
   services: ServiceRow[];
   requirements: ServiceRequirement[];
@@ -102,6 +140,8 @@ interface SevaSaarthiContextType {
 const SevaSaarthiContext = createContext<SevaSaarthiContextType | null>(null);
 
 const STORAGE_SESSION_KEY = "seva_saarthi_active_session";
+const STORAGE_EASY_MODE_KEY = "seva_saarthi_easy_mode";
+const STORAGE_LANG_KEY = "seva_saarthi_language";
 
 export function SevaSaarthiProvider({ children }: { children: React.ReactNode }) {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -115,6 +155,110 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   const [requirementStatuses, setRequirementStatuses] = useState<RequirementStatusRow[]>([]);
   const [activeServiceId, setActiveServiceId] = useState<string>("s001");
   const isDataLoadedRef = React.useRef(false);
+
+  // Easy Mode State
+  const [easyMode, setEasyModeState] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(STORAGE_EASY_MODE_KEY) === "true";
+    }
+    return false;
+  });
+
+  const setEasyMode = useCallback((val: boolean) => {
+    setEasyModeState(val);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_EASY_MODE_KEY, String(val));
+    }
+  }, []);
+
+  const toggleEasyMode = useCallback(() => {
+    setEasyModeState((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(STORAGE_EASY_MODE_KEY, String(next));
+      }
+      return next;
+    });
+  }, []);
+
+  // Language & Translations State
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(STORAGE_LANG_KEY);
+      if (saved && ["en", "te", "hi", "mr", "ta", "kn"].includes(saved)) {
+        return saved as SupportedLanguage;
+      }
+    }
+    return "en";
+  });
+
+  const setLanguage = useCallback((lang: SupportedLanguage) => {
+    setCurrentLanguage(lang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_LANG_KEY, lang);
+    }
+  }, []);
+
+  const t = useCallback(
+    (key: string, fallback?: string) => {
+      return getTranslation(currentLanguage, key, fallback);
+    },
+    [currentLanguage]
+  );
+
+  // SIH 26129 Consent Management State
+  const [consentRecords, setConsentRecords] = useState<DataSharingConsentRecord[]>([
+    {
+      id: "consent_001",
+      department: "National Scholarship Department",
+      purpose: "Family income eligibility check for Post-Matric Scholarship",
+      documentsRequested: ["Annual Family Income Certificate", "Institutional Bonafide Certificate"],
+      accessDuration: "For this scholarship session (2025-26)",
+      status: "ALLOWED",
+      date: "2026-09-10",
+      serviceId: "s001",
+    },
+    {
+      id: "consent_002",
+      department: "Income Tax Department (CBDT)",
+      purpose: "Demographic e-KYC validation for instant e-PAN issuance",
+      documentsRequested: ["Aadhaar UID Card (UIDAI Verified)"],
+      accessDuration: "One-time instantaneous verification",
+      status: "ALLOWED",
+      date: "2026-09-11",
+      serviceId: "s003",
+    },
+  ]);
+
+  const recordConsentAction = useCallback((consentId: string, allowed: boolean) => {
+    setConsentRecords((prev) =>
+      prev.map((c) => (c.id === consentId ? { ...c, status: allowed ? "ALLOWED" : "DENIED" } : c))
+    );
+  }, []);
+
+  const addConsentRecord = useCallback(
+    (record: {
+      serviceName: string;
+      department: string;
+      dataFields: string[];
+      documents: string[];
+      purpose: string;
+      status: "ALLOWED" | "DENIED" | "PENDING";
+    }) => {
+      const newEntry: DataSharingConsentRecord = {
+        id: `consent_${Date.now()}`,
+        department: record.department,
+        serviceName: record.serviceName,
+        purpose: record.purpose,
+        documentsRequested: [...record.dataFields, ...record.documents],
+        accessDuration: "Official application processing lifecycle",
+        status: record.status,
+        date: new Date().toISOString().split("T")[0],
+      };
+      setConsentRecords((prev) => [newEntry, ...prev]);
+    },
+    []
+  );
 
   // Load user data from server / localStorage for this specific authenticated user
   const loadUserData = useCallback(async (activeUser: UserSession) => {
@@ -1138,6 +1282,21 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         login,
         signup,
         logout,
+
+        // Easy Mode & Accessibility
+        easyMode,
+        toggleEasyMode,
+        setEasyMode,
+
+        // Language & Translations
+        currentLanguage,
+        setLanguage,
+        t,
+
+        // SIH 26129 Consent Management
+        consentRecords,
+        recordConsentAction,
+        addConsentRecord,
 
         services,
         requirements,
