@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Formly — Citizen Application & Portal Autofill Assistant",
-  "version": "1.0.2",
-  "description": "Autonomous auto-filling and human-in-the-loop submission for government schemes, PAN card (Protean/NSDL), scholarships, and welfare portals.",
+  "name": "SevaSaarthi — Citizen Application & Portal Autofill Assistant",
+  "version": "1.1.0",
+  "description": "Instant autofill and verification for government schemes, PAN card (Protean/NSDL), scholarships (NSP), and welfare portals.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -16,7 +16,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Formly Citizen Assistant"
+    "default_title": "SevaSaarthi Citizen Assistant"
   },
   "content_scripts": [
     {
@@ -43,7 +43,7 @@
         "default": "Alt+Shift+F",
         "mac": "Alt+Shift+F"
       },
-      "description": "Autofill current page with Formly"
+      "description": "Autofill current page with SevaSaarthi"
     }
   }
 }

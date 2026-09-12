@@ -15,19 +15,20 @@ export async function GET(request: Request) {
     const token = tokenFromCookie || tokenFromHeader;
 
     if (!token) {
-      return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
+      return NextResponse.json({ authenticated: false, success: false, user: null }, { status: 401 });
     }
 
     const user = await authenticateSession(token);
     if (!user) {
-      return NextResponse.json({ authenticated: false, user: null }, { status: 401 });
+      return NextResponse.json({ authenticated: false, success: false, user: null }, { status: 401 });
     }
 
     return NextResponse.json({
       authenticated: true,
+      success: true,
       user,
     });
   } catch (err: any) {
-    return NextResponse.json({ authenticated: false, error: err.message }, { status: 500 });
+    return NextResponse.json({ authenticated: false, success: false, error: err.message }, { status: 500 });
   }
 }

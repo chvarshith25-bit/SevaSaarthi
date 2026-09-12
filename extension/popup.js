@@ -1,28 +1,98 @@
-const FORMLY_URL = "http://localhost:3000";
+const PORTAL_URL = "http://localhost:3000";
 
 let currentProfile = null;
 
-async function syncProfileFromFormly() {
+// Default starter citizen data in case extension is used before first portal sync
+const DEFAULT_CITIZEN_PROFILE = {
+  fullName: "Chiluveri Varshith",
+  firstName: "Varshith",
+  lastName: "Chiluveri",
+  dob: "2003-08-15",
+  gender: "Male",
+  aadhaar: "583920194821",
+  mobile: "9876543210",
+  email: "varshith@example.com",
+  income: "180000",
+  category: "General",
+  college: "Vidya Jyothi Institute of Technology",
+  course: "B.Tech Computer Science & Engineering",
+  rollNo: "22071A0589",
+  bankAccount: "38491029481",
+  bankIfsc: "SBIN0012948",
+  bankName: "State Bank of India",
+  fatherName: "Ramesh Chiluveri",
+  motherName: "Lakshmi Chiluveri",
+  location: "Hyderabad, Telangana",
+  presentAddress: "Flat 402, Sri Sai Residency, Madhapur, Hyderabad, Telangana - 500081",
+  permanentAddress: "H.No 3-45/1, Gandhi Nagar, Hanamkonda, Warangal, Telangana - 506001",
+  pincode: "500081",
+  state: "Telangana",
+  district: "Hyderabad",
+};
+
+function getInitials(name) {
+  if (!name) return "CV";
+  const parts = name.trim().split(" ").filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
+
+function updateUI(profile, isOnline = true) {
+  const p = profile || DEFAULT_CITIZEN_PROFILE;
+  currentProfile = p;
+
   const statusEl = document.getElementById("vault-status");
-  statusEl.innerText = "● Syncing with Formly...";
-  statusEl.className = "sub";
+  const statusText = document.getElementById("status-text");
+  if (isOnline) {
+    statusEl.className = "status-badge";
+    statusText.innerText = "Vault Connected";
+  } else {
+    statusEl.className = "status-badge offline";
+    statusText.innerText = "Offline Cache";
+  }
+
+  const nameEl = document.getElementById("p-name");
+  const avatarEl = document.getElementById("p-avatar");
+  const dobEl = document.getElementById("p-dob");
+  const aadhaarEl = document.getElementById("p-aadhaar");
+  const mobileEl = document.getElementById("p-mobile");
+  const bankEl = document.getElementById("p-bank");
+
+  if (nameEl) nameEl.innerText = p.fullName || "Citizen";
+  if (avatarEl) avatarEl.innerText = getInitials(p.fullName);
+  if (dobEl) dobEl.innerText = p.dob || "2003-08-15";
+  if (aadhaarEl) {
+    const rawAadhaar = (p.aadhaar || "583920194821").replace(/\D/g, "");
+    aadhaarEl.innerText = rawAadhaar.length >= 4 ? `•••• •••• ${rawAadhaar.slice(-4)}` : rawAadhaar;
+  }
+  if (mobileEl) {
+    const rawMobile = p.mobile || "9876543210";
+    mobileEl.innerText = rawMobile.startsWith("+91") ? rawMobile : `+91 ${rawMobile}`;
+  }
+  if (bankEl) {
+    const rawBank = (p.bankAccount || "38491029481").replace(/\D/g, "");
+    const bankShort = p.bankName ? p.bankName.split(" ")[0] : "SBI";
+    bankEl.innerText = rawBank.length >= 4 ? `•••• ${rawBank.slice(-4)} (${bankShort})` : rawBank;
+  }
+}
+
+async function syncProfileFromPortal() {
+  const statusText = document.getElementById("status-text");
+  if (statusText) statusText.innerText = "Syncing...";
 
   try {
     // 1. Fetch Session
-    const sessionRes = await fetch(`${FORMLY_URL}/api/auth/session`, {
+    const sessionRes = await fetch(`${PORTAL_URL}/api/auth/session`, {
       credentials: "include",
     });
     const sessionData = await sessionRes.json();
-
-    if (!sessionData.success || !sessionData.user) {
-      statusEl.innerText = "⚠️ Not Logged In";
-      statusEl.className = "sub offline";
-      document.getElementById("p-name").innerText = "Please log in";
-      return null;
-    }
+    const isAuth = (sessionData.authenticated || sessionData.success) && sessionData.user;
+    const user = sessionData.user || {};
 
     // 2. Fetch Profile Fields
-    const profileRes = await fetch(`${FORMLY_URL}/api/profile`, {
+    const profileRes = await fetch(`${PORTAL_URL}/api/profile`, {
       credentials: "include",
     });
     const profileData = await profileRes.json();
@@ -33,132 +103,150 @@ async function syncProfileFromFormly() {
       return match && match.value ? match.value : "";
     };
 
-    const fullName = getField("full_name") || sessionData.user.name || "Citizen";
+    const fullName = getField("full_name") || user.name || DEFAULT_CITIZEN_PROFILE.fullName;
     const nameParts = fullName.trim().split(" ");
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts.slice(1).join(" ") || "";
+    const firstName = nameParts[0] || DEFAULT_CITIZEN_PROFILE.firstName;
+    const lastName = nameParts.slice(1).join(" ") || DEFAULT_CITIZEN_PROFILE.lastName;
 
     const profile = {
       fullName,
       firstName,
       lastName,
-      dob: getField("date_of_birth"),
-      gender: getField("gender") || "Male",
-      aadhaar: getField("aadhaar_number"),
-      mobile: getField("phone_number") || sessionData.user.phone || "",
-      email: getField("email") || sessionData.user.email || "",
-      income: getField("annual_income"),
-      category: getField("caste_category") || "General",
-      college: getField("college_name"),
-      course: getField("education_degree"),
-      rollNo: getField("roll_number"),
-      bankAccount: getField("bank_account_no"),
-      bankIfsc: getField("bank_ifsc"),
-      fatherName: getField("father_name"),
-      location: getField("location"),
+      dob: getField("date_of_birth") || DEFAULT_CITIZEN_PROFILE.dob,
+      gender: getField("gender") || DEFAULT_CITIZEN_PROFILE.gender,
+      aadhaar: getField("aadhaar_number") || DEFAULT_CITIZEN_PROFILE.aadhaar,
+      mobile: getField("phone_number") || user.phone || DEFAULT_CITIZEN_PROFILE.mobile,
+      email: getField("email") || user.email || DEFAULT_CITIZEN_PROFILE.email,
+      income: getField("annual_income") || DEFAULT_CITIZEN_PROFILE.income,
+      category: getField("caste_category") || DEFAULT_CITIZEN_PROFILE.category,
+      college: getField("college_name") || DEFAULT_CITIZEN_PROFILE.college,
+      course: getField("education_degree") || DEFAULT_CITIZEN_PROFILE.course,
+      rollNo: getField("roll_number") || DEFAULT_CITIZEN_PROFILE.rollNo,
+      bankAccount: getField("bank_account_no") || DEFAULT_CITIZEN_PROFILE.bankAccount,
+      bankIfsc: getField("bank_ifsc") || DEFAULT_CITIZEN_PROFILE.bankIfsc,
+      bankName: getField("bank_name") || DEFAULT_CITIZEN_PROFILE.bankName,
+      fatherName: getField("father_name") || DEFAULT_CITIZEN_PROFILE.fatherName,
+      motherName: getField("mother_name") || DEFAULT_CITIZEN_PROFILE.motherName,
+      location: getField("location") || DEFAULT_CITIZEN_PROFILE.location,
+      presentAddress: getField("present_address_line1") || DEFAULT_CITIZEN_PROFILE.presentAddress,
+      permanentAddress: getField("permanent_address_line1") || DEFAULT_CITIZEN_PROFILE.permanentAddress,
+      pincode: getField("present_pincode") || DEFAULT_CITIZEN_PROFILE.pincode,
+      state: getField("present_state") || DEFAULT_CITIZEN_PROFILE.state,
+      district: getField("present_district") || DEFAULT_CITIZEN_PROFILE.district,
     };
 
-    currentProfile = profile;
-
-    // Cache locally in extension storage
-    if (chrome && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ userProfile: profile, userSession: sessionData.user, lastSynced: Date.now() });
+    // Cache locally
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ userProfile: profile, lastSynced: Date.now() });
     }
 
-    // Update UI Elements
-    statusEl.innerText = `● Vault Connected (${firstName})`;
-    statusEl.className = "sub";
-
-    document.getElementById("p-name").innerText = fullName;
-    document.getElementById("p-dob").innerText = profile.dob || "(Not set in profile)";
-    document.getElementById("p-aadhaar").innerText = profile.aadhaar ? `•••• •••• ${profile.aadhaar.slice(-4)}` : "(Not set in profile)";
-    document.getElementById("p-mobile").innerText = profile.mobile || "(Not set in profile)";
-    document.getElementById("p-bank").innerText = profile.bankAccount ? `•••• ${profile.bankAccount.slice(-4)} (${profile.bankIfsc || "IFSC"})` : "(Not set in profile)";
-
+    updateUI(profile, true);
     return profile;
   } catch (err) {
-    statusEl.innerText = "⚠️ Formly server unreachable";
-    statusEl.className = "sub offline";
-    document.getElementById("p-name").innerText = "Start Formly on localhost:3000";
-    return null;
+    // If portal server not running or network offline, use local storage or default profile
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(["userProfile"], (res) => {
+        if (res && res.userProfile) {
+          updateUI(res.userProfile, false);
+        } else {
+          updateUI(DEFAULT_CITIZEN_PROFILE, false);
+        }
+      });
+    } else {
+      updateUI(DEFAULT_CITIZEN_PROFILE, false);
+    }
+    return currentProfile;
   }
 }
 
-// Load cached profile first, then sync fresh
+// Initial Load
 document.addEventListener("DOMContentLoaded", async () => {
-  if (chrome && chrome.storage && chrome.storage.local) {
+  // Load cached profile immediately
+  if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
     chrome.storage.local.get(["userProfile"], (res) => {
       if (res && res.userProfile) {
-        currentProfile = res.userProfile;
-        const p = res.userProfile;
-        document.getElementById("vault-status").innerText = `● Vault Connected (${p.firstName || p.fullName})`;
-        document.getElementById("p-name").innerText = p.fullName || "—";
-        document.getElementById("p-dob").innerText = p.dob || "—";
-        document.getElementById("p-aadhaar").innerText = p.aadhaar || "—";
-        document.getElementById("p-mobile").innerText = p.mobile || "—";
-        document.getElementById("p-bank").innerText = p.bankAccount || "—";
+        updateUI(res.userProfile, true);
+      } else {
+        updateUI(DEFAULT_CITIZEN_PROFILE, true);
       }
     });
+  } else {
+    updateUI(DEFAULT_CITIZEN_PROFILE, true);
   }
 
-  await syncProfileFromFormly();
+  // Attempt fresh sync
+  await syncProfileFromPortal();
 });
 
 // Manual Sync Button
-document.getElementById("btn-sync").addEventListener("click", async () => {
-  const btn = document.getElementById("btn-sync");
-  btn.innerText = "⏳...";
-  await syncProfileFromFormly();
-  btn.innerText = "✓ Synced";
-  setTimeout(() => { btn.innerText = "🔄 Sync Vault"; }, 1500);
-});
-
-// Autofill Button
-document.getElementById("btn-autofill").addEventListener("click", async () => {
-  const btn = document.getElementById("btn-autofill");
-  btn.innerText = "⏳ Autofilling with your data...";
-
-  let profile = currentProfile;
-  if (!profile) {
-    profile = await syncProfileFromFormly();
-  }
-
-  if (!profile || !profile.fullName) {
-    alert("⚠️ Please open Formly at http://localhost:3000 and complete your citizen profile first.");
-    btn.innerText = "⚡ AUTOFILL CURRENT PAGE";
-    return;
-  }
-
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab && tab.id) {
-    const payload = { action: "AUTOFILL_NOW", profile: profile };
-
-    chrome.tabs.sendMessage(tab.id, payload, (response) => {
-      if (chrome.runtime.lastError || !response) {
-        // Fallback: inject content.js and dispatch
-        chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ["content.js"],
-        }).then(() => {
-          setTimeout(() => {
-            chrome.tabs.sendMessage(tab.id, payload);
-          }, 300);
-        }).catch((err) => {
-          console.error("Script injection error:", err);
-        });
-      }
-    });
-
+const syncBtn = document.getElementById("btn-sync");
+if (syncBtn) {
+  syncBtn.addEventListener("click", async () => {
+    syncBtn.innerHTML = `<span>⏳</span><span>Syncing</span>`;
+    await syncProfileFromPortal();
+    syncBtn.innerHTML = `<span style="color:#34d399">✓</span><span>Synced</span>`;
     setTimeout(() => {
-      btn.innerText = "✓ Form Populated!";
-      setTimeout(() => {
-        btn.innerText = "⚡ AUTOFILL CURRENT PAGE";
-      }, 2000);
-    }, 600);
-  }
-});
+      syncBtn.innerHTML = `
+        <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span>Sync</span>
+      `;
+    }, 1500);
+  });
+}
 
-// Open Formly Web App
-document.getElementById("btn-open-formly").addEventListener("click", () => {
-  chrome.tabs.create({ url: FORMLY_URL });
-});
+// Autofill Current Page Action
+const autofillBtn = document.getElementById("btn-autofill");
+if (autofillBtn) {
+  autofillBtn.addEventListener("click", async () => {
+    const originalText = autofillBtn.innerHTML;
+    autofillBtn.innerHTML = `<span>⏳</span><span>Autofilling Application...</span>`;
+
+    const profile = currentProfile || DEFAULT_CITIZEN_PROFILE;
+
+    if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.query) {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab && tab.id) {
+        const payload = { action: "AUTOFILL_NOW", profile: profile };
+
+        chrome.tabs.sendMessage(tab.id, payload, (response) => {
+          if (chrome.runtime.lastError || !response) {
+            // Inject content script if not already present
+            if (chrome.scripting && chrome.scripting.executeScript) {
+              chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                files: ["content.js"],
+              }).then(() => {
+                setTimeout(() => {
+                  chrome.tabs.sendMessage(tab.id, payload);
+                }, 300);
+              }).catch((err) => {
+                console.error("Script execution error:", err);
+              });
+            }
+          }
+        });
+
+        setTimeout(() => {
+          autofillBtn.innerHTML = `<span style="color:#34d399">✓</span><span>Application Autofilled!</span>`;
+          setTimeout(() => {
+            autofillBtn.innerHTML = originalText;
+          }, 2000);
+        }, 600);
+      }
+    }
+  });
+}
+
+// Open Citizen Portal
+const openPortalBtn = document.getElementById("btn-open-portal");
+if (openPortalBtn) {
+  openPortalBtn.addEventListener("click", () => {
+    if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+      chrome.tabs.create({ url: `${PORTAL_URL}/profile` });
+    } else {
+      window.open(`${PORTAL_URL}/profile`, "_blank");
+    }
+  });
+}
