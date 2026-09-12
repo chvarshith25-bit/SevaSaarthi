@@ -134,154 +134,7 @@
     return matched;
   }
 
-  // Pure In-Browser Client-Side Canvas Glyph Classifier for Government Alphanumeric CAPTCHAs (< 5ms)
-  function solveCaptchaFromCanvas(canvas) {
-    try {
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return null;
-      const width = canvas.width;
-      const height = canvas.height;
-      if (width < 30 || height < 15) return null;
-
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const data = imgData.data;
-
-      // 1. Create binary grid (filter out background and noise lines)
-      const grid = [];
-      for (let y = 0; y < height; y++) {
-        grid[y] = [];
-        for (let x = 0; x < width; x++) {
-          const idx = (y * width + x) * 4;
-          const r = data[idx];
-          const g = data[idx + 1];
-          const b = data[idx + 2];
-          const a = data[idx + 3];
-
-          const isWhite = r > 215 && g > 215 && b > 215;
-          const isPinkLine = r > g + 35 && r > 110;
-          const isCyanLine = b > g + 35 && b > 110;
-          const isChar = !isWhite && !isPinkLine && !isCyanLine && a > 40 && (g > 25 || (r < 160 && g < 160 && b < 160));
-
-          grid[y][x] = isChar ? 1 : 0;
-        }
-      }
-
-      // 2. Find horizontal column density
-      const colDensity = [];
-      for (let x = 0; x < width; x++) {
-        let count = 0;
-        for (let y = 0; y < height; y++) {
-          if (grid[y][x]) count++;
-        }
-        colDensity[x] = count;
-      }
-
-      let minX = 0;
-      while (minX < width && colDensity[minX] < 2) minX++;
-      let maxX = width - 1;
-      while (maxX > minX && colDensity[maxX] < 2) maxX--;
-
-      const totalSpan = maxX - minX;
-      if (totalSpan < 30) return null;
-
-      const charWidth = totalSpan / 6;
-      let predicted = "";
-
-      for (let i = 0; i < 6; i++) {
-        const startX = Math.round(minX + i * charWidth);
-        const endX = Math.round(minX + (i + 1) * charWidth);
-
-        let cMinY = height, cMaxY = 0, cMinX = endX, cMaxX = startX;
-        let pixelCount = 0;
-
-        for (let x = startX; x < endX; x++) {
-          for (let y = 0; y < height; y++) {
-            if (grid[y] && grid[y][x]) {
-              pixelCount++;
-              if (y < cMinY) cMinY = y;
-              if (y > cMaxY) cMaxY = y;
-              if (x < cMinX) cMinX = x;
-              if (x > cMaxX) cMaxX = x;
-            }
-          }
-        }
-
-        if (pixelCount < 6 || cMinY >= cMaxY) {
-          predicted += "5";
-          continue;
-        }
-
-        const boxH = cMaxY - cMinY + 1;
-        const boxW = cMaxX - cMinX + 1;
-        const aspect = boxW / (boxH || 1);
-
-        let topPixels = 0, bottomPixels = 0;
-        const midY = Math.floor((cMinY + cMaxY) / 2);
-        for (let x = cMinX; x <= cMaxX; x++) {
-          for (let y = cMinY; y < midY; y++) if (grid[y] && grid[y][x]) topPixels++;
-          for (let y = midY; y <= cMaxY; y++) if (grid[y] && grid[y][x]) bottomPixels++;
-        }
-        const topRatio = topPixels / (pixelCount || 1);
-
-        let leftPixels = 0, rightPixels = 0;
-        const midX = Math.floor((cMinX + cMaxX) / 2);
-        for (let y = cMinY; y <= cMaxY; y++) {
-          for (let x = cMinX; x < midX; x++) if (grid[y] && grid[y][x]) leftPixels++;
-          for (let x = midX; x <= cMaxX; x++) if (grid[y] && grid[y][x]) rightPixels++;
-        }
-        const leftRatio = leftPixels / (pixelCount || 1);
-
-        function countCrossings(yRow) {
-          if (!grid[yRow]) return 0;
-          let transitions = 0, inChar = false;
-          for (let x = cMinX; x <= cMaxX; x++) {
-            if (grid[yRow][x]) {
-              if (!inChar) { transitions++; inChar = true; }
-            } else {
-              inChar = false;
-            }
-          }
-          return transitions;
-        }
-
-        const cross33 = countCrossings(Math.floor(cMinY + boxH * 0.33));
-        const cross50 = countCrossings(midY);
-        const cross66 = countCrossings(Math.floor(cMinY + boxH * 0.66));
-
-        let char = "8";
-
-        if (cross50 >= 3 || cross33 >= 3) {
-          char = aspect > 0.75 ? "m" : "w";
-        } else if (cross50 === 2 && cross66 === 2 && cross33 === 2) {
-          char = "8";
-        } else if (cross50 === 2 && cross66 === 2) {
-          char = leftRatio > 0.55 ? "b" : "d";
-        } else if (cross33 === 2 && cross66 === 1) {
-          char = "4";
-        } else if (aspect < 0.45) {
-          char = (cMaxY > height * 0.78) ? "j" : "i";
-        } else if (topRatio < 0.42) {
-          char = "2";
-        } else if (topRatio > 0.56) {
-          char = "5";
-        } else if (leftRatio > 0.58) {
-          char = "b";
-        } else if (boxH > height * 0.7 && cMinY < height * 0.25) {
-          char = "b";
-        } else {
-          char = (i % 2 === 0) ? "m" : "w";
-        }
-
-        predicted += char;
-      }
-
-      return predicted.length >= 5 ? predicted : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // Smart CAPTCHA Detection & Fast Solver
+  // Smart CAPTCHA Detection & Solver via Background Service Worker
   async function detectAndSolveCaptcha() {
     try {
       // 1. Locate CAPTCHA input field
@@ -328,6 +181,7 @@
         }
       }
 
+      // If not found by direct selector, inspect elements surrounding the captcha input
       if (!captchaImg && captchaInput) {
         const container = captchaInput.closest("form") || captchaInput.closest(".form-group") || captchaInput.parentElement?.parentElement;
         if (container) {
@@ -343,59 +197,31 @@
         }
       }
 
-      if (!captchaImg) {
+      if (!captchaImg || !captchaImg.src) {
         captchaInput.focus();
-        captchaInput.style.border = "2px solid #f59e0b";
-        captchaInput.style.backgroundColor = "#fffbeb";
         return false;
       }
 
-      // 3. Fast Canvas Decoding (< 5ms)
-      let decodedText = null;
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = captchaImg.naturalWidth || captchaImg.width || 180;
-        canvas.height = captchaImg.naturalHeight || captchaImg.height || 50;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(captchaImg, 0, 0, canvas.width, canvas.height);
-          decodedText = solveCaptchaFromCanvas(canvas);
-        }
-      } catch (e) {}
-
-      // 4. If canvas decode succeeded, fill immediately
-      if (decodedText && decodedText.length >= 4) {
-        setValueAndDispatch(captchaInput, decodedText);
-        captchaInput.style.border = "2px solid #10b981";
-        captchaInput.style.backgroundColor = "#f0fdf4";
-        captchaInput.style.boxShadow = "0 0 12px rgba(16, 185, 129, 0.4)";
-        console.log("✓ [SevaSaarthi] In-browser decoded CAPTCHA:", decodedText);
-        captchaInput.focus();
-        return true;
-      }
-
-      // 5. Fallback: request background solver if available
+      // 3. Delegate to Background Service Worker (no cross-origin or canvas taint issues)
       return new Promise((resolve) => {
         const timeout = setTimeout(() => {
           captchaInput.focus();
-          captchaInput.style.border = "2px solid #f59e0b";
-          captchaInput.style.backgroundColor = "#fffbeb";
           resolve(false);
-        }, 1200);
+        }, 1500);
 
-        if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage && captchaImg.src) {
+        if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
           chrome.runtime.sendMessage({ action: "SOLVE_CAPTCHA", imageSrc: captchaImg.src }, (response) => {
             clearTimeout(timeout);
             if (response && response.success && response.text) {
               setValueAndDispatch(captchaInput, response.text);
               captchaInput.style.border = "2px solid #10b981";
               captchaInput.style.backgroundColor = "#f0fdf4";
+              captchaInput.style.boxShadow = "0 0 12px rgba(16, 185, 129, 0.4)";
+              console.log("✓ [SevaSaarthi] Auto-filled CAPTCHA text:", response.text);
               captchaInput.focus();
               resolve(true);
             } else {
               captchaInput.focus();
-              captchaInput.style.border = "2px solid #f59e0b";
-              captchaInput.style.backgroundColor = "#fffbeb";
               resolve(false);
             }
           });
@@ -632,52 +458,56 @@
     });
 
     // D. RUN SMART CAPTCHA PREDICTION & AUTO-FILL
-    let captchaSolved = false;
     try {
-      captchaSolved = await detectAndSolveCaptcha();
+      const captchaSolved = await detectAndSolveCaptcha();
       if (captchaSolved) filledCount++;
     } catch (e) {
-      console.warn("CAPTCHA step completed:", e);
+      // ignore
     }
 
-    // Show floating confirmation banner with actual user details
-    showApprovalBanner(profile, filledCount, captchaSolved);
+    // Show sleek, unobtrusive auto-dismissing toast (No blocking overlays!)
+    showToastNotification(`SevaSaarthi Autofilled ${filledCount} field(s) for ${profile.fullName}`);
   }
 
-  // Floating Confirmation Banner
-  function showApprovalBanner(profile, count, captchaSolved) {
-    let banner = document.getElementById("sevasaarthi-approval-overlay");
-    if (!banner) {
-      banner = document.createElement("div");
-      banner.id = "sevasaarthi-approval-overlay";
-      document.documentElement.appendChild(banner);
-    }
+  // Sleek, Unobtrusive Auto-Dismissing Toast Notification (Never blocks form)
+  function showToastNotification(message) {
+    const existing = document.getElementById("sevasaarthi-toast");
+    if (existing) existing.remove();
 
-    banner.innerHTML = `
-      <div style="position: fixed; bottom: 85px; right: 24px; z-index: 2147483647; background: #0f172a; color: white; padding: 18px; border-radius: 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.6); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 360px; border: 2px solid #6366f1; animation: slideUp 0.3s ease;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: 28px; height: 28px; background: linear-gradient(135deg, #6366f1, #4f46e5); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: white; font-weight: bold;">✓</div>
-            <div>
-              <strong style="font-size: 13px; display: block; color: #fff;">SevaSaarthi Autofill Applied</strong>
-              <span style="font-size: 10px; color: #94a3b8;">${count} field(s) populated with verified citizen data</span>
-            </div>
-          </div>
-          <span style="font-size: 10px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); font-weight: bold; padding: 2px 8px; border-radius: 9999px;">VERIFIED</span>
-        </div>
-        
-        <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 12px; line-height: 1.5; background: #1e293b; padding: 10px; border-radius: 12px; border: 1px solid #334155;">
-          Applicant: <strong style="color: #fff;">${profile.fullName || "—"}</strong><br/>
-          ${profile.dob ? `DOB: <strong style="color: #fff;">${profile.dob}</strong> • ` : ""}${profile.mobile ? `Mobile: <strong style="color: #fff;">${profile.mobile}</strong><br/>` : ""}
-          ${profile.aadhaar ? `Aadhaar: <strong style="color: #fff;">•••• •••• ${profile.aadhaar.slice(-4)}</strong>` : ""}
-          ${captchaSolved ? `<span style="color: #34d399; font-weight: bold; display: block; margin-top: 6px;">⚡ CAPTCHA auto-predicted! Please verify and submit.</span>` : `<span style="color: #f59e0b; font-weight: bold; display: block; margin-top: 6px;">⚠️ Cursor focused on CAPTCHA — type 6 characters and click Request OTP.</span>`}
-        </div>
-
-        <button id="sevasaarthi-banner-close" style="width: 100%; background: #334155; color: white; border: none; padding: 8px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer;">Got It / Close</button>
-      </div>
+    const toast = document.createElement("div");
+    toast.id = "sevasaarthi-toast";
+    toast.style.cssText = `
+      position: fixed !important;
+      top: 20px !important;
+      right: 20px !important;
+      z-index: 2147483647 !important;
+      background: #0f172a !important;
+      color: #ffffff !important;
+      padding: 10px 18px !important;
+      border-radius: 12px !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4) !important;
+      border: 1px solid #6366f1 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      pointer-events: none !important;
+      animation: fadeIn 0.2s ease !important;
+    `;
+    toast.innerHTML = `
+      <span style="color: #34d399; font-size: 16px; font-weight: bold;">✓</span>
+      <span>${message}</span>
     `;
 
-    document.getElementById("sevasaarthi-banner-close").onclick = () => banner.remove();
+    document.documentElement.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transition = "opacity 0.3s ease";
+      setTimeout(() => toast.remove(), 300);
+    }, 2800);
   }
 
   // Inject Floating Button onto Website (Bottom Right Corner Only)
