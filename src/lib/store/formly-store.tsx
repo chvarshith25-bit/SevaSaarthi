@@ -11,6 +11,7 @@ import {
   ChecklistSummary,
   ChecklistItemViewModel,
   DocumentType,
+  RequirementSatisfactionStatus,
 } from "@/types";
 import {
   INITIAL_SERVICES,
@@ -897,15 +898,53 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     const activeReqs = requirements.filter((r) => r.service_id === activeServiceId);
     const items: ChecklistItemViewModel[] = activeReqs.map((req) => {
       const statusRow = requirementStatuses.find((rs) => rs.requirement_id === req.id);
-      const status = statusRow?.status || "MISSING";
-
-      const satisfiedDoc = statusRow?.satisfied_by_document_id
+      
+      let status: RequirementSatisfactionStatus = statusRow?.status || "MISSING";
+      let satisfiedDoc: DocumentRow | null = statusRow?.satisfied_by_document_id
         ? documents.find((d) => d.id === statusRow.satisfied_by_document_id) || null
         : null;
-
-      const satisfiedField = statusRow?.satisfied_by_field_name
+      let satisfiedField: ProfileField | null = statusRow?.satisfied_by_field_name
         ? profileFields.find((pf) => pf.field_name === statusRow.satisfied_by_field_name) || null
         : null;
+
+      // Dynamic evaluation if not manually locked
+      if (!statusRow || !statusRow.locked) {
+        if (req.requirement_type === "PERSONAL_INFORMATION") {
+          const matchingProfileField = profileFields.find(
+            (pf) => pf.field_name === req.field_name && pf.verified && pf.value && pf.value.trim().length > 0
+          );
+          if (matchingProfileField) {
+            status = "SATISFIED";
+            satisfiedField = matchingProfileField;
+            satisfiedDoc = null;
+          } else {
+            status = "MISSING";
+            satisfiedField = null;
+          }
+        } else {
+          // Document requirements
+          const matchingDoc = documents.find((d) => {
+            if (d.is_superseded || (d.status !== "VERIFIED" && d.status !== "EXTRACTED")) return false;
+            const docType = (d.document_type || "").toUpperCase();
+            const note = (req.notes || "").toUpperCase();
+            if (docType === note) return true;
+            if (note === "MARKSHEET" && (docType === "PREVIOUS_MARKSHEET" || docType === "MARKSHEET")) return true;
+            if (note === "BONAFIDE_CERTIFICATE" && (docType === "COLLEGE_ID" || docType === "BONAFIDE_CERTIFICATE")) return true;
+            if (note === "COLLEGE_ID" && (docType === "COLLEGE_ID" || docType === "BONAFIDE_CERTIFICATE")) return true;
+            if (note === "BANK_PASSBOOK" && docType === "BANK_PASSBOOK") return true;
+            return false;
+          });
+
+          if (matchingDoc) {
+            status = "SATISFIED";
+            satisfiedDoc = matchingDoc;
+            satisfiedField = null;
+          } else {
+            status = "MISSING";
+            satisfiedDoc = null;
+          }
+        }
+      }
 
       return {
         requirement: req,

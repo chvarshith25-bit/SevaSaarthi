@@ -11,11 +11,23 @@ interface UploadDocumentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (documentId: string) => void;
+  initialType?: DocumentType | string;
 }
 
-export function UploadDocumentModal({ isOpen, onClose, onSuccess }: UploadDocumentModalProps) {
+export function UploadDocumentModal({ isOpen, onClose, onSuccess, initialType }: UploadDocumentModalProps) {
   const { uploadDocument } = useSevaSaarthi();
-  const [selectedType, setSelectedType] = useState<DocumentType>("AADHAAR");
+  const [selectedType, setSelectedType] = useState<DocumentType>(() => {
+    if (initialType && ["AADHAAR", "INCOME_CERTIFICATE", "COLLEGE_ID", "PREVIOUS_MARKSHEET", "BANK_PASSBOOK", "CASTE_CERTIFICATE", "DOMICILE_CERTIFICATE", "OTHER"].includes(initialType)) {
+      return initialType as DocumentType;
+    }
+    return "AADHAAR";
+  });
+
+  React.useEffect(() => {
+    if (initialType && ["AADHAAR", "INCOME_CERTIFICATE", "COLLEGE_ID", "PREVIOUS_MARKSHEET", "BANK_PASSBOOK", "CASTE_CERTIFICATE", "DOMICILE_CERTIFICATE", "OTHER"].includes(initialType)) {
+      setSelectedType(initialType as DocumentType);
+    }
+  }, [initialType, isOpen]);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);

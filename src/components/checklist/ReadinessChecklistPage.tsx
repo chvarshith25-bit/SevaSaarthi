@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
+import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   FileCheck2,
   ExternalLink,
@@ -23,9 +23,17 @@ import {
   AlertTriangle,
   ArrowRight,
   BookOpen,
+  Layers,
+  GraduationCap,
+  CreditCard,
+  HeartPulse,
+  Home,
+  Briefcase,
+  Car,
+  FileBadge,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
-import { ChecklistItemViewModel, ServiceRequirement } from "@/types";
+import { ChecklistItemViewModel, ServiceRequirement, DocumentType } from "@/types";
 import { cn } from "@/lib/utils";
 import { ManualResolveModal } from "@/components/checklist/ManualResolveModal";
 import { UploadDocumentModal } from "@/components/vault/UploadDocumentModal";
@@ -37,19 +45,63 @@ import {
 import { toast } from "sonner";
 
 export function ReadinessChecklistPage() {
-  const { checklistSummary, unmarkRequirementResolved } = useSevaSaarthi();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const {
+    services,
+    requirements,
+    documents,
+    profileFields,
+    activeServiceId,
+    setActiveServiceId,
+    checklistSummary,
+    unmarkRequirementResolved,
+  } = useSevaSaarthi();
+
   const [selectedReqForResolve, setSelectedReqForResolve] = useState<ServiceRequirement | null>(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [uploadDocType, setUploadDocType] = useState<DocumentType | string>("AADHAAR");
   const [isAutofillAssistantOpen, setIsAutofillAssistantOpen] = useState(false);
   const [showProcessRoadmap, setShowProcessRoadmap] = useState(false);
   const [expandedGuidance, setExpandedGuidance] = useState<Record<string, boolean>>({});
+
+  // Sync with URL query parameter ?service=s00X
+  useEffect(() => {
+    const serviceParam = searchParams.get("service");
+    if (serviceParam && services.some((s) => s.id === serviceParam)) {
+      if (serviceParam !== activeServiceId) {
+        setActiveServiceId(serviceParam);
+      }
+    }
+  }, [searchParams, services, activeServiceId, setActiveServiceId]);
+
+  const handleSelectService = (id: string) => {
+    setActiveServiceId(id);
+    router.replace(`/checklist?service=${id}`, { scroll: false });
+  };
 
   const toggleGuidance = (id: string) => {
     setExpandedGuidance((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const { service, totalRequirements, satisfiedCount, missingCount, manuallyResolvedCount, percentageComplete, items } =
-    checklistSummary;
+  const handleOpenUploadForReq = (notes?: string | null) => {
+    if (notes) {
+      setUploadDocType(notes);
+    } else {
+      setUploadDocType("AADHAAR");
+    }
+    setIsUploadOpen(true);
+  };
+
+  const {
+    service,
+    totalRequirements,
+    satisfiedCount,
+    missingCount,
+    manuallyResolvedCount,
+    percentageComplete,
+    items,
+  } = checklistSummary;
 
   const satisfiedItems = items.filter((i) => i.status === "SATISFIED");
   const missingItems = items.filter((i) => i.status === "MISSING");
@@ -57,36 +109,215 @@ export function ReadinessChecklistPage() {
 
   const isComplete = missingCount === 0 && totalRequirements > 0;
 
+  // Calculate readiness percentages for all services for the switcher pills
+  const serviceReadinessMap = useMemo(() => {
+    const map: Record<string, { percent: number; total: number; satisfied: number }> = {};
+    services.forEach((s) => {
+      const sReqs = requirements.filter((r) => r.service_id === s.id && r.required);
+      if (sReqs.length === 0) {
+        map[s.id] = { percent: 100, total: 0, satisfied: 0 };
+        return;
+      }
+      let satisfied = 0;
+      sReqs.forEach((r) => {
+        if (r.requirement_type === "PERSONAL_INFORMATION") {
+          const match = profileFields.find(
+            (pf) => pf.field_name === r.field_name && pf.verified && pf.value && pf.value.trim().length > 0
+          );
+          if (match) satisfied++;
+        } else {
+          const matchDoc = documents.find((d) => {
+            if (d.is_superseded || (d.status !== "VERIFIED" && d.status !== "EXTRACTED")) return false;
+            const docType = (d.document_type || "").toUpperCase();
+            const note = (r.notes || "").toUpperCase();
+            if (docType === note) return true;
+            if (note === "MARKSHEET" && (docType === "PREVIOUS_MARKSHEET" || docType === "MARKSHEET")) return true;
+            if (note === "BONAFIDE_CERTIFICATE" && (docType === "COLLEGE_ID" || docType === "BONAFIDE_CERTIFICATE")) return true;
+            if (note === "COLLEGE_ID" && (docType === "COLLEGE_ID" || docType === "BONAFIDE_CERTIFICATE")) return true;
+            if (note === "BANK_PASSBOOK" && docType === "BANK_PASSBOOK") return true;
+            return false;
+          });
+          if (matchDoc) satisfied++;
+        }
+      });
+      const percent = Math.round((satisfied / sReqs.length) * 100);
+      map[s.id] = { percent, total: sReqs.length, satisfied };
+    });
+    return map;
+  }, [services, requirements, documents, profileFields]);
+
   const copySummaryToClipboard = () => {
-    const text = `Seva Saarthi Readiness Summary - ${service.name}\n` +
+    const text =
+      `Seva Saarthi Readiness Summary - ${service.name}\n` +
       `Progress: ${percentageComplete}% Complete (${satisfiedCount + manuallyResolvedCount}/${totalRequirements} items)\n\n` +
-      `Satisfied Items:\n` + satisfiedItems.map((i) => `✓ ${i.requirement.label}`).join("\n") +
-      `\n\nMissing Items:\n` + (missingItems.length > 0 ? missingItems.map((i) => `✗ ${i.requirement.label} - ${i.requirement.guidance_text}`).join("\n") : "None!") +
-      `\n\nOfficial Apply Portal: ${service.official_url}`;
+      `Satisfied Items:\n` +
+      satisfiedItems.map((i) => `✓ ${i.requirement.label}`).join("\n") +
+      `\n\nMissing Items:\n` +
+      (missingItems.length > 0
+        ? missingItems.map((i) => `✗ ${i.requirement.label} - ${i.requirement.guidance_text}`).join("\n")
+        : "None! All requirements are ready.") +
+      `\n\nOfficial Portal: ${service.official_url}`;
 
     navigator.clipboard.writeText(text);
     toast.success("Readiness checklist copied to clipboard!");
   };
 
+  const getServiceIcon = (id: string) => {
+    switch (id) {
+      case "s001":
+      case "s002":
+        return <GraduationCap className="w-4 h-4" />;
+      case "s003":
+        return <CreditCard className="w-4 h-4" />;
+      case "s004":
+        return <HeartPulse className="w-4 h-4" />;
+      case "s005":
+        return <Home className="w-4 h-4" />;
+      case "s006":
+        return <Briefcase className="w-4 h-4" />;
+      case "s007":
+        return <Car className="w-4 h-4" />;
+      case "s008":
+      default:
+        return <FileBadge className="w-4 h-4" />;
+    }
+  };
+
   return (
     <div className="space-y-6 pb-16">
-      {/* Service Detail Banner */}
+      {/* Page Header & Scheme Switcher */}
+      <div className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 bg-indigo-50 text-indigo-700 rounded-lg">
+                <FileCheck2 className="w-5 h-5" />
+              </span>
+              <h1 className="text-xl font-black text-slate-900 tracking-tight">
+                Apply for a Service / Scheme
+              </h1>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Select any government scheme below to see your required documents, what you already have, and what you still need to complete your application.
+            </p>
+          </div>
+
+          {/* Quick Dropdown on Mobile / Small screens */}
+          <div className="w-full md:w-72 shrink-0">
+            <label className="block text-[11px] font-bold text-slate-500 mb-1">
+              Select Scheme / Service:
+            </label>
+            <div className="relative">
+              <select
+                value={activeServiceId}
+                onChange={(e) => handleSelectService(e.target.value)}
+                className="w-full pl-3 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+              >
+                {services.map((s) => {
+                  const r = serviceReadinessMap[s.id] || { percent: 0 };
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({r.percent}% Ready)
+                    </option>
+                  );
+                })}
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Scheme Selector Pill Cards */}
+        <div className="pt-2 border-t border-slate-100">
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+            <span>Available Government Schemes & Certificates ({services.length})</span>
+            <span className="text-[10px] text-indigo-600 font-semibold lowercase">Click any card to check eligibility</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+            {services.map((s) => {
+              const isSelected = s.id === activeServiceId;
+              const r = serviceReadinessMap[s.id] || { percent: 0, satisfied: 0, total: 0 };
+              const isFull = r.percent === 100;
+
+              return (
+                <button
+                  key={s.id}
+                  onClick={() => handleSelectService(s.id)}
+                  className={cn(
+                    "text-left p-3 rounded-2xl border transition-all flex flex-col justify-between relative overflow-hidden group",
+                    isSelected
+                      ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-100 ring-2 ring-indigo-600/20"
+                      : "bg-slate-50/70 hover:bg-slate-100 border-slate-200/80 text-slate-800"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span
+                      className={cn(
+                        "p-1.5 rounded-lg shrink-0",
+                        isSelected ? "bg-white/20 text-white" : "bg-white text-indigo-600 border border-slate-200"
+                      )}
+                    >
+                      {getServiceIcon(s.id)}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0",
+                        isSelected
+                          ? isFull
+                            ? "bg-emerald-500 text-white border-emerald-400"
+                            : "bg-white/20 text-white border-white/30"
+                          : isFull
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border-amber-200"
+                      )}
+                    >
+                      {r.percent}% Ready
+                    </span>
+                  </div>
+
+                  <div>
+                    <h2
+                      className={cn(
+                        "text-xs font-bold leading-snug line-clamp-2",
+                        isSelected ? "text-white" : "text-slate-900 group-hover:text-indigo-600"
+                      )}
+                    >
+                      {s.name}
+                    </h2>
+                    <p
+                      className={cn(
+                        "text-[10px] mt-1 line-clamp-1",
+                        isSelected ? "text-indigo-100" : "text-slate-500"
+                      )}
+                    >
+                      {s.category}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Selected Service Detail Banner */}
       <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div>
+          <div className="flex-1">
             {/* Badges */}
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-100">
-                {service.category || "Scholarship Scheme"}
+                {service.category || "Government Scheme"}
               </span>
               <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                Active MVP Service
+                Verified Scheme
               </span>
             </div>
 
             {/* Title & Description */}
-            <h1 className="text-xl font-black text-slate-900 leading-snug">{service.name}</h1>
+            <h2 className="text-xl font-black text-slate-900 leading-snug">{service.name}</h2>
             <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
               {service.description}
             </p>
@@ -116,7 +347,7 @@ export function ReadinessChecklistPage() {
                 className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl border border-slate-200 transition-colors"
               >
                 <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-                <span>{showProcessRoadmap ? "Hide Process Guide" : "Application Process & Timeline"}</span>
+                <span>{showProcessRoadmap ? "Hide Process Guide" : "Application Process & Guidelines"}</span>
               </button>
 
               <button
@@ -130,7 +361,7 @@ export function ReadinessChecklistPage() {
           </div>
 
           {/* Readiness Meter Card */}
-          <div className="bg-gradient-to-br from-slate-50 to-indigo-50/40 border border-slate-100 rounded-2xl p-5 min-w-[240px] text-center shrink-0">
+          <div className="bg-gradient-to-br from-slate-50 to-indigo-50/40 border border-slate-100 rounded-2xl p-5 min-w-[250px] text-center shrink-0">
             <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
               Readiness Score
             </div>
@@ -153,15 +384,15 @@ export function ReadinessChecklistPage() {
             </div>
 
             <div className="flex items-center justify-between text-[10px] font-semibold text-slate-500">
-              <span className="text-emerald-700">{satisfiedCount} Satisfied</span>
-              <span className="text-amber-700">{missingCount} Missing</span>
-              <span className="text-blue-700">{manuallyResolvedCount} Resolved</span>
+              <span className="text-emerald-700 font-bold">{satisfiedCount} Satisfied</span>
+              <span className="text-amber-700 font-bold">{missingCount} Missing</span>
+              <span className="text-blue-700 font-bold">{manuallyResolvedCount} Resolved</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Official Government 5-Stage Process & Timeline Roadmap */}
+      {/* Official Process & Timeline Roadmap */}
       {showProcessRoadmap && (
         <div className="bg-white rounded-3xl border border-indigo-100 p-6 shadow-xs space-y-4 animate-in fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
@@ -170,22 +401,22 @@ export function ReadinessChecklistPage() {
                 <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-200 uppercase">
                   Official Government Lifecycle
                 </span>
-                <h2 className="text-base font-bold text-slate-900">
-                  National Scholarship Portal (NSP) Application Workflow
-                </h2>
+                <h3 className="text-base font-bold text-slate-900">
+                  {service.name} — Process Workflow
+                </h3>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Official step-by-step verification lifecycle from One-Time Registration to Direct Benefit Transfer.
+                Official step-by-step verification lifecycle from application registration to benefit sanction / issuance.
               </p>
             </div>
 
             <a
-              href="https://scholarships.gov.in"
+              href={service.official_url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-xl self-start sm:self-auto"
             >
-              <span>scholarships.gov.in</span>
+              <span>{service.official_domain}</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
@@ -206,9 +437,9 @@ export function ReadinessChecklistPage() {
                     </span>
                   </div>
 
-                  <h3 className="text-xs font-bold text-slate-900 leading-snug mb-1">
+                  <h4 className="text-xs font-bold text-slate-900 leading-snug mb-1">
                     {stage.stageName}
-                  </h3>
+                  </h4>
                   <div className="text-[10px] font-semibold text-indigo-600 mb-2">
                     {stage.responsibleParty}
                   </div>
@@ -239,18 +470,18 @@ export function ReadinessChecklistPage() {
             <div className="flex items-center gap-2.5">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
               <div>
-                <strong>Need Support or Facing Issues?</strong> NSP Official Helpdesk:{" "}
-                <span className="font-bold">{OFFICIAL_NSP_WORKFLOW.grievanceRedressal.helpline}</span> | Email:{" "}
-                <span className="font-bold">{OFFICIAL_NSP_WORKFLOW.grievanceRedressal.email}</span>
+                <strong>Need Support or Facing Issues?</strong> Official Helpdesk Helpline:{" "}
+                <span className="font-bold">1800-11-2001</span> | Email:{" "}
+                <span className="font-bold">helpdesk@gov.in</span>
               </div>
             </div>
             <a
-              href="https://scholarships.gov.in"
+              href={service.official_url}
               target="_blank"
               rel="noopener noreferrer"
               className="text-amber-800 hover:text-amber-950 font-bold underline shrink-0"
             >
-              Open Helpdesk FAQ
+              Open Official Portal
             </a>
           </div>
         </div>
@@ -265,7 +496,7 @@ export function ReadinessChecklistPage() {
             </div>
             <div>
               <h3 className="text-base font-bold text-emerald-950">
-                You are 100% ready to apply! 🎉
+                You are 100% ready to apply for {service.name}! 🎉
               </h3>
               <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
                 All required documents and personal fields are verified. Use the Autofill Assistant to review your data package and apply directly on the official portal.
@@ -275,7 +506,7 @@ export function ReadinessChecklistPage() {
           <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={() => setIsAutofillAssistantOpen(true)}
-              className="py-3 px-5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-200 flex items-center gap-2 transition-all hover:scale-102"
+              className="py-3 px-5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-200 flex items-center gap-2 transition-all hover:scale-102 cursor-pointer"
             >
               <Zap className="w-4 h-4" />
               <span>Autofill Assistant</span>
@@ -286,14 +517,14 @@ export function ReadinessChecklistPage() {
               rel="noopener noreferrer"
               className="py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-200 flex items-center gap-2 transition-all"
             >
-              <span>scholarships.gov.in</span>
+              <span>{service.official_domain}</span>
               <ExternalLink className="w-4 h-4" />
             </a>
           </div>
         </div>
       )}
 
-      {/* Missing Requirements */}
+      {/* Missing Requirements ("What you still need") */}
       {missingItems.length > 0 && (
         <div className="bg-white rounded-3xl border border-amber-200/80 p-6 shadow-xs">
           <div className="flex items-center justify-between mb-4">
@@ -302,14 +533,14 @@ export function ReadinessChecklistPage() {
                 {missingItems.length}
               </div>
               <div>
-                <h2 className="text-base font-bold text-slate-900">Missing Requirements</h2>
-                <p className="text-[11px] text-slate-500">Action needed to reach 100% readiness</p>
+                <h2 className="text-base font-bold text-slate-900">Missing Requirements (What You Still Need)</h2>
+                <p className="text-[11px] text-slate-500">Upload or confirm these {missingItems.length} items to achieve 100% readiness for this scheme</p>
               </div>
             </div>
 
             <button
-              onClick={() => setIsUploadOpen(true)}
-              className="py-1.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+              onClick={() => handleOpenUploadForReq(missingItems[0]?.requirement?.notes)}
+              className="py-1.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <UploadCloud className="w-3.5 h-3.5" />
               <span>Upload Document</span>
@@ -340,15 +571,23 @@ export function ReadinessChecklistPage() {
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-500 mt-0.5">
-                          Type: {req.requirement_type.replace(/_/g, " ")} {req.notes ? `• Expected: ${req.notes}` : ""}
+                          Type: {req.requirement_type.replace(/_/g, " ")} {req.notes ? `• Expected Document: ${req.notes}` : ""}
                         </p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                       <button
+                        onClick={() => handleOpenUploadForReq(req.notes)}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>Upload</span>
+                      </button>
+
+                      <button
                         onClick={() => toggleGuidance(req.id)}
-                        className="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center gap-1 transition-colors"
+                        className="px-2.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
                       >
                         <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
                         <span>How to get</span>
@@ -357,7 +596,7 @@ export function ReadinessChecklistPage() {
 
                       <button
                         onClick={() => setSelectedReqForResolve(req)}
-                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition-colors"
+                        className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
                       >
                         <CheckSquare className="w-3.5 h-3.5" />
                         <span>Mark Resolved</span>
@@ -461,54 +700,60 @@ export function ReadinessChecklistPage() {
         </div>
       )}
 
-      {/* Satisfied Requirements */}
+      {/* Satisfied Requirements ("What you already have") */}
       <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xs">
         <div className="flex items-center gap-2.5 mb-4">
           <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
             {satisfiedItems.length}
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900">Satisfied Requirements</h2>
-            <p className="text-[11px] text-slate-500">Verified by your profile fields and vault documents</p>
+            <h2 className="text-base font-bold text-slate-900">Satisfied Requirements (What You Already Have)</h2>
+            <p className="text-[11px] text-slate-500">Verified and ready from your profile fields and vault documents</p>
           </div>
         </div>
 
-        <div className="space-y-2.5">
-          {satisfiedItems.map((item) => {
-            const req = item.requirement;
-            return (
-              <div
-                key={req.id}
-                className="flex items-center justify-between p-3.5 bg-slate-50/60 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-slate-900">{req.label}</h3>
-                    <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1.5">
-                      {item.satisfiedByDocument && (
-                        <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-md border border-emerald-100">
-                          Source: {item.satisfiedByDocument.original_filename || item.satisfiedByDocument.document_type}
-                        </span>
-                      )}
-                      {item.satisfiedByProfileField && (
-                        <span className="font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded-md border border-indigo-100">
-                          Source: Profile ({item.satisfiedByProfileField.field_name})
-                        </span>
-                      )}
+        {satisfiedItems.length === 0 ? (
+          <div className="p-6 bg-slate-50 rounded-2xl text-center text-slate-500 text-xs">
+            No satisfied requirements yet for this scheme. Upload your documents or complete your profile to satisfy them automatically.
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {satisfiedItems.map((item) => {
+              const req = item.requirement;
+              return (
+                <div
+                  key={req.id}
+                  className="flex items-center justify-between p-3.5 bg-slate-50/60 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-900">{req.label}</h3>
+                      <div className="text-[10px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-1.5">
+                        {item.satisfiedByDocument && (
+                          <span className="font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-md border border-emerald-100">
+                            Source Document: {item.satisfiedByDocument.original_filename || item.satisfiedByDocument.document_type}
+                          </span>
+                        )}
+                        {item.satisfiedByProfileField && (
+                          <span className="font-semibold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded-md border border-indigo-100">
+                            Source Profile: {item.satisfiedByProfileField.field_name} ({item.satisfiedByProfileField.value})
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
-                  Satisfied ✓
-                </span>
-              </div>
-            );
-          })}
-        </div>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
+                    Satisfied ✓
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Manually Resolved */}
@@ -548,7 +793,7 @@ export function ReadinessChecklistPage() {
 
                   <button
                     onClick={() => unmarkRequirementResolved(req.id)}
-                    className="text-[10px] font-semibold text-slate-400 hover:text-slate-600 transition-colors"
+                    className="text-[10px] font-semibold text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                   >
                     Revert
                   </button>
@@ -568,8 +813,14 @@ export function ReadinessChecklistPage() {
         />
       )}
 
-      {/* Upload Modal */}
-      {isUploadOpen && <UploadDocumentModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />}
+      {/* Upload Modal with pre-selected doc type */}
+      {isUploadOpen && (
+        <UploadDocumentModal
+          isOpen={isUploadOpen}
+          initialType={uploadDocType}
+          onClose={() => setIsUploadOpen(false)}
+        />
+      )}
 
       {/* Autofill Assistant In-App Drawer / Modal */}
       {isAutofillAssistantOpen && (
@@ -581,3 +832,4 @@ export function ReadinessChecklistPage() {
     </div>
   );
 }
+
