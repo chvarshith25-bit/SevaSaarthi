@@ -95,9 +95,11 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
             className="relative w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-              {unreadNotificationsCount || 4}
-            </span>
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-rose-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
+                {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+              </span>
+            )}
           </Link>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
@@ -185,9 +187,11 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
             title="Notifications"
           >
             <Bell className="w-4 h-4" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
-              {unreadNotificationsCount || 4}
-            </span>
+            {unreadNotificationsCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
+              </span>
+            )}
           </Link>
 
           {/* User Profile Pill */}
