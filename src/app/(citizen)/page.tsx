@@ -68,40 +68,7 @@ export default function CitizenDashboardPage() {
         </button>
       </div>
 
-      {/* 2. Action Required Alert (Only appears if something urgently needs user action) */}
-      {actionRequiredApp && (
-        <div className="bg-rose-50 border-2 border-rose-300 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-rose-500/20">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-rose-700">Action Required</span>
-                <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-rose-200 text-rose-800">
-                  #{actionRequiredApp.id}
-                </span>
-              </div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 mt-0.5">
-                {actionRequiredApp.title}
-              </h3>
-              <p className="text-xs text-rose-800 font-medium mt-0.5">
-                {actionRequiredApp.pendingAction?.description || actionRequiredApp.remarks || "Please upload missing document to continue verification."}
-              </p>
-            </div>
-          </div>
-
-          <Link
-            href={`/track/${actionRequiredApp.id}`}
-            className="px-5 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-500/20 flex items-center justify-center gap-2 min-h-[48px] shrink-0 transition-all"
-          >
-            <span>Resolve Now</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      )}
-
-      {/* 3. Four Large, Crystal Clear Primary Citizen Action Tiles */}
+      {/* Primary Citizen Action Tiles */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Tile 1: Discover Schemes */}
         <Link
