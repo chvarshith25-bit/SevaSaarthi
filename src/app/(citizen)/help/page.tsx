@@ -4,7 +4,10 @@ import React, { useState } from "react";
 import { HelpCircle, Headphones, MessageSquare, BookOpen, ExternalLink, Send } from "lucide-react";
 import { toast } from "sonner";
 
+import { useSevaSaarthi } from "@/lib/store/formly-store";
+
 export default function HelpPage() {
+  const { t } = useSevaSaarthi();
   const [query, setQuery] = useState("");
 
   const handleSend = (e: React.FormEvent) => {
@@ -21,8 +24,8 @@ export default function HelpPage() {
           <HelpCircle className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Help & Support</h1>
-          <p className="text-xs text-slate-500">Get guidance on government scheme applications, missing documents, and certificate procedures.</p>
+          <h1 className="text-xl font-bold text-slate-900">{t("help_and_support", "Help & Support")}</h1>
+          <p className="text-xs text-slate-500">{t("help_page_desc", "Get guidance on government scheme applications, missing documents, and certificate procedures.")}</p>
         </div>
       </div>
 

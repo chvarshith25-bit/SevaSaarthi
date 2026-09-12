@@ -7,7 +7,7 @@ import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { cn } from "@/lib/utils";
 
 export function TasksPage() {
-  const { checklistSummary } = useSevaSaarthi();
+  const { checklistSummary, t } = useSevaSaarthi();
 
   const missingRequirements = checklistSummary.items.filter((i) => i.status === "MISSING");
 
@@ -43,10 +43,10 @@ export function TasksPage() {
             <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <ListTodo className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900">Tasks & Reminders</h1>
+            <h1 className="text-xl font-bold text-slate-900">{t("tasks_and_reminders", "Tasks & Reminders")}</h1>
           </div>
           <p className="text-xs text-slate-500">
-            Action items to complete your readiness checklist for target government schemes.
+            {t("tasks_desc", "Action items to complete your readiness checklist for target government schemes.")}
           </p>
         </div>
       </div>

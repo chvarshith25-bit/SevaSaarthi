@@ -19,8 +19,10 @@ import {
 } from "lucide-react";
 import { CitizenApplicationTrackerCard } from "@/components/dashboard/CitizenApplicationTrackerCard";
 import { CITIZEN_APPLICATIONS, CitizenTrackedApplication } from "@/lib/mock-data/citizen-applications";
+import { useSevaSaarthi } from "@/lib/store/formly-store";
 
 export default function ApplicationsPage() {
+  const { t } = useSevaSaarthi();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDept, setSelectedDept] = useState("ALL");
   const [selectedStatus, setSelectedStatus] = useState<"ALL" | "IN_PROGRESS" | "ACTION_REQUIRED" | "COMPLETED">("ALL");
@@ -65,10 +67,10 @@ export default function ApplicationsPage() {
             <Sparkles className="w-3.5 h-3.5" /> Seva Saarthi Live Tracking Hub
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight mb-2">
-            My Application Tracker
+            {t("my_application_tracker", "My Application Tracker")}
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5">
-            Real-time lifecycle tracking, stage milestones, exception handling, and officer decisions for all government schemes submitted through Seva Saarthi.
+            {t("tracker_desc", "Real-time lifecycle tracking, stage milestones, exception handling, and officer decisions for all government schemes submitted through Seva Saarthi.")}
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -77,14 +79,14 @@ export default function ApplicationsPage() {
               className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl transition-all shadow-md flex items-center gap-2"
             >
               <FilePlus className="w-4 h-4" />
-              <span>Apply for New Service</span>
+              <span>{t("apply_for_new_service", "Apply for New Service")}</span>
             </Link>
             <Link
-              href="/applications/PAN-2026-0001/status"
+              href="/track/PAN-2026-0001"
               className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-2"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>Direct PAN Tracker</span>
+              <span>{t("direct_pan_tracker", "Direct PAN Tracker")}</span>
             </Link>
           </div>
         </div>
@@ -97,7 +99,7 @@ export default function ApplicationsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">Total Applied</span>
+            <span className="text-xs font-bold text-slate-500">{t("total_applied", "Total Applied")}</span>
             <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
               <FileText className="w-3.5 h-3.5" />
             </div>
@@ -108,7 +110,7 @@ export default function ApplicationsPage() {
 
         <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">In Progress</span>
+            <span className="text-xs font-bold text-slate-500">{t("in_progress", "In Progress")}</span>
             <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
               <Clock className="w-3.5 h-3.5" />
             </div>
@@ -119,7 +121,7 @@ export default function ApplicationsPage() {
 
         <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">Action Required</span>
+            <span className="text-xs font-bold text-slate-500">{t("action_required", "Action Required")}</span>
             <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
               <AlertTriangle className="w-3.5 h-3.5" />
             </div>
@@ -130,7 +132,7 @@ export default function ApplicationsPage() {
 
         <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">Completed</span>
+            <span className="text-xs font-bold text-slate-500">{t("completed", "Completed")}</span>
             <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <CheckCircle2 className="w-3.5 h-3.5" />
             </div>

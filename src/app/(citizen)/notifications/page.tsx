@@ -28,6 +28,7 @@ export default function NotificationsPage() {
     unreadNotificationsCount,
     markNotificationAsRead,
     clearAllNotifications,
+    t,
   } = useSevaSaarthi();
 
   const [filter, setFilter] = useState<FilterTab>("all");
@@ -160,7 +161,7 @@ export default function NotificationsPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900 tracking-tight">Notifications</h1>
+                <h1 className="text-xl font-bold text-slate-900 tracking-tight">{t("notifications_center", "Notifications Center")}</h1>
                 {unreadNotificationsCount > 0 && (
                   <span className="px-2 py-0.5 text-[11px] font-bold bg-rose-100 text-rose-700 rounded-full">
                     {unreadNotificationsCount} unread
@@ -168,7 +169,7 @@ export default function NotificationsPage() {
                 )}
               </div>
               <p className="text-xs text-slate-500">
-                Real-time updates on your schemes, verification, and documents.
+                {t("notifications_desc", "Real-time updates on application status changes, officer actions, and system verification results.")}
               </p>
             </div>
           </div>

@@ -198,11 +198,11 @@ export function ReadinessChecklistPage() {
                 <FileCheck2 className="w-5 h-5" />
               </span>
               <h1 className="text-xl font-black text-slate-900 tracking-tight">
-                Apply for a Service / Scheme
+                {t("apply_for_service", "Apply for a Service / Scheme")}
               </h1>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Select any government scheme below to see your required documents, what you already have, and what you still need to complete your application.
+              {t("checklist_desc", "Select any government scheme below to see your required documents, what you already have, and what you still need to complete your application.")}
             </p>
           </div>
 

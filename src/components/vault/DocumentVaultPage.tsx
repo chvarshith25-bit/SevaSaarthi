@@ -23,7 +23,7 @@ import { DocumentPreviewModal } from "@/components/vault/DocumentPreviewModal";
 type CategoryFilter = "ALL" | "IDENTITY" | "INCOME" | "EDUCATION" | "BANKING";
 
 export function DocumentVaultPage() {
-  const { documents, deleteDocument } = useSevaSaarthi();
+  const { documents, deleteDocument, t } = useSevaSaarthi();
   const [filter, setFilter] = useState<CategoryFilter>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -61,7 +61,7 @@ export function DocumentVaultPage() {
   }, [documents, filter, searchQuery]);
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-6 pb-16">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -69,10 +69,10 @@ export function DocumentVaultPage() {
             <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <FolderOpen className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900">Document Vault</h1>
+            <h1 className="text-xl font-bold text-slate-900">{t("document_vault_title", "Document Vault")}</h1>
           </div>
           <p className="text-xs text-slate-500">
-            Secure personal document storage for your government schemes and certificate applications.
+            {t("vault_desc", "Secure encrypted repository for Aadhaar, PAN, marksheets and income certificates with OCR extraction.")}
           </p>
         </div>
 
@@ -96,7 +96,7 @@ export function DocumentVaultPage() {
             className="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm shadow-indigo-200 transition-all cursor-pointer"
           >
             <UploadCloud className="w-4 h-4" />
-            <span>Upload Document</span>
+            <span>{t("upload_document", "Upload Document")}</span>
           </button>
         </div>
       </div>

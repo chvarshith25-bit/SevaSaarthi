@@ -35,7 +35,7 @@ import {
 } from "@/lib/schemes/schemes-data";
 
 export function DiscoverPage() {
-  const { user, profileFields, checklistSummary } = useSevaSaarthi();
+  const { user, profileFields, checklistSummary, t } = useSevaSaarthi();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
 
@@ -119,10 +119,10 @@ export function DiscoverPage() {
             <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100/60 shadow-xs">
               <Compass className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-black text-slate-900">Government Schemes & Eligibility Matcher</h1>
+            <h1 className="text-xl font-black text-slate-900">{t("discover_schemes_title", "Discover Government Schemes")}</h1>
           </div>
           <p className="text-xs text-slate-500">
-            Real official Indian government schemes matched automatically against your verified citizen profile.
+            {t("discover_schemes_desc", "Explore 50+ central & state welfare schemes, scholarships, and subsidies.")}
           </p>
         </div>
 
@@ -131,7 +131,7 @@ export function DiscoverPage() {
             href="/profile"
             className="py-2 px-3.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-all flex items-center gap-1.5 shadow-xs"
           >
-            <span>Edit Profile Data</span>
+            <span>{t("my_profile", "My Profile")}</span>
             <ArrowRight className="w-3.5 h-3.5 text-indigo-600" />
           </Link>
         </div>
