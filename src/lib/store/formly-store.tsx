@@ -85,6 +85,7 @@ interface SevaSaarthiContextType {
 
   // Actions
   uploadDocument: (file: File, documentType?: DocumentType) => Promise<string>;
+  updateDocumentFile: (documentId: string, file: File, newPreviewUrl?: string) => Promise<void>;
   acceptExtractedField: (documentId: string, fieldId: string, customValue?: string) => Promise<void>;
   rejectExtractedField: (documentId: string, fieldId: string) => Promise<void>;
   acceptAllExtractedFields: (documentId: string) => Promise<void>;
@@ -524,6 +525,55 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     toast.success(`${file.name} uploaded successfully to Document Vault!`);
     setTimeout(recomputeRequirements, 50);
     return docId;
+  };
+
+  // Update/Replace existing document file in place (e.g. after compression)
+  const updateDocumentFile = async (
+    documentId: string,
+    file: File,
+    newPreviewUrl?: string
+  ): Promise<void> => {
+    if (!user) return;
+
+    let previewUrl = newPreviewUrl;
+    if (!previewUrl) {
+      try {
+        if (typeof window !== "undefined" && typeof window.URL?.createObjectURL === "function") {
+          previewUrl = URL.createObjectURL(file);
+        }
+      } catch {}
+    }
+
+    setDocuments((prev) =>
+      prev.map((d) =>
+        d.id === documentId
+          ? {
+              ...d,
+              original_filename: file.name,
+              mime_type: file.type || d.mime_type,
+              file_size_bytes: file.size,
+              preview_url: previewUrl || d.preview_url,
+              updated_at: new Date().toISOString(),
+            }
+          : d
+      )
+    );
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("document_id", documentId);
+
+      await fetch(`/api/documents/${documentId}`, {
+        method: "PUT",
+        body: formData,
+      });
+    } catch (e) {
+      console.warn("Could not sync updated document to server:", e);
+    }
+
+    toast.success(`${file.name} compressed and updated in Document Vault!`);
+    setTimeout(recomputeRequirements, 50);
   };
 
   // Retry OCR
@@ -1108,6 +1158,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         clearAllNotifications,
 
         uploadDocument,
+        updateDocumentFile,
         acceptExtractedField,
         rejectExtractedField,
         acceptAllExtractedFields,

@@ -42,7 +42,7 @@ export function DocumentCompressorModal({
   initialDocument,
   initialPresetId = "pan-photo",
 }: DocumentCompressorModalProps) {
-  const { uploadDocument, documents } = useSevaSaarthi();
+  const { uploadDocument, updateDocumentFile, documents } = useSevaSaarthi();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedPreset, setSelectedPreset] = useState<PortalPreset>(
     PORTAL_PRESETS.find((p) => p.id === initialPresetId) || PORTAL_PRESETS[0]
@@ -57,39 +57,55 @@ export function DocumentCompressorModal({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // If an initial document from the vault was provided, simulate loading it or let user pick
+  // If an initial document from the vault was provided, load its actual preview image or fallback
   useEffect(() => {
     if (initialDocument) {
-      // Map document_type to docType
       const dType = (initialDocument.document_type as DocumentType) || "AADHAAR";
       setSelectedDocType(dType);
 
-      // Create a dummy image/sample to compress if no raw binary is cached
-      const canvas = document.createElement("canvas");
-      canvas.width = 1200;
-      canvas.height = 800;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#f8fafc";
-        ctx.fillRect(0, 0, 1200, 800);
-        ctx.fillStyle = "#1e293b";
-        ctx.font = "bold 32px sans-serif";
-        ctx.fillText(initialDocument.original_filename || "Government Identity Document", 60, 100);
-        ctx.fillStyle = "#64748b";
-        ctx.font = "20px sans-serif";
-        ctx.fillText(`Category: ${initialDocument.document_type} • Verified Government Record`, 60, 140);
-        ctx.fillText("Digitally signed & verified by SevaSaarthi / UIDAI", 60, 180);
+      const generateFallback = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1200;
+        canvas.height = 800;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = "#f8fafc";
+          ctx.fillRect(0, 0, 1200, 800);
+          ctx.fillStyle = "#1e293b";
+          ctx.font = "bold 32px sans-serif";
+          ctx.fillText(initialDocument.original_filename || "Government Identity Document", 60, 100);
+          ctx.fillStyle = "#64748b";
+          ctx.font = "20px sans-serif";
+          ctx.fillText(`Category: ${initialDocument.document_type} • Verified Government Record`, 60, 140);
+          ctx.fillText("Digitally signed & verified by SevaSaarthi / UIDAI", 60, 180);
 
-        canvas.toBlob((blob) => {
-          if (blob) {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const file = new File(
+                [blob],
+                initialDocument.original_filename || "document_scan.jpg",
+                { type: "image/jpeg" }
+              );
+              setSelectedFile(file);
+            }
+          }, "image/jpeg", 0.95);
+        }
+      };
+
+      if (initialDocument.preview_url && (initialDocument.preview_url.startsWith("blob:") || initialDocument.preview_url.startsWith("data:") || initialDocument.preview_url.startsWith("http"))) {
+        fetch(initialDocument.preview_url)
+          .then((r) => r.blob())
+          .then((blob) => {
             const file = new File(
               [blob],
-              initialDocument.original_filename || "document_scan.jpg",
-              { type: "image/jpeg" }
+              initialDocument.original_filename || "document.jpg",
+              { type: blob.type || "image/jpeg" }
             );
             setSelectedFile(file);
-          }
-        }, "image/jpeg", 0.95);
+          })
+          .catch(() => generateFallback());
+      } else {
+        generateFallback();
       }
     }
   }, [initialDocument]);
@@ -140,10 +156,23 @@ export function DocumentCompressorModal({
     if (!compressionResult) return;
     setIsSavingToVault(true);
     try {
-      await uploadDocument(compressionResult.compressedFile, selectedDocType);
-      toast.success(
-        `Optimized document (${compressionResult.compressedSizeKb} KB) added to your Document Vault!`
-      );
+      if (initialDocument) {
+        // Replace and update the existing file in place
+        await updateDocumentFile(
+          initialDocument.id,
+          compressionResult.compressedFile,
+          compressionResult.dataUrl
+        );
+        toast.success(
+          `${initialDocument.original_filename || "Document"} compressed to ${compressionResult.compressedSizeKb} KB and updated in Document Vault!`
+        );
+      } else {
+        // Standalone compress: add as new document
+        await uploadDocument(compressionResult.compressedFile, selectedDocType);
+        toast.success(
+          `Optimized document (${compressionResult.compressedSizeKb} KB) added to your Document Vault!`
+        );
+      }
       onClose();
     } catch (err: any) {
       toast.error("Failed to save to Vault: " + (err.message || "Unknown error"));
@@ -456,17 +485,17 @@ export function DocumentCompressorModal({
               type="button"
               disabled={!compressionResult || isCompressing || isSavingToVault}
               onClick={handleSaveToVault}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm shadow-indigo-200 flex items-center gap-1.5 transition-all disabled:opacity-40"
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm shadow-indigo-200 flex items-center gap-1.5 transition-all disabled:opacity-40 cursor-pointer"
             >
               {isSavingToVault ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Saving to Vault...</span>
+                  <span>Updating Vault...</span>
                 </>
               ) : (
                 <>
                   <FileCheck2 className="w-3.5 h-3.5" />
-                  <span>Save to Document Vault</span>
+                  <span>{initialDocument ? "Replace & Update in Vault" : "Save to Document Vault"}</span>
                 </>
               )}
             </button>
