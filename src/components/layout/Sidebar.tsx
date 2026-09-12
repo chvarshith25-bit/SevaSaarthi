@@ -13,9 +13,6 @@ import {
   ListTodo,
   Bell,
   HelpCircle,
-  ArrowRight,
-  Bot,
-  Check,
 } from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { LotusLogo } from "@/components/ui/LotusLogo";
@@ -122,32 +119,9 @@ export function Sidebar() {
         </nav>
       </div>
 
-      {/* Bottom Section: Ask Saarthi AI & Digital India Footer */}
-      <div className="space-y-3 pt-4 border-t border-slate-100">
-        {/* Ask Saarthi AI Card */}
-        <div className="bg-gradient-to-br from-blue-50/60 via-indigo-50/40 to-sky-50/50 border border-blue-100/90 rounded-2xl p-3.5 space-y-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-xs shrink-0">
-              <Bot className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-xs font-bold text-slate-900">Ask Saarthi AI</div>
-            </div>
-          </div>
-          <p className="text-[11px] text-slate-500 leading-snug">
-            Get instant guidance on forms, documents and application status.
-          </p>
-          <Link
-            href="/help"
-            className="w-full py-1.5 px-3 bg-white hover:bg-slate-50 text-blue-700 font-bold text-[11px] rounded-xl border border-blue-200/80 transition-all flex items-center justify-center gap-1.5 shadow-2xs"
-          >
-            <span>Start Chatting</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        {/* Digital India Flag Footer */}
-        <div className="pt-2 flex items-center justify-between text-[10px] text-slate-400">
+      {/* Bottom Section: Digital India Footer */}
+      <div className="pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-between text-[10px] text-slate-400">
           <div className="flex items-center gap-2">
             <span className="text-base leading-none">🇮🇳</span>
             <div className="leading-tight">
