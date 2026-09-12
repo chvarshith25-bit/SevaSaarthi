@@ -29,6 +29,11 @@ import {
   DOCUMENT_PROCUREMENT_GUIDES,
   OFFICIAL_NSP_WORKFLOW,
 } from "@/lib/knowledge/government-schemes-knowledge";
+import {
+  CANONICAL_PROFILE_FIELDS,
+  APPLICATION_PORTAL_PRESETS,
+  calculatePortalReadiness,
+} from "@/lib/constants/profile";
 
 interface AutofillAssistantProps {
   isOpen: boolean;
@@ -64,30 +69,80 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
   const [activeTab, setActiveTab] = useState<"PROCESS_GUIDE" | "DOCUMENT_INTEL" | "COPY_DATA" | "FAQ">("PROCESS_GUIDE");
   const [selectedDocKey, setSelectedDocKey] = useState<string>("BONAFIDE_CERTIFICATE");
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+  const [selectedPortalId, setSelectedPortalId] = useState<string>("scholarship_nsp");
 
   if (!isOpen) return null;
 
+  const currentPreset = React.useMemo(() => {
+    if (selectedPortalId === "ALL") return null;
+    return APPLICATION_PORTAL_PRESETS.find((p) => p.id === selectedPortalId) || null;
+  }, [selectedPortalId]);
+
+  const currentReadiness = React.useMemo(() => {
+    if (!selectedPortalId || selectedPortalId === "ALL") return null;
+    return calculatePortalReadiness(profileFields, selectedPortalId);
+  }, [profileFields, selectedPortalId]);
+
+  const autofillFields = React.useMemo(() => {
+    if (currentPreset) {
+      const allPresetFieldNames = [
+        ...currentPreset.requiredFields,
+        ...(currentPreset.optionalFields || []),
+      ];
+      return allPresetFieldNames.map((fName) => {
+        const def = CANONICAL_PROFILE_FIELDS.find((d) => d.fieldName === fName);
+        const stored = profileFields.find((pf) => pf.field_name === fName);
+        const isRequired = currentPreset.requiredFields.includes(fName);
+        return {
+          key: fName,
+          label: def?.label || fName,
+          value: stored?.value || "",
+          isRequired,
+          category: def?.category || "IDENTITY",
+        };
+      });
+    }
+
+    // "ALL" selected: return all canonical fields with values first, then others
+    return CANONICAL_PROFILE_FIELDS.map((def) => {
+      const stored = profileFields.find((pf) => pf.field_name === def.fieldName);
+      return {
+        key: def.fieldName,
+        label: def.label,
+        value: stored?.value || "",
+        isRequired: !!def.isKeyField,
+        category: def.category,
+      };
+    });
+  }, [currentPreset, profileFields]);
+
   const copyToClipboard = (key: string, value: string, label: string) => {
+    if (!value) {
+      toast.error(`No value saved for ${label}. Please edit profile first.`);
+      return;
+    }
     navigator.clipboard.writeText(value);
     setCopiedKey(key);
     toast.success(`Copied ${label}: "${value}"`);
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  const autofillFields = [
-    { key: "full_name", label: "Full Name", value: profileFields.find((f) => f.field_name === "full_name")?.value || user?.name || "Applicant" },
-    { key: "dob", label: "Date of Birth", value: profileFields.find((f) => f.field_name === "date_of_birth")?.value || "" },
-    { key: "gender", label: "Gender", value: profileFields.find((f) => f.field_name === "gender")?.value || "Male" },
-    { key: "phone", label: "Mobile Number", value: profileFields.find((f) => f.field_name === "phone_number")?.value || user?.phone || "" },
-    { key: "email", label: "Email Address", value: profileFields.find((f) => f.field_name === "email")?.value || user?.email || "" },
-    { key: "aadhaar", label: "Aadhaar Number", value: profileFields.find((f) => f.field_name === "aadhaar_number")?.value || "" },
-    { key: "income", label: "Annual Family Income", value: profileFields.find((f) => f.field_name === "annual_income")?.value || "180000" },
-    { key: "category", label: "Caste / Category", value: profileFields.find((f) => f.field_name === "caste_category")?.value || "OBC" },
-    { key: "college", label: "College Name", value: profileFields.find((f) => f.field_name === "college_name")?.value || "" },
-    { key: "course", label: "Degree / Course", value: profileFields.find((f) => f.field_name === "education_degree")?.value || "" },
-    { key: "bank_acc", label: "Bank Account No", value: profileFields.find((f) => f.field_name === "bank_account_no")?.value || "" },
-    { key: "bank_ifsc", label: "Bank IFSC Code", value: profileFields.find((f) => f.field_name === "bank_ifsc")?.value || "" },
-  ];
+  const copyCompletePayloadJson = () => {
+    const payload: Record<string, string> = {};
+    autofillFields.forEach((f) => {
+      if (f.value) payload[f.key] = f.value;
+    });
+    navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    toast.success("Copied application JSON payload to clipboard!");
+  };
+
+  const copyCompletePayloadText = () => {
+    const textLines = autofillFields
+      .filter((f) => f.value)
+      .map((f) => `${f.label}: ${f.value}`);
+    navigator.clipboard.writeText(textLines.join("\n"));
+    toast.success("Copied formatted application summary to clipboard!");
+  };
 
   const officialPortals = [
     {
@@ -95,6 +150,42 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
       url: "https://scholarships.gov.in",
       domain: "scholarships.gov.in",
       purpose: "Official portal for Central and State Post-Matric Scholarships",
+    },
+    {
+      name: "NSDL / Protean PAN Application (Form 49A)",
+      url: "https://www.onlineservices.nsdl.com/paam/endUserRegisterContact.html",
+      domain: "onlineservices.nsdl.com",
+      purpose: "Permanent Account Number issuance & Aadhaar e-KYC paperless filing",
+    },
+    {
+      name: "Passport Seva Portal (MEA)",
+      url: "https://passportindia.gov.in",
+      domain: "passportindia.gov.in",
+      purpose: "Fresh Passport & Re-issue statutory online application",
+    },
+    {
+      name: "Voters' Service Portal (ECI)",
+      url: "https://voters.eci.gov.in",
+      domain: "voters.eci.gov.in",
+      purpose: "Form 6 new voter registration & EPIC card download",
+    },
+    {
+      name: "Parivahan Sarathi (MoRTH)",
+      url: "https://sarathi.parivahan.gov.in",
+      domain: "sarathi.parivahan.gov.in",
+      purpose: "Learner's & Permanent Driving License application",
+    },
+    {
+      name: "State MeeSeva / e-District",
+      url: "https://ts.meeseva.telangana.gov.in",
+      domain: "meeseva.gov.in",
+      purpose: "Income, Caste, Residence & Domicile certificates",
+    },
+    {
+      name: "UPSC / SSC One-Time Registration (OTR)",
+      url: "https://upsconline.nic.in",
+      domain: "upsconline.nic.in",
+      purpose: "Civil Services, NDA, CDS & SSC lifelong applicant profile",
     },
     {
       name: "UIDAI myAadhaar Portal",
@@ -107,12 +198,6 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
       url: "https://www.digilocker.gov.in",
       domain: "digilocker.gov.in",
       purpose: "Download authentic Class 10 & 12 digitally signed marksheets",
-    },
-    {
-      name: "Ayushman Beneficiary Portal",
-      url: "https://beneficiary.nha.gov.in",
-      domain: "beneficiary.nha.gov.in",
-      purpose: "Create Ayushman Bharat PM-JAY Golden Card",
     },
   ];
 
@@ -366,15 +451,133 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
             </div>
           )}
 
-          {/* TAB 3: 1-Click Copy Verified Data */}
+          {/* TAB 3: 1-Click Copy & Portal Autofill Payload */}
           {activeTab === "COPY_DATA" && (
-            <div className="space-y-3">
-              <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-900 flex items-center justify-between">
-                <span>Click any field button below to copy the verified value into portal form fields.</span>
-                <span className="font-bold text-indigo-600">{autofillFields.length} Fields Ready</span>
+            <div className="space-y-4">
+              {/* Application Portal Selector */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Select Target Government Application:</span>
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Filters profile fields specifically to the statutory schema required by the government department.
+                    </p>
+                  </div>
+
+                  <select
+                    value={selectedPortalId}
+                    onChange={(e) => setSelectedPortalId(e.target.value)}
+                    className="px-3 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  >
+                    <option value="ALL">Universal Citizen Profile (All 55+ Fields)</option>
+                    {APPLICATION_PORTAL_PRESETS.map((preset) => (
+                      <option key={preset.id} value={preset.id}>
+                        {preset.name} ({preset.shortName})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Portal Readiness Banner (if preset is selected) */}
+                {currentPreset && currentReadiness && (
+                  <div className="p-3 bg-white border border-slate-200/90 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0",
+                          currentReadiness.percentage === 100
+                            ? "bg-emerald-100 text-emerald-700"
+                            : currentReadiness.percentage >= 80
+                            ? "bg-indigo-100 text-indigo-700"
+                            : "bg-amber-100 text-amber-700"
+                        )}
+                      >
+                        {currentReadiness.percentage}%
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                          <span>{currentPreset.name}</span>
+                          {currentReadiness.percentage === 100 ? (
+                            <span className="text-[10px] font-extrabold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                              Ready to File
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-extrabold text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                              {currentReadiness.missingCount} field(s) missing
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {currentReadiness.satisfiedCount} of {currentReadiness.totalCount} mandatory fields confirmed
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={copyCompletePayloadJson}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        title="Copy JSON Payload"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy JSON</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={copyCompletePayloadText}
+                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+                        title="Copy Plain Text Summary"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Copy Text</span>
+                      </button>
+
+                      <a
+                        href={currentPreset.officialUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors shrink-0"
+                        title={`Open official portal: ${currentPreset.officialUrl}`}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* Batch Copy Bar when Universal is selected */}
+              {selectedPortalId === "ALL" && (
+                <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-950 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span>{autofillFields.length} statutory fields configured. Click any field to copy individual values, or export complete payload:</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={copyCompletePayloadJson}
+                      className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>Copy All JSON</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={copyCompletePayloadText}
+                      className="px-2.5 py-1 bg-white hover:bg-slate-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <FileText className="w-3 h-3" />
+                      <span>Copy Text</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Grid of Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[340px] overflow-y-auto pr-1">
                 {autofillFields.map((field) => {
                   const isCopied = copiedKey === field.key;
                   return (
@@ -383,15 +586,33 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
                       className="p-3 bg-slate-50 border border-slate-200/70 rounded-2xl flex items-center justify-between hover:border-indigo-300 transition-all"
                     >
                       <div className="min-w-0 pr-2">
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{field.label}</div>
-                        <div className="text-xs font-bold text-slate-900 truncate">{field.value || "Not filled"}</div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                            {field.label}
+                          </span>
+                          {field.isRequired && (
+                            <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-1 py-0.2 rounded">
+                              Required
+                            </span>
+                          )}
+                        </div>
+                        <div
+                          className={cn(
+                            "text-xs font-bold truncate mt-0.5",
+                            field.value ? "text-slate-900" : "text-slate-400 italic"
+                          )}
+                        >
+                          {field.value || "Not filled in profile"}
+                        </div>
                       </div>
 
                       <button
                         onClick={() => copyToClipboard(field.key, field.value, field.label)}
                         className={cn(
-                          "p-2 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-colors",
-                          isCopied ? "bg-emerald-600 text-white" : "bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200"
+                          "p-2 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer",
+                          isCopied
+                            ? "bg-emerald-600 text-white"
+                            : "bg-white hover:bg-indigo-50 text-slate-700 hover:text-indigo-600 border border-slate-200"
                         )}
                         title="Copy to clipboard"
                       >
@@ -408,22 +629,28 @@ export function AutofillAssistant({ isOpen, onClose }: AutofillAssistantProps) {
                 <div className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                   Authorized Government Form Portals:
                 </div>
-                {officialPortals.map((p) => (
-                  <div key={p.domain} className="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between text-xs">
-                    <div>
-                      <div className="font-bold text-slate-900">{p.name}</div>
-                      <div className="text-[11px] text-slate-500">{p.purpose}</div>
-                    </div>
-                    <a
-                      href={p.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors shrink-0"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {officialPortals.map((p) => (
+                    <div
+                      key={p.domain}
+                      className="p-2.5 bg-white border border-slate-200 rounded-xl flex items-center justify-between text-xs"
                     >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </div>
-                ))}
+                      <div className="truncate pr-2">
+                        <div className="font-bold text-slate-900 truncate">{p.name}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{p.purpose}</div>
+                      </div>
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors shrink-0"
+                        title={p.url}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}

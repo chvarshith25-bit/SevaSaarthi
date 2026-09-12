@@ -15,6 +15,10 @@ import {
 import {
   INITIAL_SERVICES,
   INITIAL_REQUIREMENTS,
+  INITIAL_DOCUMENTS,
+  INITIAL_EXTRACTED_FIELDS,
+  INITIAL_PROFILE_FIELDS,
+  INITIAL_REQUIREMENT_STATUS,
 } from "@/lib/mock-data/initial-state";
 import { extractDocumentFields } from "@/lib/ocr/ocr-engine";
 import { toast } from "sonner";
@@ -184,54 +188,73 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
         const parsed = JSON.parse(saved);
         if (parsed.documents) setDocuments(parsed.documents);
         if (parsed.extractedFields) setExtractedFields(parsed.extractedFields);
-        if (parsed.profileFields) setProfileFields(parsed.profileFields);
+        if (parsed.profileFields && Array.isArray(parsed.profileFields)) {
+          // If cached profile has fewer than 20 fields, merge in INITIAL_PROFILE_FIELDS so user gets full 55+ canonical fields
+          const existingMap = new Map(parsed.profileFields.map((f: ProfileField) => [f.field_name, f]));
+          const merged = [...parsed.profileFields];
+          for (const initField of INITIAL_PROFILE_FIELDS) {
+            if (!existingMap.has(initField.field_name)) {
+              merged.push({ ...initField, user_id: activeUser.id });
+            }
+          }
+          setProfileFields(merged);
+        } else {
+          setProfileFields(INITIAL_PROFILE_FIELDS);
+        }
         if (parsed.requirementStatuses) setRequirementStatuses(parsed.requirementStatuses);
         isDataLoadedRef.current = true;
       } else {
-        // Fresh user: initialize empty profile with their registration name & email
-        const initialProfile: ProfileField[] = [
-          {
-            id: `pf_${activeUser.id}_fullname`,
-            user_id: activeUser.id,
-            field_name: "full_name",
-            value: activeUser.name,
-            source_document_id: null,
-            confidence: 1.0,
-            verified: true,
-            confirmed_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-          {
-            id: `pf_${activeUser.id}_email`,
-            user_id: activeUser.id,
-            field_name: "email",
-            value: activeUser.email,
-            source_document_id: null,
-            confidence: 1.0,
-            verified: true,
-            confirmed_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ];
-        if (activeUser.phone) {
-          initialProfile.push({
-            id: `pf_${activeUser.id}_phone`,
-            user_id: activeUser.id,
-            field_name: "phone_number",
-            value: activeUser.phone,
-            source_document_id: null,
-            confidence: 1.0,
-            verified: true,
-            confirmed_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        // Fresh user: If demo user, seed full INITIAL_PROFILE_FIELDS
+        if (activeUser.id === "u0000000-0000-0000-0000-000000000001" || activeUser.id === "u001" || activeUser.email === "sankeerths615@gmail.com") {
+          setProfileFields(INITIAL_PROFILE_FIELDS);
+          setDocuments(INITIAL_DOCUMENTS);
+          setExtractedFields(INITIAL_EXTRACTED_FIELDS);
+          setRequirementStatuses(INITIAL_REQUIREMENT_STATUS);
+        } else {
+          const initialProfile: ProfileField[] = [
+            {
+              id: `pf_${activeUser.id}_fullname`,
+              user_id: activeUser.id,
+              field_name: "full_name",
+              value: activeUser.name,
+              source_document_id: null,
+              confidence: 1.0,
+              verified: true,
+              confirmed_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            {
+              id: `pf_${activeUser.id}_email`,
+              user_id: activeUser.id,
+              field_name: "email",
+              value: activeUser.email,
+              source_document_id: null,
+              confidence: 1.0,
+              verified: true,
+              confirmed_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+          ];
+          if (activeUser.phone) {
+            initialProfile.push({
+              id: `pf_${activeUser.id}_phone`,
+              user_id: activeUser.id,
+              field_name: "phone_number",
+              value: activeUser.phone,
+              source_document_id: null,
+              confidence: 1.0,
+              verified: true,
+              confirmed_at: new Date().toISOString(),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
+          setProfileFields(initialProfile);
+          setDocuments([]);
+          setExtractedFields([]);
         }
-        setProfileFields(initialProfile);
-        setDocuments([]);
-        setExtractedFields([]);
         isDataLoadedRef.current = true;
       }
     } catch (err) {
