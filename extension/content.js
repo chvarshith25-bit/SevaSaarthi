@@ -6,7 +6,7 @@
     return;
   }
 
-  // Guard against any captcha or verification URLs
+  // Guard against any captcha verification iframe URLs
   const currentUrl = (window.location.href || "").toLowerCase();
   if (
     currentUrl.includes("recaptcha") ||
@@ -84,7 +84,7 @@
     element.focus();
     element.value = val;
 
-    // React native value setter bypass
+    // React / Angular native value setter bypass
     const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
       window.HTMLInputElement.prototype,
       "value"
@@ -109,7 +109,7 @@
     element.style.boxShadow = "0 0 10px rgba(16, 185, 129, 0.3)";
   }
 
-  // Helper to select dropdown options (including Select2)
+  // Helper to select dropdown options
   function selectDropdown(selectEl, matchTextOrVal) {
     if (!selectEl || !matchTextOrVal) return false;
     let matched = false;
@@ -134,16 +134,17 @@
     return matched;
   }
 
-  // Smart CAPTCHA Detection & OCR Auto-Solver
+  // Smart CAPTCHA Detection & OCR Auto-Solver via Extension Background Service Worker
   async function detectAndSolveCaptcha() {
     try {
       // 1. Locate CAPTCHA input field
       const captchaInputSelectors = [
+        'input[placeholder*="captcha" i]',
         'input[name*="captcha" i]',
         'input[id*="captcha" i]',
-        'input[placeholder*="captcha" i]',
-        'input[aria-label*="captcha" i]',
+        'input[formcontrolname="captcha" i]',
         'input[formcontrolname*="captcha" i]',
+        'input[aria-label*="captcha" i]',
         '#captcha',
         '#txtCaptcha',
         '#captchaInput',
@@ -162,15 +163,16 @@
 
       if (!captchaInput) return false;
 
-      // 2. Locate CAPTCHA image element
+      // 2. Locate CAPTCHA image or canvas element
       const captchaImgSelectors = [
         'img[src*="captcha" i]',
+        'img[src*="Captcha" i]',
+        'img[src*="getCaptcha" i]',
         'img[id*="captcha" i]',
         'img[class*="captcha" i]',
         '#captchaImg',
         '#imgCaptcha',
         '#captchaimg',
-        '#cpatchaTextBox',
         'canvas[id*="captcha" i]',
         'canvas[class*="captcha" i]',
       ];
@@ -184,11 +186,19 @@
         }
       }
 
-      // If no image found by direct selector, search nearby the input container
+      // If not found by direct selector, inspect elements surrounding the captcha input
       if (!captchaImg && captchaInput) {
-        const container = captchaInput.closest("form") || captchaInput.parentElement?.parentElement;
+        const container = captchaInput.closest("form") || captchaInput.closest(".form-group") || captchaInput.parentElement?.parentElement;
         if (container) {
-          captchaImg = container.querySelector("img, canvas");
+          const imgs = container.querySelectorAll("img, canvas");
+          for (const img of imgs) {
+            const h = img.naturalHeight || img.height || img.offsetHeight;
+            const w = img.naturalWidth || img.width || img.offsetWidth;
+            if (h >= 25 && h <= 120 && w >= 60) {
+              captchaImg = img;
+              break;
+            }
+          }
         }
       }
 
@@ -199,56 +209,42 @@
         return false;
       }
 
-      // 3. Extract Image Data as Base64 Canvas
-      let imageBase64 = null;
+      // 3. Extract Image Source / Base64
+      let imageSrc = null;
       if (captchaImg.tagName.toLowerCase() === "canvas") {
-        imageBase64 = captchaImg.toDataURL("image/png");
-      } else {
-        const canvas = document.createElement("canvas");
-        canvas.width = captchaImg.naturalWidth || captchaImg.width || 160;
-        canvas.height = captchaImg.naturalHeight || captchaImg.height || 50;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(captchaImg, 0, 0, canvas.width, canvas.height);
-          try {
-            imageBase64 = canvas.toDataURL("image/png");
-          } catch (e) {
-            imageBase64 = captchaImg.src;
-          }
+        imageSrc = captchaImg.toDataURL("image/png");
+      } else if (captchaImg.src) {
+        imageSrc = captchaImg.src;
+      }
+
+      if (!imageSrc) {
+        captchaInput.focus();
+        return false;
+      }
+
+      // 4. Send message to background service worker (bypasses all Mixed Content / CORS restrictions)
+      return new Promise((resolve) => {
+        if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+          chrome.runtime.sendMessage({ action: "SOLVE_CAPTCHA", imageSrc }, (response) => {
+            if (response && response.success && response.text) {
+              setValueAndDispatch(captchaInput, response.text);
+              captchaInput.style.border = "2px solid #10b981";
+              captchaInput.style.backgroundColor = "#f0fdf4";
+              captchaInput.style.boxShadow = "0 0 12px rgba(16, 185, 129, 0.4)";
+              console.log("✓ [SevaSaarthi] Auto-filled CAPTCHA text:", response.text);
+              captchaInput.focus();
+              resolve(true);
+            } else {
+              captchaInput.focus();
+              captchaInput.style.border = "2px solid #f59e0b";
+              captchaInput.style.backgroundColor = "#fffbeb";
+              resolve(false);
+            }
+          });
+        } else {
+          resolve(false);
         }
-      }
-
-      if (!imageBase64 && captchaImg.src) {
-        imageBase64 = captchaImg.src;
-      }
-
-      if (!imageBase64) {
-        captchaInput.focus();
-        return false;
-      }
-
-      // 4. Send to SevaSaarthi CAPTCHA OCR service
-      const res = await fetch("http://localhost:3000/api/agent/solve-captcha", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64 }),
       });
-
-      const data = await res.json();
-      if (data.success && data.text && data.text.length >= 3) {
-        setValueAndDispatch(captchaInput, data.text);
-        captchaInput.style.border = "2px solid #f59e0b";
-        captchaInput.style.backgroundColor = "#fffbeb";
-        captchaInput.style.boxShadow = "0 0 10px rgba(245, 158, 11, 0.4)";
-        console.log("✓ [SevaSaarthi] Auto-filled predicted CAPTCHA:", data.text);
-        captchaInput.focus();
-        return true;
-      } else {
-        captchaInput.focus();
-        captchaInput.style.border = "2px solid #f59e0b";
-        captchaInput.style.backgroundColor = "#fffbeb";
-        return false;
-      }
     } catch (err) {
       console.warn("[SevaSaarthi] CAPTCHA auto-solve:", err.message);
       return false;
@@ -377,7 +373,7 @@
     }
 
     // B. ECI / ECINET / VOTER PORTAL LOGIN MATCHERS
-    const eciMobile = document.querySelector('input[placeholder*="Mobile" i], input[placeholder*="EPIC" i], #mobNo, #mobileNumber, #username');
+    const eciMobile = document.querySelector('input[placeholder*="Mobile" i], input[placeholder*="EPIC" i], #mobNo, #mobileNumber, input[formcontrolname="mobileNumber"]');
     if (eciMobile && profile.mobile) {
       setValueAndDispatch(eciMobile, profile.mobile);
       filledCount++;
