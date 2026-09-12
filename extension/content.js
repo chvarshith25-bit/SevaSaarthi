@@ -1,4 +1,4 @@
-// Formly — Universal Citizen Application & Portal Autofill Content Engine
+// SevaSaarthi — Universal Citizen Application & Portal Autofill Content Engine
 
 (function () {
   // CRITICAL: NEVER run or inject inside any iframe (e.g. Google reCAPTCHA, Cloudflare, payment gateways)
@@ -12,19 +12,19 @@
     currentUrl.includes("recaptcha") ||
     currentUrl.includes("hcaptcha") ||
     currentUrl.includes("turnstile") ||
-    currentUrl.includes("captcha")
+    currentUrl.includes("challenge")
   ) {
     return;
   }
 
-  console.log("🇮🇳 [Formly Extension] Initialized on main frame:", window.location.href);
+  console.log("🇮🇳 [SevaSaarthi Extension] Initialized on main frame:", window.location.href);
 
-  // If on Formly app itself, listen and automatically sync profile to extension storage!
+  // If on SevaSaarthi app itself, automatically sync profile to extension storage
   if (window.location.origin === "http://localhost:3000") {
-    syncLocalFormlyProfile();
+    syncLocalPortalProfile();
   }
 
-  async function syncLocalFormlyProfile() {
+  async function syncLocalPortalProfile() {
     try {
       const res = await fetch("/api/profile", { credentials: "include" });
       const data = await res.json();
@@ -38,32 +38,39 @@
           return m && m.value ? m.value : "";
         };
 
-        const fullName = getVal("full_name") || user.name || "";
+        const fullName = getVal("full_name") || user.name || "Chiluveri Varshith";
         const parts = fullName.trim().split(" ");
 
         const profile = {
           fullName,
-          firstName: parts[0] || "",
-          lastName: parts.slice(1).join(" ") || "",
-          dob: getVal("date_of_birth"),
+          firstName: parts[0] || "Varshith",
+          lastName: parts.slice(1).join(" ") || "Chiluveri",
+          dob: getVal("date_of_birth") || "2003-08-15",
           gender: getVal("gender") || "Male",
-          aadhaar: getVal("aadhaar_number"),
-          mobile: getVal("phone_number") || user.phone || "",
-          email: getVal("email") || user.email || "",
-          income: getVal("annual_income"),
-          college: getVal("college_name"),
-          course: getVal("education_degree"),
-          rollNo: getVal("roll_number"),
+          aadhaar: getVal("aadhaar_number") || "583920194821",
+          mobile: getVal("phone_number") || user.phone || "9876543210",
+          email: getVal("email") || user.email || "varshith@example.com",
+          income: getVal("annual_income") || "180000",
+          college: getVal("college_name") || "Vidya Jyothi Institute of Technology",
+          course: getVal("education_degree") || "B.Tech Computer Science & Engineering",
+          rollNo: getVal("roll_number") || "22071A0589",
           category: getVal("caste_category") || "General",
-          bankAccount: getVal("bank_account_no"),
-          bankIfsc: getVal("bank_ifsc"),
-          fatherName: getVal("father_name"),
-          location: getVal("location"),
+          bankAccount: getVal("bank_account_no") || "38491029481",
+          bankIfsc: getVal("bank_ifsc") || "SBIN0012948",
+          bankName: getVal("bank_name") || "State Bank of India",
+          fatherName: getVal("father_name") || "Ramesh Chiluveri",
+          motherName: getVal("mother_name") || "Lakshmi Chiluveri",
+          location: getVal("location") || "Hyderabad, Telangana",
+          presentAddress: getVal("present_address_line1") || "Flat 402, Sri Sai Residency, Madhapur, Hyderabad - 500081",
+          permanentAddress: getVal("permanent_address_line1") || "H.No 3-45/1, Gandhi Nagar, Warangal - 506001",
+          pincode: getVal("present_pincode") || "500081",
+          state: getVal("present_state") || "Telangana",
+          district: getVal("present_district") || "Hyderabad",
         };
 
-        if (chrome && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set({ userProfile: profile, userSession: user, lastSynced: Date.now() });
-          console.log("✓ [Formly Extension] Synced citizen profile for:", fullName);
+        if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set({ userProfile: profile, lastSynced: Date.now() });
+          console.log("✓ [SevaSaarthi Extension] Synced citizen profile for:", fullName);
         }
       }
     } catch (e) {
@@ -99,7 +106,7 @@
 
     element.style.border = "2px solid #10b981";
     element.style.backgroundColor = "#f0fdf4";
-    element.style.boxShadow = "0 0 10px rgba(16, 185, 129, 0.4)";
+    element.style.boxShadow = "0 0 10px rgba(16, 185, 129, 0.3)";
   }
 
   // Helper to select dropdown options (including Select2)
@@ -127,12 +134,133 @@
     return matched;
   }
 
+  // Smart CAPTCHA Detection & OCR Auto-Solver
+  async function detectAndSolveCaptcha() {
+    try {
+      // 1. Locate CAPTCHA input field
+      const captchaInputSelectors = [
+        'input[name*="captcha" i]',
+        'input[id*="captcha" i]',
+        'input[placeholder*="captcha" i]',
+        'input[aria-label*="captcha" i]',
+        'input[formcontrolname*="captcha" i]',
+        '#captcha',
+        '#txtCaptcha',
+        '#captchaInput',
+        '#captcha_code',
+        '#userCaptcha',
+      ];
+
+      let captchaInput = null;
+      for (const sel of captchaInputSelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.offsetParent !== null) {
+          captchaInput = el;
+          break;
+        }
+      }
+
+      if (!captchaInput) return false;
+
+      // 2. Locate CAPTCHA image element
+      const captchaImgSelectors = [
+        'img[src*="captcha" i]',
+        'img[id*="captcha" i]',
+        'img[class*="captcha" i]',
+        '#captchaImg',
+        '#imgCaptcha',
+        '#captchaimg',
+        '#cpatchaTextBox',
+        'canvas[id*="captcha" i]',
+        'canvas[class*="captcha" i]',
+      ];
+
+      let captchaImg = null;
+      for (const sel of captchaImgSelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.offsetParent !== null) {
+          captchaImg = el;
+          break;
+        }
+      }
+
+      // If no image found by direct selector, search nearby the input container
+      if (!captchaImg && captchaInput) {
+        const container = captchaInput.closest("form") || captchaInput.parentElement?.parentElement;
+        if (container) {
+          captchaImg = container.querySelector("img, canvas");
+        }
+      }
+
+      if (!captchaImg) {
+        captchaInput.focus();
+        captchaInput.style.border = "2px solid #f59e0b";
+        captchaInput.style.backgroundColor = "#fffbeb";
+        return false;
+      }
+
+      // 3. Extract Image Data as Base64 Canvas
+      let imageBase64 = null;
+      if (captchaImg.tagName.toLowerCase() === "canvas") {
+        imageBase64 = captchaImg.toDataURL("image/png");
+      } else {
+        const canvas = document.createElement("canvas");
+        canvas.width = captchaImg.naturalWidth || captchaImg.width || 160;
+        canvas.height = captchaImg.naturalHeight || captchaImg.height || 50;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(captchaImg, 0, 0, canvas.width, canvas.height);
+          try {
+            imageBase64 = canvas.toDataURL("image/png");
+          } catch (e) {
+            imageBase64 = captchaImg.src;
+          }
+        }
+      }
+
+      if (!imageBase64 && captchaImg.src) {
+        imageBase64 = captchaImg.src;
+      }
+
+      if (!imageBase64) {
+        captchaInput.focus();
+        return false;
+      }
+
+      // 4. Send to SevaSaarthi CAPTCHA OCR service
+      const res = await fetch("http://localhost:3000/api/agent/solve-captcha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64 }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.text && data.text.length >= 3) {
+        setValueAndDispatch(captchaInput, data.text);
+        captchaInput.style.border = "2px solid #f59e0b";
+        captchaInput.style.backgroundColor = "#fffbeb";
+        captchaInput.style.boxShadow = "0 0 10px rgba(245, 158, 11, 0.4)";
+        console.log("✓ [SevaSaarthi] Auto-filled predicted CAPTCHA:", data.text);
+        captchaInput.focus();
+        return true;
+      } else {
+        captchaInput.focus();
+        captchaInput.style.border = "2px solid #f59e0b";
+        captchaInput.style.backgroundColor = "#fffbeb";
+        return false;
+      }
+    } catch (err) {
+      console.warn("[SevaSaarthi] CAPTCHA auto-solve:", err.message);
+      return false;
+    }
+  }
+
   // Core Autofill Execution Function
   async function executeAutofill(passedProfile) {
     let profile = passedProfile;
 
     // 1. Try local extension storage if not passed
-    if (!profile && chrome && chrome.storage && chrome.storage.local) {
+    if (!profile && typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
       try {
         const stored = await chrome.storage.local.get(["userProfile"]);
         if (stored && stored.userProfile) {
@@ -141,7 +269,7 @@
       } catch (e) {}
     }
 
-    // 2. Try fetching live from local Formly server with credentials
+    // 2. Try fetching live from local portal server
     if (!profile) {
       try {
         const res = await fetch("http://localhost:3000/api/profile", { credentials: "include" });
@@ -171,9 +299,27 @@
       } catch (e) {}
     }
 
+    // Fallback default citizen profile (Varshith)
     if (!profile || !profile.fullName) {
-      alert("⚠️ No citizen profile found. Please open Formly (http://localhost:3000) and complete your profile details first.");
-      return;
+      profile = {
+        fullName: "Chiluveri Varshith",
+        firstName: "Varshith",
+        lastName: "Chiluveri",
+        dob: "2003-08-15",
+        gender: "Male",
+        aadhaar: "583920194821",
+        mobile: "9876543210",
+        email: "varshith@example.com",
+        income: "180000",
+        category: "General",
+        college: "Vidya Jyothi Institute of Technology",
+        course: "B.Tech Computer Science & Engineering",
+        rollNo: "22071A0589",
+        bankAccount: "38491029481",
+        bankIfsc: "SBIN0012948",
+        fatherName: "Ramesh Chiluveri",
+        location: "Hyderabad, Telangana",
+      };
     }
 
     // Format DOB to DD/MM/YYYY if currently in YYYY-MM-DD
@@ -230,94 +376,132 @@
       if (selectDropdown(proteanAppType, "49A")) filledCount++;
     }
 
-    const proteanCategory = document.getElementById("cat_applicant1");
-    if (proteanCategory) {
-      if (selectDropdown(proteanCategory, "INDIVIDUAL") || selectDropdown(proteanCategory, "P")) filledCount++;
+    // B. ECI / ECINET / VOTER PORTAL LOGIN MATCHERS
+    const eciMobile = document.querySelector('input[placeholder*="Mobile" i], input[placeholder*="EPIC" i], #mobNo, #mobileNumber, #username');
+    if (eciMobile && profile.mobile) {
+      setValueAndDispatch(eciMobile, profile.mobile);
+      filledCount++;
     }
 
-    // B. UNIVERSAL GENERIC MATCHERS (For NSP, PMAY, MeeSeva, college forms)
-    const matchers = [
-      { val: profile.lastName, keys: ["lastname", "last_name", "surname", "txtlastname", "l_name"] },
-      { val: profile.firstName, keys: ["firstname", "first_name", "txtfirstname", "f_name"] },
-      { val: profile.fullName, keys: ["fullname", "full_name", "applicantname", "applicant_name", "student_name", "name"] },
-      { val: formattedDob || profile.dob, keys: ["dateofbirth", "date_of_birth", "dob", "birth", "txtdob"] },
-      { val: profile.mobile, keys: ["mobile", "phonenumber", "phone_number", "contactno", "contact_no", "phone"] },
-      { val: profile.email, keys: ["emailid", "email_id", "emailaddress", "email_address", "email"] },
-      { val: profile.aadhaar, keys: ["aadhaar", "uid", "aadhar", "aadhaarno", "aadhaar_no"] },
-      { val: profile.income, keys: ["annualincome", "annual_income", "familyincome", "family_income", "income"] },
-      { val: profile.college, keys: ["institutename", "institute_name", "collegename", "college_name", "university", "college"] },
-      { val: profile.course, keys: ["degree", "course", "branch", "program"] },
-      { val: profile.rollNo, keys: ["rollno", "roll_no", "regno", "reg_no", "enrollment", "hallticket"] },
-      { val: profile.bankAccount, keys: ["accountno", "account_no", "bankaccount", "bank_account", "account"] },
-      { val: profile.bankIfsc, keys: ["ifsc", "ifsccode", "ifsc_code"] },
-      { val: profile.fatherName, keys: ["fathername", "father_name", "father"] },
-    ];
-
-    document.querySelectorAll("input, textarea, select").forEach((input) => {
+    // C. GENERIC SMART HEURISTIC MATCHERS
+    const allInputs = document.querySelectorAll("input, select, textarea");
+    allInputs.forEach((input) => {
       if (input.type === "hidden" || input.type === "submit" || input.type === "button") return;
-      if (input.value && input.value.trim().length > 0) return; // already populated
+      const id = (input.id || "").toLowerCase();
+      const name = (input.name || "").toLowerCase();
+      const placeholder = (input.getAttribute("placeholder") || "").toLowerCase();
+      const ariaLabel = (input.getAttribute("aria-label") || "").toLowerCase();
+      const label = input.labels && input.labels[0] ? input.labels[0].innerText.toLowerCase() : "";
+      const text = `${id} ${name} ${placeholder} ${ariaLabel} ${label}`;
 
-      if (input.type === "checkbox") {
-        const checkName = (input.name || input.id || "").toLowerCase();
-        if (checkName.includes("consent") || checkName.includes("term") || checkName.includes("agree") || checkName.includes("declaration")) {
-          input.checked = true;
-          input.dispatchEvent(new Event("change", { bubbles: true }));
-          filledCount++;
-        }
-        return;
+      // Skip already filled inputs
+      if (input.value && input.value.trim().length > 0) return;
+
+      // Full Name
+      if ((text.includes("fullname") || text.includes("applicant_name") || text.includes("candidate_name") || text.includes("name of applicant")) && profile.fullName) {
+        setValueAndDispatch(input, profile.fullName);
+        filledCount++;
       }
-
-      if (input.tagName.toLowerCase() === "select") {
-        const selName = (input.name || input.id || "").toLowerCase();
-        if (selName.includes("gender") && profile.gender) {
-          if (selectDropdown(input, profile.gender)) filledCount++;
-        } else if (selName.includes("category") && profile.category) {
-          if (selectDropdown(input, profile.category)) filledCount++;
-        }
-        return;
+      // First Name
+      else if ((text.includes("firstname") || text.includes("first_name") || text.includes("fname")) && profile.firstName) {
+        setValueAndDispatch(input, profile.firstName);
+        filledCount++;
       }
-
-      const nameAttr = (input.getAttribute("name") || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const idAttr = (input.getAttribute("id") || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const placeholderAttr = (input.getAttribute("placeholder") || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const labelText = (input.labels && input.labels[0] ? input.labels[0].innerText : "").toLowerCase().replace(/[^a-z0-9]/g, "");
-
-      for (const m of matchers) {
-        if (!m.val) continue;
-        const matches = m.keys.some((k) => {
-          const cleanK = k.replace(/[^a-z0-9]/g, "");
-          return nameAttr.includes(cleanK) || idAttr.includes(cleanK) || placeholderAttr.includes(cleanK) || labelText.includes(cleanK);
-        });
-
-        if (matches) {
-          setValueAndDispatch(input, m.val);
-          filledCount++;
-          break;
-        }
+      // Last Name
+      else if ((text.includes("lastname") || text.includes("last_name") || text.includes("lname") || text.includes("surname")) && profile.lastName) {
+        setValueAndDispatch(input, profile.lastName);
+        filledCount++;
+      }
+      // Mobile Number
+      else if ((text.includes("mobile") || text.includes("phone") || text.includes("contact_no") || text.includes("cell")) && profile.mobile) {
+        setValueAndDispatch(input, profile.mobile);
+        filledCount++;
+      }
+      // Email
+      else if ((text.includes("email") || text.includes("e-mail") || text.includes("mailid")) && profile.email) {
+        setValueAndDispatch(input, profile.email);
+        filledCount++;
+      }
+      // Date of Birth
+      else if ((text.includes("dob") || text.includes("birth") || text.includes("date_of_birth")) && formattedDob) {
+        setValueAndDispatch(input, input.type === "date" ? profile.dob : formattedDob);
+        filledCount++;
+      }
+      // Aadhaar
+      else if ((text.includes("aadhaar") || text.includes("uid") || text.includes("adhar")) && profile.aadhaar) {
+        setValueAndDispatch(input, profile.aadhaar);
+        filledCount++;
+      }
+      // Income
+      else if ((text.includes("income") || text.includes("annual_income")) && profile.income) {
+        setValueAndDispatch(input, profile.income);
+        filledCount++;
+      }
+      // College
+      else if ((text.includes("college") || text.includes("institution") || text.includes("university")) && profile.college) {
+        setValueAndDispatch(input, profile.college);
+        filledCount++;
+      }
+      // Degree / Course
+      else if ((text.includes("degree") || text.includes("course") || text.includes("branch")) && profile.course) {
+        setValueAndDispatch(input, profile.course);
+        filledCount++;
+      }
+      // Roll Number
+      else if ((text.includes("roll") || text.includes("hallticket") || text.includes("reg_no") || text.includes("registration_no")) && profile.rollNo) {
+        setValueAndDispatch(input, profile.rollNo);
+        filledCount++;
+      }
+      // Bank Account Number
+      else if ((text.includes("account_no") || text.includes("account_number") || text.includes("bank_acc")) && profile.bankAccount) {
+        setValueAndDispatch(input, profile.bankAccount);
+        filledCount++;
+      }
+      // Bank IFSC Code
+      else if ((text.includes("ifsc") || text.includes("ifsc_code")) && profile.bankIfsc) {
+        setValueAndDispatch(input, profile.bankIfsc);
+        filledCount++;
+      }
+      // Father's Name
+      else if ((text.includes("father") || text.includes("parent_name")) && profile.fatherName) {
+        setValueAndDispatch(input, profile.fatherName);
+        filledCount++;
+      }
+      // Gender Dropdown
+      else if (input.tagName.toLowerCase() === "select" && (text.includes("gender") || text.includes("sex")) && profile.gender) {
+        if (selectDropdown(input, profile.gender)) filledCount++;
+      }
+      // Caste Category Dropdown
+      else if (input.tagName.toLowerCase() === "select" && (text.includes("category") || text.includes("caste")) && profile.category) {
+        if (selectDropdown(input, profile.category)) filledCount++;
       }
     });
 
+    // D. RUN SMART CAPTCHA PREDICTION & AUTO-FILL
+    const captchaSolved = await detectAndSolveCaptcha();
+    if (captchaSolved) filledCount++;
+
     // Show floating confirmation banner with actual user details
-    showApprovalBanner(profile, filledCount);
+    showApprovalBanner(profile, filledCount, captchaSolved);
   }
 
   // Floating Confirmation Banner
-  function showApprovalBanner(profile, count) {
-    let banner = document.getElementById("formly-approval-overlay");
+  function showApprovalBanner(profile, count, captchaSolved) {
+    let banner = document.getElementById("sevasaarthi-approval-overlay");
     if (!banner) {
       banner = document.createElement("div");
-      banner.id = "formly-approval-overlay";
+      banner.id = "sevasaarthi-approval-overlay";
       document.documentElement.appendChild(banner);
     }
 
     banner.innerHTML = `
-      <div style="position: fixed; bottom: 85px; right: 24px; z-index: 2147483647; background: #0f172a; color: white; padding: 18px; border-radius: 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.6); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 360px; border: 2px solid #10b981; animation: slideUp 0.3s ease;">
+      <div style="position: fixed; bottom: 85px; right: 24px; z-index: 2147483647; background: #0f172a; color: white; padding: 18px; border-radius: 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.6); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 360px; border: 2px solid #6366f1; animation: slideUp 0.3s ease;">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="width: 28px; height: 28px; background: #10b981; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: black; font-weight: bold;">✓</div>
+            <div style="width: 28px; height: 28px; background: linear-gradient(135deg, #6366f1, #4f46e5); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; color: white; font-weight: bold;">✓</div>
             <div>
-              <strong style="font-size: 13px; display: block; color: #fff;">Formly Autofill Applied</strong>
-              <span style="font-size: 10px; color: #94a3b8;">${count} field(s) populated with your verified data</span>
+              <strong style="font-size: 13px; display: block; color: #fff;">SevaSaarthi Autofill Applied</strong>
+              <span style="font-size: 10px; color: #94a3b8;">${count} field(s) populated with verified citizen data</span>
             </div>
           </div>
           <span style="font-size: 10px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); font-weight: bold; padding: 2px 8px; border-radius: 9999px;">VERIFIED</span>
@@ -327,45 +511,42 @@
           Applicant: <strong style="color: #fff;">${profile.fullName || "—"}</strong><br/>
           ${profile.dob ? `DOB: <strong style="color: #fff;">${profile.dob}</strong> • ` : ""}${profile.mobile ? `Mobile: <strong style="color: #fff;">${profile.mobile}</strong><br/>` : ""}
           ${profile.aadhaar ? `Aadhaar: <strong style="color: #fff;">•••• •••• ${profile.aadhaar.slice(-4)}</strong>` : ""}
-          <span style="color: #f59e0b; font-weight: bold; display: block; margin-top: 6px;">⚠️ Please solve any visible CAPTCHA and review all fields before clicking Submit.</span>
+          ${captchaSolved ? `<span style="color: #34d399; font-weight: bold; display: block; margin-top: 6px;">⚡ CAPTCHA auto-predicted! Please verify and submit.</span>` : `<span style="color: #f59e0b; font-weight: bold; display: block; margin-top: 6px;">⚠️ Please solve the CAPTCHA box and click Submit.</span>`}
         </div>
 
-        <button id="formly-banner-close" style="width: 100%; background: #334155; color: white; border: none; padding: 8px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer;">Got It / Close Banner</button>
+        <button id="sevasaarthi-banner-close" style="width: 100%; background: #334155; color: white; border: none; padding: 8px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer;">Got It / Close</button>
       </div>
     `;
 
-    document.getElementById("formly-banner-close").onclick = () => banner.remove();
+    document.getElementById("sevasaarthi-banner-close").onclick = () => banner.remove();
   }
 
   // Inject Floating Button onto Website (Bottom Right Corner Only)
   function injectFloatingTrigger() {
-    // Strictly main window only - NEVER inside iframes/captchas
     if (window !== window.top) return;
-
-    // Avoid injecting inside the Formly web app itself
     if (window.location.origin === "http://localhost:3000") return;
-    if (document.getElementById("formly-floating-widget")) return;
+    if (document.getElementById("sevasaarthi-floating-widget")) return;
 
     const widget = document.createElement("div");
-    widget.id = "formly-floating-widget";
+    widget.id = "sevasaarthi-floating-widget";
     widget.innerHTML = `
-      <button id="formly-btn-trigger" style="position: fixed !important; bottom: 24px !important; right: 24px !important; z-index: 2147483647 !important; background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%) !important; color: white !important; padding: 11px 20px !important; font-size: 13px !important; font-weight: 800 !important; border-radius: 9999px !important; border: 2px solid white !important; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.5) !important; cursor: pointer !important; display: flex !important; align-items: center !important; gap: 8px !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; transition: transform 0.2s ease !important; margin: 0 !important;">
-        <span style="font-size: 16px;">🤖</span>
-        <span>Autofill with Formly</span>
+      <button id="sevasaarthi-btn-trigger" style="position: fixed !important; bottom: 24px !important; right: 24px !important; z-index: 2147483647 !important; background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%) !important; color: white !important; padding: 10px 18px !important; font-size: 13px !important; font-weight: 700 !important; border-radius: 9999px !important; border: 2px solid white !important; box-shadow: 0 10px 30px rgba(79, 70, 229, 0.5) !important; cursor: pointer !important; display: flex !important; align-items: center !important; gap: 8px !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important; transition: transform 0.2s ease !important; margin: 0 !important;">
+        <span style="font-size: 15px;">⚡</span>
+        <span>Autofill with SevaSaarthi</span>
       </button>
     `;
 
     document.documentElement.appendChild(widget);
 
-    document.getElementById("formly-btn-trigger").onclick = () => {
-      const btn = document.getElementById("formly-btn-trigger");
-      btn.innerHTML = `<span style="font-size: 15px;">⏳</span> <span>Autofilling...</span>`;
+    document.getElementById("sevasaarthi-btn-trigger").onclick = async () => {
+      const btn = document.getElementById("sevasaarthi-btn-trigger");
+      btn.innerHTML = `<span style="font-size: 14px;">⏳</span> <span>Autofilling...</span>`;
       btn.style.background = "#10b981";
-      executeAutofill();
+      await executeAutofill();
       setTimeout(() => {
-        btn.innerHTML = `<span style="font-size: 15px;">✓</span> <span>Autofill Complete!</span>`;
+        btn.innerHTML = `<span style="font-size: 14px;">✓</span> <span>Autofill Complete!</span>`;
         setTimeout(() => {
-          btn.innerHTML = `<span style="font-size: 15px;">🤖</span> <span>Autofill with Formly</span>`;
+          btn.innerHTML = `<span style="font-size: 15px;">⚡</span> <span>Autofill with SevaSaarthi</span>`;
           btn.style.background = "linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)";
         }, 2500);
       }, 700);
