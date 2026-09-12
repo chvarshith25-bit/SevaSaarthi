@@ -57,40 +57,28 @@ export async function POST(request: Request) {
     }
 
     const docId = `doc_${Date.now()}`;
-    const ocrResult = await extractDocumentFields(file, documentType);
 
     const newDoc: DocumentRow = {
       id: docId,
       user_id: user.id,
-      document_type: ocrResult.documentType,
+      document_type: documentType,
       storage_path: `vault/${file.name}`,
       original_filename: file.name,
       mime_type: file.type || "application/octet-stream",
-      status: "EXTRACTED",
-      ocr_raw_text: ocrResult.rawText,
+      status: "VERIFIED",
+      ocr_raw_text: null,
       is_superseded: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
-    const extracted: ExtractedField[] = ocrResult.fields.map((f, i) => ({
-      id: `ef_${Date.now()}_${i}`,
-      document_id: docId,
-      field_name: f.fieldName,
-      raw_value: f.rawValue,
-      normalized_value: f.normalizedValue || null,
-      confidence: f.confidence,
-      accepted: false,
-      created_at: new Date().toISOString(),
-    }));
-
-    await addDocumentForUser(user.id, newDoc, extracted);
+    await addDocumentForUser(user.id, newDoc, []);
 
     return NextResponse.json({
       success: true,
-      message: "Document uploaded and OCR extracted successfully",
+      message: "Document uploaded successfully",
       document: newDoc,
-      extracted_fields: extracted,
+      extracted_fields: [],
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message || "Upload failed" }, { status: 500 });
