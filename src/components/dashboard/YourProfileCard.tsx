@@ -22,8 +22,15 @@ export function YourProfileCard() {
 
   const displayName = user?.name || "Chiluveri Varshith";
   const displayEmail = user?.email || "chiluverivarshithsahs@gmail.com";
-  const displayPhone = getField("phone_number", user?.phone || "+91 98765 43210");
-  const displayDob = getField("date_of_birth", "15 Aug 2003");
+  const rawPhone = getField("phone_number", user?.phone || "9876543210");
+  const displayPhone = rawPhone.startsWith("+91")
+    ? rawPhone
+    : `+91 ${rawPhone.replace(/\D/g, "").slice(-10).replace(/(\d{5})(\d{5})/, "$1 $2")}`;
+  const rawDob = getField("date_of_birth", "2003-08-15");
+  const displayDob =
+    rawDob.includes("-") && rawDob.length === 10
+      ? new Date(rawDob).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+      : rawDob;
   const displayLocation = getField("location", getField("present_city", "Hyderabad, Telangana"));
   const displayEducation = getField("education_degree", "B.Tech (CSE)");
 

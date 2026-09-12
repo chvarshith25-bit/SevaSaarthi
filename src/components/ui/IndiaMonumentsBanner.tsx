@@ -3,26 +3,8 @@ import React from "react";
 export function IndiaMonumentsBanner({ className = "" }: { className?: string }) {
   return (
     <div className={`relative flex items-center justify-end overflow-hidden pointer-events-none ${className}`}>
-      {/* Sovereignty slogan text */}
-      <div className="text-right hidden sm:block select-none mr-4 z-10">
-        <div className="text-[13px] font-black tracking-wider text-slate-800 uppercase">
-          Citizens
-        </div>
-        <div className="text-[13px] font-black tracking-wider text-blue-900 uppercase">
-          Stronger India
-        </div>
-        <div className="text-[13px] font-black tracking-wider text-slate-700 uppercase">
-          Brighter Tomorrow
-        </div>
-        <div className="h-1 w-20 ml-auto mt-1 flex rounded-full overflow-hidden">
-          <div className="flex-1 bg-[#FF9933]" />
-          <div className="w-1 bg-white" />
-          <div className="flex-1 bg-[#138808]" />
-        </div>
-      </div>
-
       {/* SVG Monuments Silhouette + Waving Flag Ribbon + Flying Birds */}
-      <div className="w-48 sm:w-64 md:w-80 h-28 sm:h-32 relative shrink-0">
+      <div className="w-56 sm:w-72 md:w-80 h-24 sm:h-28 relative shrink-0">
         <svg
           viewBox="0 0 320 130"
           fill="none"
