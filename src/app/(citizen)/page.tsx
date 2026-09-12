@@ -46,14 +46,14 @@ export default function CitizenDashboardPage() {
           <div className="flex items-center gap-2 mb-1.5">
             <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-              <span>DigiLocker Verified Citizen</span>
+              <span>{t("digilocker_verified", "DigiLocker Verified Citizen")}</span>
             </span>
           </div>
           <h1 className={cn("font-black text-slate-900 tracking-tight", easyMode ? "text-3xl" : "text-2xl sm:text-3xl")}>
-            Welcome, {firstName}! 👋
+            {t("welcome_user", "Welcome")}, {firstName}! 👋
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-            {applications.length} applications on record • {docsCount} verified documents saved
+            {applications.length} {t("applications_on_record", "applications on record")} • {docsCount} {t("verified_documents_saved", "verified documents saved")}
           </p>
         </div>
 
@@ -64,7 +64,7 @@ export default function CitizenDashboardPage() {
           className="px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-2xl text-xs font-bold shadow-md shadow-blue-500/20 flex items-center justify-center gap-2.5 transition-all cursor-pointer min-h-[48px] shrink-0"
         >
           <Mic className="w-4 h-4 animate-pulse" />
-          <span>Ask Voice Saarthi</span>
+          <span>{t("ask_voice_saarthi", "Ask Voice Saarthi")}</span>
         </button>
       </div>
 
@@ -80,14 +80,14 @@ export default function CitizenDashboardPage() {
               <Compass className="w-6 h-6" />
             </div>
             <h2 className={cn("font-bold text-slate-900 group-hover:text-blue-700 transition-colors", easyMode ? "text-lg" : "text-base")}>
-              Find Schemes
+              {t("find_schemes", "Find Schemes")}
             </h2>
             <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-              Explore 50+ scholarships, farming, housing & welfare schemes.
+              {t("find_schemes_desc", "Explore 50+ scholarships, farming, housing & welfare schemes.")}
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600">
-            <span>Explore All</span>
+            <span>{t("explore_all", "Explore All")}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
         </Link>
@@ -102,14 +102,14 @@ export default function CitizenDashboardPage() {
               <FilePlus2 className="w-6 h-6" />
             </div>
             <h2 className={cn("font-bold text-slate-900 group-hover:text-indigo-700 transition-colors", easyMode ? "text-lg" : "text-base")}>
-              Apply for a Service
+              {t("apply_for_a_service", "Apply for a Service")}
             </h2>
             <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-              Check required documents and apply with 1-click autofill.
+              {t("apply_service_desc", "Check required documents and apply with 1-click autofill.")}
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
-            <span>Start Application</span>
+            <span>{t("start_application", "Start Application")}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
         </Link>
@@ -125,18 +125,18 @@ export default function CitizenDashboardPage() {
             </div>
             <div className="flex items-center justify-between">
               <h2 className={cn("font-bold text-slate-900 group-hover:text-emerald-700 transition-colors", easyMode ? "text-lg" : "text-base")}>
-                My Applications
+                {t("my_applications_title", "My Applications")}
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                {applications.length} Total
+                {applications.length} {t("total", "Total")}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-              Track live government processing milestones and approval stages.
+              {t("my_applications_desc", "Track live government processing milestones and approval stages.")}
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600">
-            <span>Track Status</span>
+            <span>{t("track_status", "Track Status")}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
         </Link>
@@ -152,18 +152,18 @@ export default function CitizenDashboardPage() {
             </div>
             <div className="flex items-center justify-between">
               <h2 className={cn("font-bold text-slate-900 group-hover:text-purple-700 transition-colors", easyMode ? "text-lg" : "text-base")}>
-                My Documents
+                {t("my_documents", "My Documents")}
               </h2>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800">
-                {docsCount} Stored
+                {docsCount} {t("stored", "Stored")}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-              Aadhaar, PAN, Marksheets & Income certificates stored securely.
+              {t("my_documents_desc", "Aadhaar, PAN, Marksheets & Income certificates stored securely.")}
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-purple-600">
-            <span>Open Vault</span>
+            <span>{t("open_vault", "Open Vault")}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </div>
         </Link>
@@ -175,13 +175,13 @@ export default function CitizenDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div>
               <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Active Application Status
+                {t("active_application_status", "Active Application Status")}
               </div>
               <h2 className="text-lg font-bold text-slate-900 mt-0.5">
                 {primaryApp.title}
               </h2>
               <p className="text-xs text-slate-500">
-                {primaryApp.department} • Application ID: <span className="font-mono font-bold text-slate-700">#{primaryApp.id}</span>
+                {primaryApp.department} • {t("application_id", "Application ID")}: <span className="font-mono font-bold text-slate-700">#{primaryApp.id}</span>
               </p>
             </div>
 
@@ -197,21 +197,21 @@ export default function CitizenDashboardPage() {
                 "w-2 h-2 rounded-full",
                 primaryApp.statusCategory === "ACTION_REQUIRED" ? "bg-rose-600 animate-pulse" : "bg-blue-600"
               )} />
-              <span>{primaryApp.statusText}</span>
+              <span>{primaryApp.statusCategory === "ACTION_REQUIRED" ? t("action_required", primaryApp.statusText) : primaryApp.statusText}</span>
             </span>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
             <div className="flex items-center gap-2 text-xs text-slate-600">
               <Clock className="w-4 h-4 text-slate-400" />
-              <span>Applied on: <strong>{primaryApp.appliedDate}</strong></span>
+              <span>{t("applied_on", "Applied on")}: <strong>{primaryApp.appliedDate}</strong></span>
             </div>
 
             <Link
               href={`/track/${primaryApp.id}`}
               className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs flex items-center justify-center gap-1.5 transition-all min-h-[44px]"
             >
-              <span>View Full Tracking Details</span>
+              <span>{t("view_full_tracking", "View Full Tracking Details")}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -225,15 +225,15 @@ export default function CitizenDashboardPage() {
             <HelpCircle className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-xs sm:text-sm font-bold text-slate-900">Need help with an application or missing document?</h4>
-            <p className="text-[11px] text-slate-500">Free citizen support helpline & AI guidance available 24/7.</p>
+            <h4 className="text-xs sm:text-sm font-bold text-slate-900">{t("need_help", "Need help with an application or missing document?")}</h4>
+            <p className="text-[11px] text-slate-500">{t("help_desc", "Free citizen support helpline & AI guidance available 24/7.")}</p>
           </div>
         </div>
         <Link
           href="/help"
           className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 shadow-2xs transition-all shrink-0 flex items-center justify-center gap-1.5 min-h-[40px]"
         >
-          <span>Get Help</span>
+          <span>{t("get_help", "Get Help")}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
