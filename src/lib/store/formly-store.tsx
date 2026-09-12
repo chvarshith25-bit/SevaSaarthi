@@ -481,6 +481,15 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
     if (!user) throw new Error("Please log in to upload documents.");
 
     const docId = `doc_${Date.now()}`;
+
+    // Generate client-side preview URL
+    let previewUrl: string | null = null;
+    try {
+      if (typeof window !== "undefined" && typeof window.URL?.createObjectURL === "function") {
+        previewUrl = URL.createObjectURL(file);
+      }
+    } catch {}
+
     const newDoc: DocumentRow = {
       id: docId,
       user_id: user.id,
@@ -490,6 +499,8 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
       mime_type: file.type || "application/octet-stream",
       status: "VERIFIED",
       ocr_raw_text: null,
+      preview_url: previewUrl,
+      file_size_bytes: file.size,
       is_superseded: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

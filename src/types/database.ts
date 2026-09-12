@@ -61,6 +61,8 @@ export interface DocumentRow {
   mime_type: string | null;
   status: DocumentStatus;
   ocr_raw_text: string | null;
+  preview_url?: string | null;
+  file_size_bytes?: number | null;
   is_superseded: boolean;
   created_at: string;
   updated_at: string;
