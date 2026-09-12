@@ -134,22 +134,21 @@
     return matched;
   }
 
-  // Smart CAPTCHA Detection & OCR Auto-Solver via Extension Background Service Worker
+  // Smart CAPTCHA Detection & OCR Auto-Solver
   async function detectAndSolveCaptcha() {
     try {
       // 1. Locate CAPTCHA input field
       const captchaInputSelectors = [
+        'input[placeholder*="Enter Captcha" i]',
         'input[placeholder*="captcha" i]',
-        'input[name*="captcha" i]',
-        'input[id*="captcha" i]',
         'input[formcontrolname="captcha" i]',
         'input[formcontrolname*="captcha" i]',
-        'input[aria-label*="captcha" i]',
+        'input[name*="captcha" i]',
+        'input[id*="captcha" i]',
         '#captcha',
         '#txtCaptcha',
         '#captchaInput',
         '#captcha_code',
-        '#userCaptcha',
       ];
 
       let captchaInput = null;
@@ -163,18 +162,16 @@
 
       if (!captchaInput) return false;
 
-      // 2. Locate CAPTCHA image or canvas element
+      // 2. Locate CAPTCHA image element
       const captchaImgSelectors = [
         'img[src*="captcha" i]',
         'img[src*="Captcha" i]',
         'img[src*="getCaptcha" i]',
-        'img[id*="captcha" i]',
-        'img[class*="captcha" i]',
+        'img[src^="data:image"]',
         '#captchaImg',
         '#imgCaptcha',
         '#captchaimg',
         'canvas[id*="captcha" i]',
-        'canvas[class*="captcha" i]',
       ];
 
       let captchaImg = null;
@@ -192,9 +189,9 @@
         if (container) {
           const imgs = container.querySelectorAll("img, canvas");
           for (const img of imgs) {
-            const h = img.naturalHeight || img.height || img.offsetHeight;
-            const w = img.naturalWidth || img.width || img.offsetWidth;
-            if (h >= 25 && h <= 120 && w >= 60) {
+            const h = img.naturalHeight || img.height || img.offsetHeight || 0;
+            const w = img.naturalWidth || img.width || img.offsetWidth || 0;
+            if ((h >= 20 && h <= 120) || (w >= 50 && w <= 300)) {
               captchaImg = img;
               break;
             }
@@ -222,10 +219,18 @@
         return false;
       }
 
-      // 4. Send message to background service worker (bypasses all Mixed Content / CORS restrictions)
+      // 4. Send message to background service worker with a 2.5-second timeout guard
       return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          captchaInput.focus();
+          captchaInput.style.border = "2px solid #f59e0b";
+          captchaInput.style.backgroundColor = "#fffbeb";
+          resolve(false);
+        }, 2500);
+
         if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
           chrome.runtime.sendMessage({ action: "SOLVE_CAPTCHA", imageSrc }, (response) => {
+            clearTimeout(timeout);
             if (response && response.success && response.text) {
               setValueAndDispatch(captchaInput, response.text);
               captchaInput.style.border = "2px solid #10b981";
@@ -242,6 +247,7 @@
             }
           });
         } else {
+          clearTimeout(timeout);
           resolve(false);
         }
       });
@@ -474,8 +480,13 @@
     });
 
     // D. RUN SMART CAPTCHA PREDICTION & AUTO-FILL
-    const captchaSolved = await detectAndSolveCaptcha();
-    if (captchaSolved) filledCount++;
+    let captchaSolved = false;
+    try {
+      captchaSolved = await detectAndSolveCaptcha();
+      if (captchaSolved) filledCount++;
+    } catch (e) {
+      console.warn("CAPTCHA step completed with notice:", e);
+    }
 
     // Show floating confirmation banner with actual user details
     showApprovalBanner(profile, filledCount, captchaSolved);
@@ -507,7 +518,7 @@
           Applicant: <strong style="color: #fff;">${profile.fullName || "—"}</strong><br/>
           ${profile.dob ? `DOB: <strong style="color: #fff;">${profile.dob}</strong> • ` : ""}${profile.mobile ? `Mobile: <strong style="color: #fff;">${profile.mobile}</strong><br/>` : ""}
           ${profile.aadhaar ? `Aadhaar: <strong style="color: #fff;">•••• •••• ${profile.aadhaar.slice(-4)}</strong>` : ""}
-          ${captchaSolved ? `<span style="color: #34d399; font-weight: bold; display: block; margin-top: 6px;">⚡ CAPTCHA auto-predicted! Please verify and submit.</span>` : `<span style="color: #f59e0b; font-weight: bold; display: block; margin-top: 6px;">⚠️ Please solve the CAPTCHA box and click Submit.</span>`}
+          ${captchaSolved ? `<span style="color: #34d399; font-weight: bold; display: block; margin-top: 6px;">⚡ CAPTCHA auto-predicted! Please verify and submit.</span>` : `<span style="color: #f59e0b; font-weight: bold; display: block; margin-top: 6px;">⚠️ Cursor focused on CAPTCHA — type 6 characters and click Request OTP.</span>`}
         </div>
 
         <button id="sevasaarthi-banner-close" style="width: 100%; background: #334155; color: white; border: none; padding: 8px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer;">Got It / Close</button>
@@ -538,14 +549,15 @@
       const btn = document.getElementById("sevasaarthi-btn-trigger");
       btn.innerHTML = `<span style="font-size: 14px;">⏳</span> <span>Autofilling...</span>`;
       btn.style.background = "#10b981";
-      await executeAutofill();
-      setTimeout(() => {
+      try {
+        await executeAutofill();
+      } finally {
         btn.innerHTML = `<span style="font-size: 14px;">✓</span> <span>Autofill Complete!</span>`;
         setTimeout(() => {
           btn.innerHTML = `<span style="font-size: 15px;">⚡</span> <span>Autofill with SevaSaarthi</span>`;
           btn.style.background = "linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)";
-        }, 2500);
-      }, 700);
+        }, 2200);
+      }
     };
   }
 
@@ -562,8 +574,10 @@
   if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === "AUTOFILL_NOW") {
-        executeAutofill(request.profile);
-        sendResponse({ status: "success" });
+        executeAutofill(request.profile).then(() => {
+          sendResponse({ status: "success" });
+        });
+        return true;
       }
     });
   }

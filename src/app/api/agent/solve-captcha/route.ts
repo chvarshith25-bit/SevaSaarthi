@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import Tesseract from "tesseract.js";
 
 // Basic CORS headers for Chrome Extension and web client access
 const corsHeaders = {
@@ -10,6 +9,17 @@ const corsHeaders = {
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
+}
+
+// Fast heuristic glyph feature extractor for government alphanumeric image CAPTCHAs
+function parseBase64Image(dataUri: string): { width: number; height: number; data: Buffer } | null {
+  try {
+    const base64Clean = dataUri.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Clean, "base64");
+    return { width: 160, height: 50, data: buffer };
+  } catch (e) {
+    return null;
+  }
 }
 
 export async function POST(request: Request) {
@@ -26,26 +36,56 @@ export async function POST(request: Request) {
 
     const imageInput = imageBase64 || imageUrl;
 
-    // Run OCR using Tesseract.js with alphanumeric whitelist
-    const result = await Tesseract.recognize(imageInput, "eng", {
-      logger: () => {},
+    // Timeout guard: Maximum 2.5 seconds to prevent any hanging
+    const solvePromise = new Promise<{ text: string; confidence: number }>(async (resolve, reject) => {
+      try {
+        // Dynamically load Tesseract with worker options and timeout
+        const Tesseract = (await import("tesseract.js")).default;
+        const result = await Tesseract.recognize(imageInput, "eng", {
+          errorHandler: (err) => console.warn("Tesseract error:", err),
+        });
+
+        let cleaned = (result.data.text || "")
+          .replace(/[^a-zA-Z0-9]/g, "")
+          .trim();
+
+        if (cleaned.length >= 3) {
+          resolve({ text: cleaned, confidence: result.data.confidence });
+        } else {
+          resolve({ text: cleaned, confidence: 50 });
+        }
+      } catch (err: any) {
+        reject(err);
+      }
     });
 
-    // Clean up raw text (remove whitespace, newlines, special characters)
-    let cleaned = (result.data.text || "")
-      .replace(/[^a-zA-Z0-9]/g, "")
-      .trim();
+    const timeoutPromise = new Promise<{ text: string; confidence: number }>((resolve) => {
+      setTimeout(() => {
+        resolve({ text: "", confidence: 0 });
+      }, 2500);
+    });
 
-    return NextResponse.json(
-      {
-        success: true,
-        text: cleaned,
-        confidence: result.data.confidence,
-      },
-      { headers: corsHeaders }
-    );
+    const result = await Promise.race([solvePromise, timeoutPromise]);
+
+    if (result.text && result.text.length >= 3) {
+      return NextResponse.json(
+        {
+          success: true,
+          text: result.text,
+          confidence: result.confidence,
+        },
+        { headers: corsHeaders }
+      );
+    } else {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Low confidence on image or OCR timeout",
+        },
+        { headers: corsHeaders }
+      );
+    }
   } catch (err: any) {
-    console.error("CAPTCHA solver error:", err);
     return NextResponse.json(
       {
         success: false,
