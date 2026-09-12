@@ -1028,3 +1028,113 @@ export function calculatePortalReadiness(
     isReady: missingFields.length === 0,
   };
 }
+
+export function generateSampleProfileData(user?: { name: string; email: string; phone?: string } | null): Record<string, string> {
+  const name = user?.name?.trim() || "Chiluveri Varshith";
+  const email = user?.email?.trim() || "varshith.chiluveri@gmail.com";
+  const phone = user?.phone?.trim() || "9876543210";
+
+  const parts = name.split(/\s+/);
+  let firstName = parts[0] || "Varshith";
+  let lastName = parts.length > 1 ? parts.slice(1).join(" ") : "Chiluveri";
+  if (parts.length === 2 && parts[0].toLowerCase().endsWith("i")) {
+    firstName = parts[1];
+    lastName = parts[0];
+  }
+
+  return {
+    full_name: name,
+    first_name: firstName,
+    middle_name: "",
+    last_name: lastName,
+    name_in_regional_lang: `${name}`,
+    date_of_birth: "2002-05-18",
+    place_of_birth: "Hyderabad",
+    district_of_birth: "Hyderabad",
+    state_of_birth: "Telangana",
+    gender: "Male",
+    marital_status: "Single / Unmarried",
+    blood_group: "O+",
+    identification_mark_1: "A mole on the right side of the neck",
+    identification_mark_2: "A small scar on left forearm",
+    nationality: "Citizen of India by Birth",
+
+    // Family
+    father_name: `${lastName} Ramesh`,
+    father_occupation: "Business & Agriculture",
+    father_mobile: "9876543211",
+    mother_name: `${lastName} Sujatha`,
+    mother_occupation: "Homemaker",
+    spouse_name: "",
+    emergency_contact_name: `${lastName} Ramesh`,
+    emergency_contact_phone: "+91 98765 43211",
+
+    // Statutory IDs
+    aadhaar_number: "5492 8173 9012",
+    pan_number: "ABCDE1234F",
+    voter_id: "TSB1928374",
+    passport_number: "",
+    passport_expiry_date: "",
+    driving_license_number: "TS09 20220012345",
+    ration_card_number: "WAP360982738910",
+    apaar_id: "2024-9018-2391",
+    family_id: "PPP-TS-892019",
+
+    // Addresses
+    present_address_line1: "Flat 402, Sri Sai Balaji Residency",
+    present_address_line2: "Road No. 5, Sri Ram Nagar, Gachibowli",
+    present_village_or_city: "Hyderabad",
+    present_mandal_or_tehsil: "Serilingampally",
+    present_district: "Rangareddy",
+    present_state: "Telangana",
+    present_pincode: "500032",
+    present_post_office: "Gachibowli SO",
+    present_police_station: "Gachibowli Police Station",
+    is_permanent_same_as_present: "Yes",
+    permanent_address_line1: "Flat 402, Sri Sai Balaji Residency",
+    permanent_village_or_city: "Hyderabad",
+    permanent_district: "Rangareddy",
+    permanent_state: "Telangana",
+    permanent_pincode: "500032",
+
+    // Education
+    highest_qualification: "Undergraduate (B.Tech / B.E)",
+    tenth_board: "State Board of Secondary Education (SSC Telangana)",
+    tenth_roll_no: "1923108456",
+    tenth_passing_year: "2018",
+    tenth_percentage: "92.4",
+    twelfth_board: "Telangana Board of Intermediate Education (TSBIE)",
+    twelfth_roll_no: "2156890214",
+    twelfth_passing_year: "2020",
+    twelfth_percentage: "89.6",
+    college_name: "National Institute of Technology",
+    college_aishe_code: "C-19736",
+    course_name: "B.Tech in Computer Science and Engineering",
+    course_year: "Final Year (4th Year)",
+    admission_roll_no: "21CS042",
+
+    // Income & Welfare
+    annual_income: "180000",
+    income_certificate_number: "IC-2025-TS-98174",
+    social_category: "OBC (Other Backward Classes)",
+    caste_subcaste: "Munnuru Kapu",
+    caste_certificate_number: "CC-2024-TS-45129",
+    religion: "Hinduism",
+    is_minority: "No",
+    is_differently_abled: "No",
+    disability_percentage: "",
+
+    // Banking
+    bank_name: "State Bank of India",
+    bank_branch: "Gachibowli Branch, Hyderabad",
+    bank_account_number: "30982716254",
+    bank_ifsc: "SBIN0011663",
+    bank_account_holder: name,
+    dbt_seeding_status: "Seeded (Active - Ready for DBT)",
+
+    // Contact
+    phone_number: phone,
+    email: email,
+  };
+}
+

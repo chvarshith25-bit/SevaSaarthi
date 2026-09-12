@@ -32,7 +32,9 @@ import {
   calculatePortalReadiness,
   getProfileCompleteness,
   ProfileCategoryKey,
+  generateSampleProfileData,
 } from "@/lib/constants/profile";
+import { AutofillAssistant } from "@/components/assistant/AutofillAssistant";
 
 export function ProfilePage() {
   const {
@@ -48,6 +50,7 @@ export function ProfilePage() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValues, setTempValues] = useState<Record<string, string>>({});
   const [isFullEditModalOpen, setIsFullEditModalOpen] = useState(false);
+  const [isAutofillAssistantOpen, setIsAutofillAssistantOpen] = useState(false);
   const [modalActiveTab, setModalActiveTab] = useState<ProfileCategoryKey>("IDENTITY");
   const [fullFormData, setFullFormData] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState("");
@@ -102,6 +105,12 @@ export function ProfilePage() {
     e.preventDefault();
     await batchUpdateProfileFields(fullFormData);
     setIsFullEditModalOpen(false);
+  };
+
+  const handleAutoPopulateDemoData = async () => {
+    const sampleData = generateSampleProfileData(user);
+    await batchUpdateProfileFields(sampleData);
+    toast.success(`✨ Successfully pre-filled statutory profile details for ${user?.name || "you"}!`);
   };
 
   const getSourceBadge = (sourceDocId: string | null, confidence: number | null) => {
@@ -160,16 +169,25 @@ export function ProfilePage() {
         </div>
 
         {/* Action Button & Profile Strength */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={handleAutoPopulateDemoData}
+            className="px-3.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Pre-fill all statutory profile fields with verified sample data to test 100% portal autofill"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Pre-Fill Sample Profile</span>
+          </button>
+
           <button
             onClick={() => handleOpenFullModal()}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-200 flex items-center gap-2 transition-colors cursor-pointer"
+            className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-200 flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Edit2 className="w-3.5 h-3.5" />
             <span>Complete All Details</span>
           </button>
 
-          <div className="bg-white border border-slate-100 rounded-2xl p-3 px-4 shadow-xs flex items-center gap-3">
+          <div className="bg-white border border-slate-100 rounded-2xl p-2.5 px-3.5 shadow-xs flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-emerald-100/70 text-emerald-600 flex items-center justify-center">
               <ShieldCheck className="w-4 h-4" />
             </div>
@@ -201,13 +219,15 @@ export function ProfilePage() {
                 Your profile details are mapped directly to official form schemas. When applying, Formly autofills all mandatory fields.
               </p>
             </div>
-            <a
-              href="/assistant"
-              className="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-500/30 hover:bg-indigo-500/50 border border-indigo-400/40 rounded-xl text-xs font-bold text-white transition-colors"
+            <button
+              type="button"
+              onClick={() => setIsAutofillAssistantOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-indigo-500/30 hover:bg-indigo-500/50 border border-indigo-400/40 rounded-xl text-xs font-bold text-white transition-colors cursor-pointer"
             >
+              <Sparkles className="w-3.5 h-3.5" />
               <span>Launch Autofill Assistant</span>
               <ChevronRight className="w-3.5 h-3.5" />
-            </a>
+            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -291,12 +311,21 @@ export function ProfilePage() {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => handleOpenFullModal()}
-            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shrink-0 transition-colors cursor-pointer"
-          >
-            Fill All Now
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleAutoPopulateDemoData}
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shrink-0 transition-colors cursor-pointer flex items-center gap-1.5 shadow-2xs"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>1-Click Sample Pre-Fill</span>
+            </button>
+            <button
+              onClick={() => handleOpenFullModal()}
+              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shrink-0 transition-colors cursor-pointer"
+            >
+              Fill All Now
+            </button>
+          </div>
         </div>
       )}
 
@@ -712,6 +741,14 @@ export function ProfilePage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Autofill Assistant Modal */}
+      {isAutofillAssistantOpen && (
+        <AutofillAssistant
+          isOpen={isAutofillAssistantOpen}
+          onClose={() => setIsAutofillAssistantOpen(false)}
+        />
       )}
     </div>
   );
