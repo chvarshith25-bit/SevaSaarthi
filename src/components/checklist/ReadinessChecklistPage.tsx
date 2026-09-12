@@ -40,7 +40,7 @@ import { UploadDocumentModal } from "@/components/vault/UploadDocumentModal";
 import { AutofillAssistant } from "@/components/assistant/AutofillAssistant";
 import {
   DOCUMENT_PROCUREMENT_GUIDES,
-  OFFICIAL_NSP_WORKFLOW,
+  getSchemeWorkflow,
 } from "@/lib/knowledge/government-schemes-knowledge";
 import { toast } from "sonner";
 
@@ -393,99 +393,105 @@ export function ReadinessChecklistPage() {
       </div>
 
       {/* Official Process & Timeline Roadmap */}
-      {showProcessRoadmap && (
-        <div className="bg-white rounded-3xl border border-indigo-100 p-6 shadow-xs space-y-4 animate-in fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-200 uppercase">
-                  Official Government Lifecycle
-                </span>
-                <h3 className="text-base font-bold text-slate-900">
-                  {service.name} — Process Workflow
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Official step-by-step verification lifecycle from application registration to benefit sanction / issuance.
-              </p>
-            </div>
-
-            <a
-              href={service.official_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-xl self-start sm:self-auto"
-            >
-              <span>{service.official_domain}</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3 pt-1">
-            {OFFICIAL_NSP_WORKFLOW.stages.map((stage) => (
-              <div
-                key={stage.stageNumber}
-                className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-300 transition-all"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
-                      {stage.stageNumber}
-                    </span>
-                    <span className="text-[10px] font-semibold text-slate-500">
-                      {stage.timeline}
-                    </span>
-                  </div>
-
-                  <h4 className="text-xs font-bold text-slate-900 leading-snug mb-1">
-                    {stage.stageName}
-                  </h4>
-                  <div className="text-[10px] font-semibold text-indigo-600 mb-2">
-                    {stage.responsibleParty}
-                  </div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed mb-3">
-                    {stage.description}
-                  </p>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200/60">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                    Key Checklist:
-                  </div>
-                  <ul className="text-[10px] text-slate-600 space-y-1">
-                    {stage.actionItems.slice(0, 2).map((action, idx) => (
-                      <li key={idx} className="flex items-start gap-1">
-                        <span className="text-indigo-600 font-bold">•</span>
-                        <span>{action}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Grievance Redressal Banner */}
-          <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900">
-            <div className="flex items-center gap-2.5">
-              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+      {showProcessRoadmap && (() => {
+        const workflow = getSchemeWorkflow(service.id, service.name, service.official_url, service.official_domain);
+        return (
+          <div className="bg-white rounded-3xl border border-indigo-100 p-6 shadow-xs space-y-4 animate-in fade-in">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
               <div>
-                <strong>Need Support or Facing Issues?</strong> Official Helpdesk Helpline:{" "}
-                <span className="font-bold">1800-11-2001</span> | Email:{" "}
-                <span className="font-bold">helpdesk@gov.in</span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-200 uppercase">
+                    Official Government Lifecycle
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {workflow.schemeName || service.name} — Process Workflow
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Official step-by-step verification lifecycle from application registration to benefit sanction / issuance.
+                </p>
               </div>
+
+              <a
+                href={workflow.officialPortal || service.official_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-xl self-start sm:self-auto"
+              >
+                <span>{workflow.portalDomain || service.official_domain}</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
-            <a
-              href={service.official_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-amber-800 hover:text-amber-950 font-bold underline shrink-0"
-            >
-              Open Official Portal
-            </a>
+
+            <div className={cn(
+              "grid gap-3 pt-1",
+              workflow.stages.length <= 3 ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-5"
+            )}>
+              {workflow.stages.map((stage) => (
+                <div
+                  key={stage.stageNumber}
+                  className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between hover:border-indigo-300 transition-all"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-bold flex items-center justify-center">
+                        {stage.stageNumber}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-500">
+                        {stage.timeline}
+                      </span>
+                    </div>
+
+                    <h4 className="text-xs font-bold text-slate-900 leading-snug mb-1">
+                      {stage.stageName}
+                    </h4>
+                    <div className="text-[10px] font-semibold text-indigo-600 mb-2">
+                      {stage.responsibleParty}
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed mb-3">
+                      {stage.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/60">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Key Checklist:
+                    </div>
+                    <ul className="text-[10px] text-slate-600 space-y-1">
+                      {stage.actionItems.slice(0, 2).map((action, idx) => (
+                        <li key={idx} className="flex items-start gap-1">
+                          <span className="text-indigo-600 font-bold">•</span>
+                          <span>{action}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Grievance Redressal Banner */}
+            <div className="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900">
+              <div className="flex items-center gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <div>
+                  <strong>Need Support or Facing Issues?</strong> Official Helpline:{" "}
+                  <span className="font-bold">{workflow.grievanceRedressal?.helpline || "1800-111-555"}</span> | Email:{" "}
+                  <span className="font-bold">{workflow.grievanceRedressal?.email || "helpdesk@gov.in"}</span>
+                </div>
+              </div>
+              <a
+                href={workflow.officialPortal || service.official_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-amber-800 hover:text-amber-950 font-bold underline shrink-0"
+              >
+                Open Official Portal
+              </a>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Completion Banner */}
       {isComplete && (
@@ -672,10 +678,10 @@ export function ReadinessChecklistPage() {
                                 href={docGuide.portalUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
+                                className="inline-flex items-center gap-1.5 text-[11px] font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-xl shadow-2xs transition-colors"
                               >
-                                <span>Open Official Portal ({docGuide.portalUrl})</span>
-                                <ExternalLink className="w-3 h-3" />
+                                <span>Open {docGuide.issuingPortal || "Official Portal"}</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
                               </a>
                             </div>
                           )}
