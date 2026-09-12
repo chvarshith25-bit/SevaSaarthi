@@ -3,9 +3,30 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, Bell, ChevronDown, User, LogOut, CheckCircle, Menu, Globe, Check } from "lucide-react";
+import {
+  Search,
+  Bell,
+  ChevronDown,
+  User,
+  LogOut,
+  CheckCircle,
+  Menu,
+  Globe,
+  Check,
+  X,
+  Sparkles,
+  FileText,
+  Compass,
+  ArrowRight,
+  ShieldCheck,
+  CreditCard,
+  GraduationCap,
+  Home,
+  Bot,
+} from "lucide-react";
 import { useSevaSaarthi } from "@/lib/store/formly-store";
 import { LotusLogo } from "@/components/ui/LotusLogo";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   onOpenMobileNav?: () => void;
@@ -20,6 +41,28 @@ const LANGUAGES = [
   { code: "KN", name: "Kannada", label: "ಕನ್ನಡ" },
 ];
 
+const QUICK_SEARCH_ITEMS = [
+  { id: "scheme_pan", title: "Instant e-PAN Card Application", category: "Identity & Tax", type: "scheme", href: "/discover?q=pan", icon: CreditCard },
+  { id: "scheme_nsp", title: "Post-Matric Scholarship (NSP)", category: "Scholarships", type: "scheme", href: "/discover?q=scholarship", icon: GraduationCap },
+  { id: "scheme_pmay", title: "Pradhan Mantri Awas Yojana (PMAY)", category: "Housing", type: "scheme", href: "/discover?q=pmay", icon: Home },
+  { id: "scheme_abha", title: "Ayushman Bharat Health Card (ABHA)", category: "Healthcare", type: "scheme", href: "/discover?q=ayushman", icon: ShieldCheck },
+  { id: "scheme_dl", title: "Driving License / Sarathi Portal", category: "Transport", type: "scheme", href: "/discover?q=driving", icon: Compass },
+  { id: "scheme_inc", title: "Income & Domicile Certificate", category: "e-District", type: "scheme", href: "/discover?q=certificate", icon: FileText },
+  
+  // Vault Documents
+  { id: "doc_aadhaar", title: "Aadhaar Card (UIDAI)", category: "Document Vault", type: "document", href: "/vault", icon: FileText },
+  { id: "doc_pan", title: "Permanent Account Number (PAN)", category: "Document Vault", type: "document", href: "/vault", icon: FileText },
+  { id: "doc_marksheet", title: "10th / 12th Board Marksheet", category: "Document Vault", type: "document", href: "/vault", icon: FileText },
+  { id: "doc_income", title: "Annual Income Certificate", category: "Document Vault", type: "document", href: "/vault", icon: FileText },
+
+  // Platform Navigation
+  { id: "nav_profile", title: "My Profile (27 Verified Attributes)", category: "Citizen Profile", type: "page", href: "/profile", icon: User },
+  { id: "nav_vault", title: "Document Vault & OCR Extractions", category: "Locker", type: "page", href: "/vault", icon: FileText },
+  { id: "nav_apply", title: "Apply for a Service (Checklist)", category: "Readiness", type: "page", href: "/checklist", icon: Sparkles },
+  { id: "nav_tasks", title: "Tasks & Reminders", category: "Actions", type: "page", href: "/tasks", icon: CheckCircle },
+  { id: "nav_ai", title: "Ask Saarthi AI Assistant", category: "Guidance", type: "page", href: "/help", icon: Bot },
+];
+
 export function Header({ onOpenMobileNav }: HeaderProps = {}) {
   const router = useRouter();
   const { user, logout, unreadNotificationsCount } = useSevaSaarthi();
@@ -27,7 +70,10 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [selectedLang, setSelectedLang] = useState("EN");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Compute initials dynamically
   const getInitials = (name?: string) => {
@@ -43,30 +89,68 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
   const displayName = user?.name || "Chiluveri Varshith";
   const displayEmail = user?.email || "chiluverivarshithsahs@gmail.com";
 
-  // Keyboard shortcut Ctrl + K
+  // Filter search results
+  const searchResults = React.useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) {
+      return QUICK_SEARCH_ITEMS.slice(0, 7);
+    }
+    return QUICK_SEARCH_ITEMS.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        item.category.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
+
+  // Keyboard shortcut Ctrl + K and outside click
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        setIsSearchOpen(true);
         searchInputRef.current?.focus();
       }
       if (e.key === "Escape") {
         setShowUserMenu(false);
         setShowLangMenu(false);
+        setIsSearchOpen(false);
+        setShowMobileSearch(false);
         searchInputRef.current?.blur();
       }
     };
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsSearchOpen(false);
+    setShowMobileSearch(false);
     if (searchQuery.trim()) {
       router.push(`/discover?q=${encodeURIComponent(searchQuery.trim())}`);
     } else {
       router.push("/discover");
     }
+  };
+
+  const handleSelectResult = (href: string) => {
+    setIsSearchOpen(false);
+    setShowMobileSearch(false);
+    router.push(href);
   };
 
   return (
@@ -90,6 +174,15 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {/* Mobile Search Button */}
+          <button
+            onClick={() => setShowMobileSearch(!showMobileSearch)}
+            aria-label="Search"
+            className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+
           <Link
             href="/notifications"
             className="relative w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
@@ -110,25 +203,149 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
         </div>
       </header>
 
+      {/* Mobile Search Overlay Input */}
+      {showMobileSearch && (
+        <div className="md:hidden px-4 py-2 bg-white border-b border-slate-200 z-30 shadow-md">
+          <form onSubmit={handleSearchSubmit} className="relative flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search schemes (PAN, Scholarship...)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="px-3 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl shrink-0"
+            >
+              Search
+            </button>
+          </form>
+        </div>
+      )}
+
       {/* 2. DESKTOP HEADER (>= 768px) */}
       <header className="hidden md:flex items-center justify-between px-6 py-3.5 border-b border-slate-100 bg-white/95 backdrop-blur-md sticky top-0 z-20 gap-4">
-        {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-xl">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search for services (e.g., PAN, Scholarship, Certificate...)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-20 py-2.5 bg-slate-50 border border-slate-200/90 rounded-2xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 pointer-events-none">
-            <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 bg-white border border-slate-200 rounded-md shadow-2xs font-mono">
-              Ctrl + K
-            </kbd>
-          </div>
-        </form>
+        {/* Global Search Bar */}
+        <div ref={searchContainerRef} className="relative flex-1 max-w-xl">
+          <form onSubmit={handleSearchSubmit} className="relative w-full">
+            <button
+              type="submit"
+              aria-label="Submit search"
+              className="w-8 h-8 absolute left-1 top-1/2 -translate-y-1/2 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search for schemes, services & documents (e.g. PAN, Scholarship...)"
+              value={searchQuery}
+              onFocus={() => setIsSearchOpen(true)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setIsSearchOpen(true);
+              }}
+              className="w-full pl-10 pr-24 py-2.5 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200/90 rounded-2xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium shadow-2xs"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    searchInputRef.current?.focus();
+                  }}
+                  className="w-5 h-5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+              <kbd className="px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 rounded-md shadow-2xs font-mono select-none">
+                Ctrl + K
+              </kbd>
+            </div>
+          </form>
+
+          {/* Interactive Live Search Dropdown */}
+          {isSearchOpen && (
+            <div className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 max-h-[75vh] flex flex-col">
+              <div className="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50 flex items-center justify-between">
+                <span>{searchQuery ? "Search Results" : "Quick Services & Navigation"}</span>
+                <span className="text-[9px] font-normal lowercase">press Enter to view all</span>
+              </div>
+
+              <div className="overflow-y-auto p-1.5 space-y-1">
+                {searchResults.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400 space-y-2">
+                    <Search className="w-6 h-6 mx-auto text-slate-300" />
+                    <p className="text-xs">No direct matches found for &quot;{searchQuery}&quot;</p>
+                    <button
+                      onClick={() => handleSearchSubmit()}
+                      className="text-xs font-bold text-blue-600 hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Search in All Schemes</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  searchResults.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleSelectResult(item.href)}
+                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-center justify-between group transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors flex items-center justify-center shrink-0">
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-slate-800 group-hover:text-blue-600 truncate transition-colors">
+                              {item.title}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-medium">
+                              {item.category}
+                            </div>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {searchQuery && (
+                <div className="p-2 border-t border-slate-100 bg-slate-50/50">
+                  <button
+                    type="button"
+                    onClick={() => handleSearchSubmit()}
+                    className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <span>Search all schemes for &quot;{searchQuery}&quot;</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Right Controls */}
         <div className="flex items-center gap-3 shrink-0">

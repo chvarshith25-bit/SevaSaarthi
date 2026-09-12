@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Compass,
   GraduationCap,
@@ -35,11 +36,21 @@ import {
 
 export function DiscoverPage() {
   const { user, profileFields, checklistSummary } = useSevaSaarthi();
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
+
   const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialQuery);
   const [onlyEligible, setOnlyEligible] = useState(false);
   const [selectedSchemeForDetails, setSelectedSchemeForDetails] = useState<SchemeMatchResult | null>(null);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q !== null) {
+      setSearch(q);
+    }
+  }, [searchParams]);
 
   // Evaluate each scheme against the logged-in user's profile
   const schemeMatches: SchemeMatchResult[] = useMemo(() => {
