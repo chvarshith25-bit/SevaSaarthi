@@ -47,14 +47,7 @@ export function SaarthiVoiceAssistantModal({
 
   // Language mapping for Web Speech API
   const getLanguageCode = () => {
-    switch (currentLanguage) {
-      case "hi":
-        return "hi-IN";
-      case "te":
-        return "te-IN";
-      default:
-        return "en-IN";
-    }
+    return "en-IN";
   };
 
   useEffect(() => {
@@ -210,7 +203,7 @@ export function SaarthiVoiceAssistantModal({
             </div>
             <div>
               <h2 className="font-bold text-base">Seva Saarthi Voice Assistant</h2>
-              <p className="text-xs text-blue-100">Ask in English, Hindi, Telugu, or your local language</p>
+              <p className="text-xs text-blue-100">Ask your question or search for government services</p>
             </div>
           </div>
           <button

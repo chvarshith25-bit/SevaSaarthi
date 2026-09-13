@@ -11,8 +11,6 @@ import {
   LogOut,
   CheckCircle,
   Menu,
-  Globe,
-  Check,
   X,
   Sparkles,
   FileText,
@@ -31,12 +29,6 @@ import { cn } from "@/lib/utils";
 interface HeaderProps {
   onOpenMobileNav?: () => void;
 }
-
-const LANGUAGES = [
-  { code: "EN", name: "English", label: "English" },
-  { code: "TE", name: "Telugu", label: "తెలుగు" },
-  { code: "HI", name: "Hindi", label: "हिन्दी" },
-];
 
 const QUICK_SEARCH_ITEMS = [
   { id: "scheme_pan", title: "Instant e-PAN Card Application", category: "Identity & Tax", type: "scheme", href: "/discover?q=pan", icon: CreditCard },
@@ -68,13 +60,10 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
     unreadNotificationsCount,
     easyMode,
     toggleEasyMode,
-    currentLanguage,
-    setLanguage,
     t,
   } = useSevaSaarthi();
 
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showLangMenu, setShowLangMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
@@ -94,8 +83,6 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
   const initials = getInitials(user?.name || "Chiluveri Varshith");
   const displayName = user?.name || "Chiluveri Varshith";
   const displayEmail = user?.email || "chiluverivarshithsahs@gmail.com";
-
-  const currentLangObj = LANGUAGES.find((l) => l.code.toLowerCase() === currentLanguage.toLowerCase()) || LANGUAGES[0];
 
   // Filter search results
   const searchResults = React.useMemo(() => {
@@ -120,7 +107,6 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
       }
       if (e.key === "Escape") {
         setShowUserMenu(false);
-        setShowLangMenu(false);
         setIsSearchOpen(false);
         setShowMobileSearch(false);
         searchInputRef.current?.blur();
@@ -198,15 +184,6 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
             <span>{easyMode ? "Easy: ON" : "Easy Mode"}</span>
           </button>
 
-          {/* Mobile Language Selector */}
-          <button
-            onClick={() => setShowLangMenu(!showLangMenu)}
-            aria-label="Select language"
-            className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer border border-slate-200 text-xs font-bold"
-          >
-            {currentLangObj.code}
-          </button>
-
           <Link
             href="/notifications"
             className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
@@ -226,52 +203,6 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
           </button>
         </div>
       </header>
-
-      {/* Mobile Language Modal Dropdown */}
-      {showLangMenu && (
-        <div className="md:hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl p-5 w-full max-w-sm shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-blue-600" />
-                <h3 className="text-base font-bold text-slate-900">Select Language / భాష</h3>
-              </div>
-              <button
-                onClick={() => setShowLangMenu(false)}
-                className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 flex items-center justify-center"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {LANGUAGES.map((lang) => {
-                const isSel = currentLanguage.toLowerCase() === lang.code.toLowerCase();
-                return (
-                  <button
-                    key={lang.code}
-                    onClick={() => {
-                      setLanguage(lang.code.toLowerCase() as any);
-                      setShowLangMenu(false);
-                    }}
-                    className={cn(
-                      "p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer",
-                      isSel
-                        ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                        : "bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800"
-                    )}
-                  >
-                    <div className="text-sm font-bold">{lang.label}</div>
-                    <div className={cn("text-[11px]", isSel ? "text-blue-100" : "text-slate-500")}>
-                      {lang.name}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Mobile Search Overlay Input */}
       {showMobileSearch && (
@@ -435,56 +366,7 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
             <span>{easyMode ? "Easy Mode: Active" : "Easy Mode"}</span>
           </button>
 
-          {/* Multilingual Selector */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => {
-                setShowLangMenu(!showLangMenu);
-                setShowUserMenu(false);
-              }}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-2xl text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
-            >
-              <Globe className="w-3.5 h-3.5 text-blue-600" />
-              <span>{currentLangObj.label}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-            </button>
 
-            {showLangMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowLangMenu(false)}
-                  aria-hidden="true"
-                />
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in slide-in-from-top-2">
-                  <div className="px-3.5 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-50">
-                    Select Language / భాష
-                  </div>
-                  {LANGUAGES.map((lang) => {
-                    const isSelected = currentLanguage.toLowerCase() === lang.code.toLowerCase();
-                    return (
-                      <button
-                        key={lang.code}
-                        type="button"
-                        onClick={() => {
-                          setLanguage(lang.code.toLowerCase() as any);
-                          setShowLangMenu(false);
-                        }}
-                        className="w-full text-left px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 flex items-center justify-between cursor-pointer transition-colors"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold">{lang.label}</span>
-                          <span className="text-slate-400">({lang.name})</span>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-blue-600" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
 
           {/* Notification Bell */}
           <Link
@@ -506,7 +388,6 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
               type="button"
               onClick={() => {
                 setShowUserMenu(!showUserMenu);
-                setShowLangMenu(false);
               }}
               className="flex items-center gap-2.5 p-1.5 pr-3 hover:bg-slate-50 rounded-2xl border border-slate-200/80 transition-all cursor-pointer"
             >
