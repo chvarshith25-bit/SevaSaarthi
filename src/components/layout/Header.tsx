@@ -282,7 +282,7 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
               <input
                 type="text"
                 autoFocus
-                placeholder="What are you looking for? (e.g. Scholarship, PAN)"
+                placeholder={t("search_placeholder", "What are you looking for? (e.g. Scholarship, PAN)")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -322,7 +322,7 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="What are you looking for? (e.g. Scholarship, Income Certificate, PAN Card...)"
+              placeholder={t("search_placeholder", "What are you looking for? (e.g. Scholarship, Income Certificate, PAN Card...)")}
               value={searchQuery}
               onFocus={() => setIsSearchOpen(true)}
               onChange={(e) => {
