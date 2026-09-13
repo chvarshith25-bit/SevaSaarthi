@@ -1458,6 +1458,19 @@ export function retryApplicationVerification(id: string): PanApplicationRecord &
   return makeDualResult(promise, app);
 }
 
+export function resetApplicationTimeout(id: string): PanApplicationRecord & Promise<PanApplicationRecord> {
+  const app = panApplicationsMemory.find((a) => a.id === id || (a as any).application_number === id);
+  if (!app) throw new Error(`Application not found: ${id}`);
+
+  app.stage = "VERIFICATION_IN_PROGRESS";
+  app.status = "API_UNAVAILABLE";
+  if (app.verifications && app.verifications.length > 1) {
+    app.verifications[1].status = "FAILED";
+    app.verifications[1].details = "Gateway Timeout (504): External PAN core deduplication service did not respond within 5000ms. Queued for automatic retry.";
+  }
+  return makeDualResult(Promise.resolve(app), app);
+}
+
 export function assignApplication(
   id: string,
   officerId: string,

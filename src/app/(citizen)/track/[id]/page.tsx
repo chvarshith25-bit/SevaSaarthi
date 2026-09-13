@@ -44,6 +44,7 @@ export default function PanTrackerPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [correctionInput, setCorrectionInput] = useState("");
   const [isSubmittingCorrection, setIsSubmittingCorrection] = useState(false);
+  const [isRetryingGateway, setIsRetryingGateway] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const fetchApplication = async (silent = false) => {
@@ -117,6 +118,29 @@ export default function PanTrackerPage() {
       toast.error("Error submitting correction");
     } finally {
       setIsSubmittingCorrection(false);
+    }
+  };
+
+  const handleRetryGateway = async (reset = false) => {
+    setIsRetryingGateway(true);
+    try {
+      const res = await fetch(`/api/track/${appId}/retry`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reset }),
+      });
+      const data = await res.json();
+      if (data.success && data.application) {
+        setApplication(data.application);
+        toast.success(data.message || (reset ? "Reset to timeout state" : "Gateway reconnected successfully!"));
+      } else {
+        toast.error(data.error || "Retry failed");
+      }
+    } catch (err) {
+      console.error("Error retrying gateway connection:", err);
+      toast.error("Failed to contact gateway retry service");
+    } finally {
+      setIsRetryingGateway(false);
     }
   };
 
@@ -766,7 +790,7 @@ export default function PanTrackerPage() {
                 <option value="INC-2026-3021">INC-2026-3021 (Income Certificate - Delivered)</option>
                 <option value="CST-2026-1190">CST-2026-1190 (Caste Certificate - Delivered)</option>
                 <option value="PAN-2026-0001">PAN-2026-0001 (PAN Card - Officer Review)</option>
-                <option value="PAN-2026-0002">PAN-2026-0002 (PAN Card - API Retry)</option>
+                <option value="PAN-2026-0002">PAN-2026-0002 (PAN Card - Gateway Delay / Auto-Retry Demo)</option>
                 <option value="PAN-2026-0003">PAN-2026-0003 (PAN Card - DOB Conflict)</option>
                 <option value="PAN-2026-0004">PAN-2026-0004 (PAN Card - Returned for Fix)</option>
               </select>
@@ -1137,18 +1161,65 @@ export default function PanTrackerPage() {
             )}
 
             {application.status === "API_UNAVAILABLE" && (
-              <div className="mt-5 bg-blue-50 border border-blue-200 rounded-2xl p-4 sm:p-5">
-                <div className="flex items-start gap-3">
-                  <RefreshCw className="w-5 h-5 text-blue-600 shrink-0 mt-0.5 animate-spin" />
-                  <div>
-                    <h4 className="font-bold text-sm text-blue-900">
-                      External Registry Connectivity Delay
-                    </h4>
-                    <p className="text-xs text-blue-800 mt-1 leading-relaxed">
-                      The external government verification registry experienced a temporary timeout. Your application is safely persisted in state and our resiliency engine is automatically re-querying the gateway. You do not need to resubmit.
+              <div className="mt-5 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-5 sm:p-6 shadow-xs">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                    <RefreshCw className={`w-5 h-5 ${isRetryingGateway ? "animate-spin text-blue-700" : ""}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h4 className="font-bold text-sm text-blue-950">
+                        External Gateway Connectivity Delay (Resiliency Queue)
+                      </h4>
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 bg-blue-100 text-blue-800 border border-blue-200 rounded-full">
+                        Auto-Retry Active • Zero Data Loss
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-blue-900/90 mt-2 leading-relaxed">
+                      The external downstream verification gateway experienced a temporary timeout (504 Gateway Delay). Rather than failing or dropping your application, Seva Saarthi's fault-tolerant engine safely persisted your submission in state and has placed it in an automatic retry queue.
                     </p>
+
+                    <div className="mt-3 flex items-center gap-2 text-[11px] text-blue-800 font-medium">
+                      <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+                      <span>Automated background retry active: re-querying every 15s with exponential backoff.</span>
+                    </div>
+
+                    {/* Interactive Citizen/Evaluator Action */}
+                    <div className="mt-4 pt-3 border-t border-blue-200/80 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleRetryGateway(false)}
+                        disabled={isRetryingGateway}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-xs transition-all disabled:opacity-60 cursor-pointer"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isRetryingGateway ? "animate-spin" : ""}`} />
+                        <span>{isRetryingGateway ? "Reconnecting Gateway..." : "Reconnect Gateway & Verify Now"}</span>
+                      </button>
+
+                      <span className="text-[11px] text-slate-500">
+                        Simulate the external gateway recovering and passing verification.
+                      </span>
+                    </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {appId === "PAN-2026-0002" && application.status !== "API_UNAVAILABLE" && (
+              <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-emerald-900 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Gateway Resiliency Succeeded: External connector recovered and case routed to Officer Review.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRetryGateway(true)}
+                  disabled={isRetryingGateway}
+                  className="px-3 py-1.5 bg-white border border-emerald-300 hover:bg-emerald-100 text-emerald-800 rounded-xl font-bold text-xs transition-colors shrink-0 cursor-pointer"
+                >
+                  Reset Case to Gateway Delay
+                </button>
               </div>
             )}
 

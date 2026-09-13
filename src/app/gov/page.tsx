@@ -887,12 +887,12 @@ export default function GovernmentDashboardPage() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-mono font-bold text-xs text-amber-300">PAN-2026-0002</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                    API Retry Case
+                    Gateway Delay (Auto-Retry)
                   </span>
                 </div>
                 <div className="font-bold text-sm text-white">Anjali Sharma</div>
                 <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-                  API timeout (504). Show retry queue & recovery mechanism.
+                  504 Gateway Timeout simulation. Demonstrates automated retry queue & zero-data-loss resiliency.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800 mt-3 flex items-center justify-between text-xs font-semibold text-amber-300 group-hover:underline">
