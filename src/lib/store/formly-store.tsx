@@ -185,7 +185,7 @@ export function SevaSaarthiProvider({ children }: { children: React.ReactNode })
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(STORAGE_LANG_KEY);
-      if (saved && ["en", "te", "hi", "mr", "ta", "kn"].includes(saved)) {
+      if (saved && ["en", "te", "hi"].includes(saved)) {
         return saved as SupportedLanguage;
       }
     }

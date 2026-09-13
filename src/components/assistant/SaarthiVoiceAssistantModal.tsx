@@ -52,12 +52,6 @@ export function SaarthiVoiceAssistantModal({
         return "hi-IN";
       case "te":
         return "te-IN";
-      case "mr":
-        return "mr-IN";
-      case "ta":
-        return "ta-IN";
-      case "kn":
-        return "kn-IN";
       default:
         return "en-IN";
     }

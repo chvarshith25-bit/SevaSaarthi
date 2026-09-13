@@ -34,11 +34,8 @@ interface HeaderProps {
 
 const LANGUAGES = [
   { code: "EN", name: "English", label: "English" },
-  { code: "HI", name: "Hindi", label: "हिन्दी" },
   { code: "TE", name: "Telugu", label: "తెలుగు" },
-  { code: "TA", name: "Tamil", label: "தமிழ்" },
-  { code: "MR", name: "Marathi", label: "मराठी" },
-  { code: "KN", name: "Kannada", label: "ಕನ್ನಡ" },
+  { code: "HI", name: "Hindi", label: "हिन्दी" },
 ];
 
 const QUICK_SEARCH_ITEMS = [
