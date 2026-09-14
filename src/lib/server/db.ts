@@ -997,6 +997,48 @@ export function createPanApplication(data: {
         "SUCCESS",
         { details: `Application ${appId} submitted successfully.` }
       );
+
+      // Phase 3: Trigger AI Model 1 Workflow Router asynchronously
+      try {
+        const { WorkflowRouter } = await import("./ai/workflow-router");
+        const routingInput = {
+          applicationId: appId,
+          serviceName: newApp.serviceName,
+          applicationTitle: newApp.serviceName,
+          applicationDescription: `${newApp.serviceName} submitted by citizen`,
+          category: isScholarship ? "Higher Education & Scholarships" : "Identity & Tax",
+          stateCode: data.citizenData.state,
+          documentTypes: Object.values(newApp.documents).map((d: any) => d.type),
+        };
+        const rec = await WorkflowRouter.routeApplication(routingInput);
+        await WorkflowRouter.persistRecommendation(rec, effectiveAppUuid);
+      } catch (aiErr) {
+        console.warn("[createPanApplication] AI routing recommendation warning:", aiErr);
+      }
+
+      // Phase 6: Trigger End-to-End AI Model 2 Entity Resolution & Semantic Data Mapping
+      try {
+        const { resolveApplicationIdentity } = await import("./ai/orchestrator");
+        const idRes = await resolveApplicationIdentity(effectiveAppUuid, {
+          callerUserId: data.userId,
+        });
+
+        // Merge generated verifications into memory app record
+        if (idRes.verificationsGenerated && idRes.verificationsGenerated.length > 0) {
+          for (const v of idRes.verificationsGenerated) {
+            const existingIdx = newApp.verifications.findIndex(
+              (x: any) => x.id === v.id || x.name === v.name
+            );
+            if (existingIdx >= 0) {
+              newApp.verifications[existingIdx] = v as any;
+            } else {
+              newApp.verifications.push(v as any);
+            }
+          }
+        }
+      } catch (m2Err) {
+        console.warn("[createPanApplication] AI Model 2 resolution warning:", m2Err);
+      }
     } catch (e) {
       console.warn("[createPanApplication] PG persist error:", e);
     }
@@ -1119,6 +1161,7 @@ export function officerReturnApplication(
   }
 
   app.status = "RETURNED_FOR_CORRECTION";
+  (app as any).correctionReason = reason;
   (app as any).correctionNotice = {
     issue: reason,
     affectedField: details?.affectedField || "addressProof",
@@ -1602,7 +1645,58 @@ export function getAuditLogs(applicationId?: string): AuditLogRecord[] & Promise
     }
   }
 
-  return makeDualArray(Promise.resolve(syncLogs), syncLogs);
+  const promise = (async () => {
+    try {
+      await getAuthoritativeDb();
+      let query = `
+        SELECT e.*, a.application_number
+        FROM audit_events e
+        LEFT JOIN applications a ON e.application_id = a.id
+      `;
+      const params: any[] = [];
+      if (applicationId) {
+        query += ` WHERE a.id::text = $1 OR a.application_number = $1 OR e.application_id::text = $1`;
+        params.push(applicationId);
+      }
+      query += ` ORDER BY e.created_at ASC`;
+      const rows = await pgQuery(query, params);
+      if (rows && rows.length > 0) {
+        return rows.map((r: any) => {
+          const roleMap: Record<string, any> = {
+            CITIZEN: "CITIZEN",
+            EMPLOYEE: "OFFICER",
+            SYSTEM: "SYSTEM_WORKFLOW",
+            AI: "SYSTEM_WORKFLOW",
+          };
+          const rec: AuditLogRecord = {
+            id: r.id,
+            applicationId: r.application_number || r.application_id || undefined,
+            timestamp: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+            actor: {
+              id: r.actor_id || "system",
+              name: r.actor_type,
+              role: roleMap[r.actor_type] || "SYSTEM_WORKFLOW",
+            },
+            action: r.action,
+            source: r.source || "GOV_PORTAL",
+            target: r.target || "SYSTEM",
+            purpose: r.purpose || r.action,
+            consentToken: r.consent_id || undefined,
+            result: r.result === "SUCCESS" ? "SUCCESS" : r.result === "FAILED" ? "FAILURE" : "SUCCESS",
+            details: (r.metadata && typeof r.metadata === "object" && (r.metadata.details || r.metadata.remarks)) || r.purpose || r.action,
+            requestId: r.request_id || r.id,
+          };
+          rec.tamperHash = calculateAuditTamperHash(rec);
+          return rec;
+        });
+      }
+    } catch (err) {
+      console.warn("[getAuditLogs] Database query error, falling back to memory:", err);
+    }
+    return syncLogs;
+  })();
+
+  return makeDualArray(promise, syncLogs);
 }
 
 export function getExceptions(): ExceptionRecord[] & Promise<ExceptionRecord[]> {
@@ -1671,3 +1765,94 @@ export async function recordIdempotency(key: string, operation: string, applicat
     );
   } catch {}
 }
+
+// ----------------------------------------------------------------------
+// AI Model 2 Entity Resolution Database Helpers (Phase 6)
+// ----------------------------------------------------------------------
+
+export async function getApplicationEntityResolutions(applicationIdOrNumber: string): Promise<any[]> {
+  try {
+    await getAuthoritativeDb();
+    const rows = await pgQuery(
+      `SELECT r.*, a.application_number
+       FROM application_entity_resolutions r
+       JOIN applications a ON r.application_id = a.id
+       WHERE a.id::text = $1 OR a.application_number = $1
+       ORDER BY r.total_score DESC, r.created_at DESC`,
+      [applicationIdOrNumber]
+    );
+    return rows;
+  } catch (err) {
+    console.warn("[getApplicationEntityResolutions] Error fetching resolutions:", err);
+    return [];
+  }
+}
+
+export async function officerReviewEntityResolution(
+  applicationIdOrNumber: string,
+  resolutionId: string,
+  action: "ACCEPT" | "REJECT" | "VERIFICATION_REQUIRED",
+  officerUserId: string,
+  remarks?: string
+): Promise<{ success: boolean; resolution?: any; error?: string }> {
+  try {
+    await getAuthoritativeDb();
+    const statusMap = {
+      ACCEPT: "ACCEPTED",
+      REJECT: "REJECTED",
+      VERIFICATION_REQUIRED: "VERIFICATION_REQUIRED",
+    } as const;
+
+    const newStatus = statusMap[action];
+    let empUuid: string | null = null;
+    if (officerUserId) {
+      const emp = await pgQuery<{ id: string }>(
+        `SELECT id FROM employees WHERE employee_code = $1 OR email = $1 OR id::text = $1 LIMIT 1`,
+        [officerUserId]
+      );
+      if (emp.length > 0) {
+        empUuid = emp[0].id;
+      }
+    }
+
+    const updated = await pgQuery(
+      `UPDATE application_entity_resolutions
+       SET review_status = $1, reviewed_by = $2, reviewed_at = now(), updated_at = now()
+       WHERE id = $3
+       RETURNING *`,
+      [newStatus, empUuid, resolutionId]
+    );
+
+    if (updated.length === 0) {
+      return { success: false, error: "Entity resolution record not found" };
+    }
+
+    const resRecord = updated[0];
+
+    // Log tamper-evident audit event
+    await pgRecordAuditEvent(
+      "EMPLOYEE",
+      officerUserId,
+      "REVIEW",
+      resRecord.application_id,
+      "GOV_WORKFLOW_DESK",
+      "ENTITY_RESOLUTION_REVIEW",
+      `Officer Adjudication: ${action} on candidate ${resRecord.candidate_record_id} (${resRecord.candidate_registry})`,
+      null,
+      "SUCCESS",
+      {
+        action,
+        candidateId: resRecord.candidate_record_id,
+        registry: resRecord.candidate_registry,
+        score: resRecord.total_score,
+        remarks: remarks || "",
+      }
+    );
+
+    return { success: true, resolution: resRecord };
+  } catch (err: any) {
+    console.error("[officerReviewEntityResolution] Error:", err);
+    return { success: false, error: err.message };
+  }
+}
+

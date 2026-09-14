@@ -92,10 +92,14 @@ export async function resetAuthoritativeDb(): Promise<void> {
 }
 
 async function initSchema(db: PGlite) {
-  // Check if applications table exists and is readable
+  // Check if applications, sub_departments, application_routing_recommendations, and synthetic_master_citizens tables exist
   try {
-    const check = await db.query(`SELECT 1 FROM information_schema.tables WHERE table_name = 'applications'`);
-    if (check.rows.length > 0) {
+    const checkApp = await db.query(`SELECT 1 FROM information_schema.tables WHERE table_name = 'applications'`);
+    const checkSub = await db.query(`SELECT 1 FROM information_schema.tables WHERE table_name = 'sub_departments'`);
+    const checkRec = await db.query(`SELECT 1 FROM information_schema.tables WHERE table_name = 'application_routing_recommendations'`);
+    const checkSyn = await db.query(`SELECT 1 FROM information_schema.tables WHERE table_name = 'synthetic_master_citizens'`);
+    const checkEnt = await db.query(`SELECT 1 FROM information_schema.tables WHERE table_name = 'application_entity_resolutions'`);
+    if (checkApp.rows.length > 0 && checkSub.rows.length > 0 && checkRec.rows.length > 0 && checkSyn.rows.length > 0 && checkEnt.rows.length > 0) {
       // Test read on users table to verify relation integrity
       await db.query(`SELECT id FROM users LIMIT 1`);
       await db.query(`UPDATE employees SET is_active = true WHERE employee_code = 'OFF-PAN-7042'`).catch(() => {});
@@ -103,7 +107,7 @@ async function initSchema(db: PGlite) {
       return; // Already initialized and healthy
     }
   } catch (err) {
-    console.warn("[PGlite] Existing tables corrupted, rebuilding schema:", err);
+    console.warn("[PGlite] Existing tables need migration/rebuilding:", err);
   }
 
   // 1. Supabase auth mock & public users/sessions tables
@@ -155,6 +159,34 @@ async function initSchema(db: PGlite) {
   if (fs.existsSync(sql002Path)) {
     const sql002 = fs.readFileSync(sql002Path, "utf8");
     await db.exec(cleanSqlForPglite(sql002));
+  }
+
+  // 4b. Migration 003 (Controlled Service & Workflow Registry)
+  const sql003Path = path.resolve(process.cwd(), "supabase/migrations/003_controlled_registry.sql");
+  if (fs.existsSync(sql003Path)) {
+    const sql003 = fs.readFileSync(sql003Path, "utf8");
+    await db.exec(cleanSqlForPglite(sql003));
+  }
+
+  // 4c. Migration 004 (AI Model 1 Workflow Routing Recommendations)
+  const sql004Path = path.resolve(process.cwd(), "supabase/migrations/004_ai_workflow_router.sql");
+  if (fs.existsSync(sql004Path)) {
+    const sql004 = fs.readFileSync(sql004Path, "utf8");
+    await db.exec(cleanSqlForPglite(sql004));
+  }
+
+  // 4d. Migration 005 (Synthetic Government Registries for Model 2)
+  const sql005Path = path.resolve(process.cwd(), "supabase/migrations/005_synthetic_government_registries.sql");
+  if (fs.existsSync(sql005Path)) {
+    const sql005 = fs.readFileSync(sql005Path, "utf8");
+    await db.exec(cleanSqlForPglite(sql005));
+  }
+
+  // 4e. Migration 006 (AI Model 2 Entity Resolution Storage)
+  const sql006Path = path.resolve(process.cwd(), "supabase/migrations/006_ai_entity_resolution.sql");
+  if (fs.existsSync(sql006Path)) {
+    const sql006 = fs.readFileSync(sql006Path, "utf8");
+    await db.exec(cleanSqlForPglite(sql006));
   }
 
   // 5. Seed initial employees & users for government & citizen
@@ -373,7 +405,7 @@ async function seedInitialData(db: PGlite) {
     INSERT INTO services (id, code, name, description, provider_name, provider_level, version, is_active)
     VALUES (
       'a0000000-0000-0000-0000-000000000001',
-      'SCHOLARSHIP_01',
+      'POST_MATRIC_SCHOLARSHIP',
       'Post-Matric Scholarship Scheme (NSP)',
       'Centrally sponsored scholarship covering college tuition and study maintenance for higher education.',
       'Department of Higher Education',
@@ -381,7 +413,10 @@ async function seedInitialData(db: PGlite) {
       1,
       true
     )
-    ON CONFLICT (code) DO NOTHING;
+    ON CONFLICT (id) DO UPDATE SET
+      code = EXCLUDED.code,
+      name = EXCLUDED.name,
+      description = EXCLUDED.description;
   `);
 
   // Seed Test Citizen: test.citizen@formly.local
@@ -472,6 +507,134 @@ async function seedInitialData(db: PGlite) {
       ('d0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', 'CASTE_CERTIFICATE', '/vault/caste.pdf', 'OBC_Community_Certificate.pdf', 'application/pdf', '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6', 'VERIFIED')
     ON CONFLICT (id) DO NOTHING;
   `);
+
+  // Auto-seed synthetic government registries for Phase 4 if data file exists and master citizens is empty
+  const synthPath = path.resolve(process.cwd(), "data/synthetic/all_registries.json");
+  if (fs.existsSync(synthPath)) {
+    try {
+      const countRes = await db.query("SELECT COUNT(*) as count FROM synthetic_master_citizens");
+      if (parseInt((countRes.rows[0] as any)?.count || "0", 10) === 0) {
+        const synthData = JSON.parse(fs.readFileSync(synthPath, "utf8"));
+        for (const c of synthData.citizens || []) {
+          await db.query(
+            `INSERT INTO synthetic_master_citizens (
+              citizen_id, full_name, date_of_birth, gender, father_name, guardian_name,
+              mobile_number, email, address, district, state, pincode, aadhaar_reference, pan_reference
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            ON CONFLICT (citizen_id) DO NOTHING;`,
+            [
+              c.citizen_id, c.full_name, c.date_of_birth, c.gender, c.father_name, c.guardian_name,
+              c.mobile_number, c.email, c.address, c.district, c.state, c.pincode, c.aadhaar_reference, c.pan_reference
+            ]
+          );
+        }
+        for (const r of synthData.revenue || []) {
+          await db.query(
+            `INSERT INTO registry_revenue (
+              id, citizen_id, name, father_name, dob, address, district,
+              income_certificate_number, annual_income, certificate_status, issue_date
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            ON CONFLICT (id) DO NOTHING;`,
+            [
+              r.id, r.citizen_id, r.name, r.father_name, r.dob, r.address, r.district,
+              r.income_certificate_number, r.annual_income, r.certificate_status, r.issue_date
+            ]
+          );
+        }
+        for (const e of synthData.education || []) {
+          await db.query(
+            `INSERT INTO registry_education (
+              id, citizen_id, student_name, dob, college_name, course,
+              scholarship_id, scholarship_status, academic_year, income_reference
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ON CONFLICT (id) DO NOTHING;`,
+            [
+              e.id, e.citizen_id, e.student_name, e.dob, e.college_name, e.course,
+              e.scholarship_id, e.scholarship_status, e.academic_year, e.income_reference
+            ]
+          );
+        }
+        for (const a of synthData.agriculture || []) {
+          await db.query(
+            `INSERT INTO registry_agriculture (
+              id, citizen_id, farmer_name, village, district, land_reference,
+              pm_kisan_status, bank_reference, eligibility_status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ON CONFLICT (id) DO NOTHING;`,
+            [
+              a.id, a.citizen_id, a.farmer_name, a.village, a.district, a.land_reference,
+              a.pm_kisan_status, a.bank_reference, a.eligibility_status
+            ]
+          );
+        }
+        for (const h of synthData.health || []) {
+          await db.query(
+            `INSERT INTO registry_health (
+              id, citizen_id, beneficiary_name, dob, health_scheme_id,
+              ayushman_status, family_reference, eligibility_status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (id) DO NOTHING;`,
+            [
+              h.id, h.citizen_id, h.beneficiary_name, h.dob, h.health_scheme_id,
+              h.ayushman_status, h.family_reference, h.eligibility_status
+            ]
+          );
+        }
+        for (const ho of synthData.housing || []) {
+          await db.query(
+            `INSERT INTO registry_housing (
+              id, citizen_id, applicant_name, address, district,
+              household_income, housing_scheme_id, housing_status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (id) DO NOTHING;`,
+            [
+              ho.id, ho.citizen_id, ho.applicant_name, ho.address, ho.district,
+              ho.household_income, ho.housing_scheme_id, ho.housing_status
+            ]
+          );
+        }
+        for (const l of synthData.land || []) {
+          await db.query(
+            `INSERT INTO registry_land (
+              id, citizen_id, owner_name, survey_number, village,
+              district, land_area, ownership_status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (id) DO NOTHING;`,
+            [
+              l.id, l.citizen_id, l.owner_name, l.survey_number, l.village,
+              l.district, l.land_area, l.ownership_status
+            ]
+          );
+        }
+        for (const p of synthData.pan || []) {
+          await db.query(
+            `INSERT INTO registry_pan (
+              id, citizen_id, name, dob, pan_reference, pan_status, category
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (id) DO NOTHING;`,
+            [
+              p.id, p.citizen_id, p.name, p.dob, p.pan_reference, p.pan_status, p.category
+            ]
+          );
+        }
+        for (const g of synthData.ground_truth || []) {
+          await db.query(
+            `INSERT INTO synthetic_entity_ground_truth (
+              id, master_citizen_id, source_registry, source_record_id,
+              candidate_citizen_id, match_type, ground_truth_match, notes
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (id) DO NOTHING;`,
+            [
+              g.id, g.master_citizen_id, g.source_registry, g.source_record_id,
+              g.candidate_citizen_id, g.match_type, g.ground_truth_match, g.notes
+            ]
+          );
+        }
+      }
+    } catch (synthErr) {
+      console.warn("[PGlite] Warning: Auto-seeding synthetic government data failed:", synthErr);
+    }
+  }
 }
 
 export async function pgQuery<T = any>(sql: string, params: any[] = []): Promise<T[]> {

@@ -154,7 +154,23 @@ export interface AuditLogRecord {
 export interface ConnectorRequestRecord {
   id: string;
   systemName: string;
-  systemKey: 'identity' | 'document' | 'pan_core' | 'printing' | 'dispatch';
+  systemKey:
+    | 'identity'
+    | 'document'
+    | 'pan_core'
+    | 'printing'
+    | 'dispatch'
+    | 'revenue'
+    | 'education'
+    | 'bank_npci'
+    | 'land_records'
+    | 'revenue_registry'
+    | 'education_registry'
+    | 'agriculture_registry'
+    | 'health_registry'
+    | 'housing_registry'
+    | 'land_registry'
+    | 'pan_tax_registry';
   status: 'ONLINE' | 'DEGRADED' | 'OFFLINE';
   endpoint: string;
   method: 'POST' | 'GET';

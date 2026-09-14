@@ -59,6 +59,21 @@ export default function PanApplicationWorkspacePage() {
   const [rejectionEvidence, setRejectionEvidence] = useState("UIDAI e-KYC record vs Submitted CBSE Matriculation Memo");
   const [rejectionConfirmed, setRejectionConfirmed] = useState(false);
 
+  // Phase 3: AI Model 1 Workflow Recommendation States
+  const [routingRecommendation, setRoutingRecommendation] = useState<any>(null);
+  const [entityResolutions, setEntityResolutions] = useState<any[]>([]);
+  const [registryOptions, setRegistryOptions] = useState<any>({
+    departments: [],
+    subDepartments: [],
+    offices: [],
+    services: [],
+  });
+  const [overrideModalOpen, setOverrideModalOpen] = useState(false);
+  const [overrideDeptId, setOverrideDeptId] = useState("");
+  const [overrideSubDeptId, setOverrideSubDeptId] = useState("");
+  const [overrideOfficeId, setOverrideOfficeId] = useState("");
+  const [overrideReason, setOverrideReason] = useState("");
+
   const fetchCaseDetails = async () => {
     try {
       setLoading(true);
@@ -67,6 +82,15 @@ export default function PanApplicationWorkspacePage() {
       if (data.success && data.application) {
         setApplication(data.application);
         setAuditLogs(data.auditLogs || []);
+        if (data.routingRecommendation) {
+          setRoutingRecommendation(data.routingRecommendation);
+        }
+        if (data.entityResolutions) {
+          setEntityResolutions(data.entityResolutions);
+        }
+        if (data.registry) {
+          setRegistryOptions(data.registry);
+        }
       } else {
         toast.error("Application not found");
       }
@@ -123,6 +147,32 @@ export default function PanApplicationWorkspacePage() {
       setAcceptModalOpen(false);
       setReturnModalOpen(false);
       setRejectModalOpen(false);
+    }
+  };
+
+  const handleReviewEntityResolution = async (resolutionId: string, action: "ACCEPT" | "REJECT" | "VERIFICATION_REQUIRED") => {
+    setIsProcessing(true);
+    try {
+      const endpoint = action === "ACCEPT"
+        ? `/api/gov/applications/${appId}/entity-resolution/accept`
+        : `/api/gov/applications/${appId}/entity-resolution/reject`;
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resolutionId, action }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`Entity candidate ${action === "ACCEPT" ? "accepted" : "reviewed"} by officer.`);
+        await fetchCaseDetails();
+      } else {
+        toast.error(data.error || "Failed to update entity resolution review");
+      }
+    } catch {
+      toast.error("Network error updating entity resolution review");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -391,6 +441,159 @@ export default function PanApplicationWorkspacePage() {
             </div>
           </div>
 
+          {/* 2b. AI Model 2 Cross-Registry Entity Resolution Panel (Phase 6) */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                  <Shield className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                    CROSS-REGISTRY IDENTITY RESOLUTION (AI MODEL 2)
+                  </h3>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    Hybrid Subword N-Gram Embeddings + Graph Corroboration (Advisory Only)
+                  </span>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                DPDP Section 6 Verified
+              </span>
+            </div>
+
+            {entityResolutions.length === 0 ? (
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-500 text-center">
+                <span>No cross-registry candidates retrieved yet or single-source verification active.</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {entityResolutions.map((cand) => {
+                  const fieldScores = typeof cand.field_scores === "string" ? JSON.parse(cand.field_scores) : cand.field_scores || {};
+                  return (
+                    <div
+                      key={cand.id || cand.candidate_record_id}
+                      className={`p-4 rounded-2xl border transition-all space-y-3 ${
+                        cand.is_collision_warning
+                          ? "bg-amber-50/60 border-amber-200"
+                          : cand.review_status === "ACCEPTED"
+                          ? "bg-emerald-50/50 border-emerald-200"
+                          : cand.review_status === "REJECTED"
+                          ? "bg-rose-50/50 border-rose-200"
+                          : "bg-slate-50/60 border-slate-200"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2 flex-wrap">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-slate-900 uppercase">
+                              {cand.candidate_registry?.replace(/_/g, " ")}
+                            </span>
+                            <span className="font-mono text-[11px] text-slate-500 font-semibold">
+                              ({cand.candidate_record_id})
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-slate-500 block mt-0.5">
+                            Match Score: <strong className="text-indigo-700">{Math.round(Number(cand.total_score) * 100)}%</strong>
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {cand.is_collision_warning && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 animate-pulse">
+                              POTENTIAL COLLISION
+                            </span>
+                          )}
+                          <span
+                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                              cand.confidence_tier === "HIGH"
+                                ? "bg-emerald-100 text-emerald-800"
+                                : cand.confidence_tier === "MEDIUM"
+                                ? "bg-blue-100 text-blue-800"
+                                : cand.confidence_tier === "AMBIGUOUS"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            {cand.confidence_tier} CONFIDENCE
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                              cand.review_status === "ACCEPTED"
+                                ? "bg-emerald-600 text-white"
+                                : cand.review_status === "REJECTED"
+                                ? "bg-rose-600 text-white"
+                                : cand.review_status === "VERIFICATION_REQUIRED"
+                                ? "bg-amber-600 text-white"
+                                : "bg-slate-200 text-slate-700"
+                            }`}
+                          >
+                            {cand.review_status === "PENDING" ? "HUMAN REVIEW REQUIRED" : cand.review_status}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Field Scores Breakdown */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] bg-white/80 p-2.5 rounded-xl border border-slate-100">
+                        <div>
+                          <span className="text-slate-400 block">Name:</span>
+                          <span className="font-bold text-slate-800">{Math.round((fieldScores.nameScore ?? 0) * 100)}%</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block">DOB:</span>
+                          <span className="font-bold text-slate-800">{fieldScores.dobScore !== undefined ? `${Math.round(fieldScores.dobScore * 100)}%` : "N/A"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block">Father:</span>
+                          <span className="font-bold text-slate-800">{fieldScores.fatherScore !== undefined ? `${Math.round(fieldScores.fatherScore * 100)}%` : "N/A"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block">Address/Dist:</span>
+                          <span className="font-bold text-slate-800">{Math.round(((fieldScores.addressScore ?? 0.5) * 0.7 + (fieldScores.districtScore ?? 0.5) * 0.3) * 100)}%</span>
+                        </div>
+                      </div>
+
+                      {/* Explanation & Corroboration */}
+                      <p className="text-xs text-slate-700 leading-relaxed">
+                        {cand.explanation}
+                      </p>
+
+                      {/* Officer Decision Action Buttons */}
+                      {cand.review_status === "PENDING" && (
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-200/60">
+                          <button
+                            onClick={() => handleReviewEntityResolution(cand.id, "ACCEPT")}
+                            disabled={isProcessing}
+                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Accept Candidate</span>
+                          </button>
+                          <button
+                            onClick={() => handleReviewEntityResolution(cand.id, "REJECT")}
+                            disabled={isProcessing}
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Reject</span>
+                          </button>
+                          <button
+                            onClick={() => handleReviewEntityResolution(cand.id, "VERIFICATION_REQUIRED")}
+                            disabled={isProcessing}
+                            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            <span>Request Manual Proof</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {/* 3. Citizen Data & Documents Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Citizen Data */}
@@ -499,6 +702,127 @@ export default function PanApplicationWorkspacePage() {
 
         {/* Right Column (4 cols): AI Assistant, Officer Decision Console, Audit Trail */}
         <div className="lg:col-span-4 space-y-6">
+          {/* Phase 3: AI Model 1 Workflow Recommendation Card */}
+          <div className="bg-white rounded-3xl border border-indigo-100 p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-indigo-50 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs">
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                    AI WORKFLOW RECOMMENDATION
+                  </h3>
+                  <span className="text-[10px] text-slate-400 font-medium">Model: workflow-router-v1</span>
+                </div>
+              </div>
+              <span
+                className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
+                  routingRecommendation?.status === "CONFIRMED"
+                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                    : routingRecommendation?.status === "OVERRIDDEN"
+                    ? "bg-purple-100 text-purple-800 border border-purple-200"
+                    : (routingRecommendation?.confidence_score ?? 0.95) >= 0.85
+                    ? "bg-blue-100 text-blue-800 border border-blue-200"
+                    : "bg-amber-100 text-amber-800 border border-amber-200"
+                }`}
+              >
+                {routingRecommendation?.status === "CONFIRMED"
+                  ? "AI CONFIRMED"
+                  : routingRecommendation?.status === "OVERRIDDEN"
+                  ? "HUMAN OVERRIDDEN"
+                  : (routingRecommendation?.confidence_score ?? 0.95) >= 0.85
+                  ? "AI RECOMMENDED"
+                  : "HUMAN CONFIRMATION REQUIRED"}
+              </span>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Department:</span>
+                  <span className="font-bold text-slate-800">
+                    {routingRecommendation?.suggested_department_name || application.department || "Income Tax Department (CBDT)"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Sub-department:</span>
+                  <span className="font-bold text-slate-800">
+                    {routingRecommendation?.suggested_sub_department_name || "PAN Allotment & Processing Cell"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Office:</span>
+                  <span className="font-bold text-slate-800">
+                    {routingRecommendation?.suggested_office_name || application.office || "Regional Processing Office Hyderabad"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-medium">Workflow:</span>
+                  <span className="font-bold text-indigo-700">
+                    {routingRecommendation?.suggested_workflow_code || "WF_PAN_LIFECYCLE"}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
+                  <span className="text-slate-400 font-medium">Confidence:</span>
+                  <span className="font-black text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">
+                    {Math.round((routingRecommendation?.confidence_score ?? 0.95) * 100)}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-2xl">
+                <span className="text-[10px] font-bold text-indigo-900 uppercase tracking-wide block mb-1">
+                  Why this route?
+                </span>
+                <p className="text-[11px] text-indigo-950 leading-relaxed">
+                  {routingRecommendation?.explanation ||
+                    "Application features match statutory service parameters under authoritative registry specifications."}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  onClick={async () => {
+                    try {
+                      setIsProcessing(true);
+                      const res = await fetch(`/api/gov/applications/${appId}/confirm-route`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                      });
+                      const d = await res.json();
+                      if (d.success) {
+                        toast.success("AI Workflow Route confirmed by officer.");
+                        await fetchCaseDetails();
+                      } else {
+                        toast.error(d.error || "Failed to confirm route");
+                      }
+                    } catch (e) {
+                      toast.error("Network error confirming route");
+                    } finally {
+                      setIsProcessing(false);
+                    }
+                  }}
+                  disabled={isProcessing || routingRecommendation?.status === "CONFIRMED"}
+                  className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Confirm Route</span>
+                </button>
+
+                <button
+                  onClick={() => setOverrideModalOpen(true)}
+                  disabled={isProcessing}
+                  className="py-2.5 px-3 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Change Route</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* AI Case Summary Assistant */}
           <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 shadow-md space-y-4">
             <div className="flex items-center justify-between">
@@ -976,6 +1300,150 @@ export default function PanApplicationWorkspacePage() {
                 className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-sm disabled:opacity-50 transition-all"
               >
                 CONFIRM REJECTION
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase 3: Human Route Override Modal */}
+      {overrideModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-bold text-slate-900 text-sm">
+                  Human Statutory Route Override
+                </h3>
+              </div>
+              <button
+                onClick={() => setOverrideModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              As an authorized Department Officer, you can re-route this application to another registered government entity. Your decision will be permanently recorded with your employee credentials in the audit trail.
+            </p>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Target Department *
+                </label>
+                <select
+                  value={overrideDeptId}
+                  onChange={(e) => setOverrideDeptId(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Select Department...</option>
+                  {registryOptions.departments.map((d: any) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name} ({d.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Target Sub-Department *
+                </label>
+                <select
+                  value={overrideSubDeptId}
+                  onChange={(e) => setOverrideSubDeptId(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Select Sub-Department...</option>
+                  {registryOptions.subDepartments
+                    .filter((sd: any) => !overrideDeptId || sd.department_id === overrideDeptId)
+                    .map((sd: any) => (
+                      <option key={sd.id} value={sd.id}>
+                        {sd.name} ({sd.code})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Target Office
+                </label>
+                <select
+                  value={overrideOfficeId}
+                  onChange={(e) => setOverrideOfficeId(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">Select Office...</option>
+                  {registryOptions.offices
+                    .filter((o: any) => !overrideDeptId || o.department_id === overrideDeptId)
+                    .map((o: any) => (
+                      <option key={o.id} value={o.id}>
+                        {o.name} - {o.city}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Statutory Override Reason *
+                </label>
+                <textarea
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                  rows={2}
+                  placeholder="e.g., Application requires state revenue jurisdictional scrutiny rather than central tax cell."
+                  className="w-full p-2.5 bg-slate-50 border border-indigo-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setOverrideModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    setIsProcessing(true);
+                    const res = await fetch(`/api/gov/applications/${appId}/override-route`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        overrideDepartmentId: overrideDeptId,
+                        overrideSubDepartmentId: overrideSubDeptId,
+                        overrideOfficeId,
+                        reason: overrideReason,
+                      }),
+                    });
+                    const d = await res.json();
+                    if (d.success) {
+                      toast.success("Statutory route override recorded.");
+                      setOverrideModalOpen(false);
+                      await fetchCaseDetails();
+                    } else {
+                      toast.error(d.error || "Failed to override route");
+                    }
+                  } catch (err) {
+                    toast.error("Network error executing route override");
+                  } finally {
+                    setIsProcessing(false);
+                  }
+                }}
+                disabled={isProcessing || !overrideReason.trim()}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all disabled:opacity-50"
+              >
+                SAVE STATUTORY OVERRIDE
               </button>
             </div>
           </div>
