@@ -1,0 +1,43 @@
+{
+  "version": "v2.1.0",
+  "model_type": "Calibrated Supervised Entity Resolution (Remediated Graph)",
+  "feature_names": [
+    "name_sim",
+    "initials_compat",
+    "dob_sim",
+    "father_sim",
+    "address_sim",
+    "district_sim",
+    "pincode_sim",
+    "ngram_cosine",
+    "agreeing_count",
+    "conflicting_count",
+    "graph_corroboration"
+  ],
+  "weights": [
+    0.29195161977821277,
+    0.6472110996339557,
+    4.347472635405569,
+    -2.2074892192535196,
+    -3.8292366739120247,
+    3.810091225843841,
+    2.9513471543603624,
+    3.164566093587098,
+    3.877921784759713,
+    -3.807299854204097,
+    0.6467255272832527
+  ],
+  "bias": -4.368040642032752,
+  "temperature": 0.5,
+  "thresholds": {
+    "HIGH_CONFIDENCE": 0.85,
+    "MEDIUM_CONFIDENCE": 0.6,
+    "LOW_CONFIDENCE": 0.35,
+    "HARD_CONFLICT_CAP": 0.25
+  },
+  "metrics": {
+    "test_ece": 0.01766482450380988,
+    "test_brier": 0.01558891458491269,
+    "test_log_loss": 0.06435316303552352
+  }
+}

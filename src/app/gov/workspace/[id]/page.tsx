@@ -24,6 +24,8 @@ import {
   Copy,
   CheckCircle,
   Play,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { PanApplicationRecord, AuditLogRecord } from "@/types/government";
 import { toast } from "sonner";
@@ -39,6 +41,7 @@ export default function PanApplicationWorkspacePage() {
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isComparisonOpen, setIsComparisonOpen] = useState(true);
 
   // Dialog States
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
@@ -467,7 +470,218 @@ export default function PanApplicationWorkspacePage() {
                 <span>No cross-registry candidates retrieved yet or single-source verification active.</span>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
+                {/* 2b.1 Side-by-Side Comparison Drawer (Phase 7B - Multiple candidates with score >= 0.70) */}
+                {(() => {
+                  const highScoringCandidates = entityResolutions.filter((c) => Number(c.total_score) >= 0.70);
+                  if (highScoringCandidates.length < 2) return null;
+
+                  return (
+                    <div className="bg-gradient-to-br from-indigo-50/70 via-slate-50 to-white border-2 border-indigo-200/80 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
+                            <Sparkles className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-xs font-black uppercase tracking-wider text-indigo-950">
+                                Side-by-Side Candidate Comparison
+                              </h4>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white shadow-2xs">
+                                {highScoringCandidates.length} Candidates ≥ 70%
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-600 mt-0.5">
+                              Multiple high-scoring records detected across authoritative registries. Compare discrepancies before final officer decision.
+                            </p>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsComparisonOpen((prev) => !prev)}
+                          className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all self-start sm:self-auto cursor-pointer"
+                        >
+                          <span>{isComparisonOpen ? "Collapse Comparison" : "Expand Comparison"}</span>
+                          {isComparisonOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+                      </div>
+
+                      {isComparisonOpen && (
+                        <div className="mt-4 pt-1">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {highScoringCandidates.map((cand) => {
+                              const fieldScores = typeof cand.field_scores === "string" ? JSON.parse(cand.field_scores) : cand.field_scores || {};
+                              const matchedFields = Array.isArray(cand.matched_fields) ? cand.matched_fields : (cand.matched_fields ? String(cand.matched_fields).split(",") : ["name"]);
+                              const conflictingFields = Array.isArray(cand.conflicting_fields) ? cand.conflicting_fields : (cand.conflicting_fields ? String(cand.conflicting_fields).split(",") : []);
+
+                              return (
+                                <div
+                                  key={`compare-${cand.id || cand.candidate_record_id}`}
+                                  className={`bg-white rounded-2xl border-2 p-4 flex flex-col justify-between shadow-xs transition-all ${
+                                    cand.is_collision_warning
+                                      ? "border-amber-400 bg-amber-50/20"
+                                      : cand.review_status === "ACCEPTED"
+                                      ? "border-emerald-500 bg-emerald-50/20"
+                                      : cand.review_status === "REJECTED"
+                                      ? "border-rose-400 bg-rose-50/20"
+                                      : "border-indigo-200/90"
+                                  }`}
+                                >
+                                  <div className="space-y-3">
+                                    {/* Candidate Header */}
+                                    <div className="border-b border-slate-100 pb-2.5">
+                                      <div className="flex items-center justify-between gap-1 flex-wrap">
+                                        <span className="font-extrabold text-xs text-indigo-900 uppercase tracking-tight">
+                                          {cand.candidate_registry?.replace(/_/g, " ")}
+                                        </span>
+                                        <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                          {cand.candidate_record_id}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between gap-2 mt-2">
+                                        <div className="flex items-baseline gap-1">
+                                          <span className="text-lg font-black text-indigo-700">
+                                            {Math.round(Number(cand.total_score) * 100)}%
+                                          </span>
+                                          <span className="text-[10px] font-bold text-slate-500">Match</span>
+                                        </div>
+                                        <span
+                                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                            cand.confidence_tier === "HIGH"
+                                              ? "bg-emerald-100 text-emerald-800"
+                                              : cand.confidence_tier === "MEDIUM"
+                                              ? "bg-blue-100 text-blue-800"
+                                              : "bg-amber-100 text-amber-800"
+                                          }`}
+                                        >
+                                          {cand.confidence_tier}
+                                        </span>
+                                      </div>
+
+                                      {cand.is_collision_warning && (
+                                        <div className="mt-2 text-[10px] font-bold text-rose-800 bg-rose-100/90 border border-rose-200 px-2 py-1 rounded-lg flex items-center gap-1.5">
+                                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                          <span>Homonym Collision Warning: Conflicting Parents/DOB</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Field Comparisons Matrix */}
+                                    <div className="space-y-1.5 text-[11px]">
+                                      <div className="flex items-center justify-between py-1 border-b border-slate-50">
+                                        <span className="text-slate-500 font-semibold">Name Match:</span>
+                                        <span className={`font-bold ${((fieldScores.nameScore ?? 0) >= 0.85) ? "text-emerald-700" : "text-amber-700"}`}>
+                                          {Math.round((fieldScores.nameScore ?? 0) * 100)}%
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between py-1 border-b border-slate-50">
+                                        <span className="text-slate-500 font-semibold">Date of Birth:</span>
+                                        <span className={`font-bold ${(fieldScores.dobScore === undefined || fieldScores.dobScore >= 0.9) ? "text-emerald-700" : "text-rose-700"}`}>
+                                          {fieldScores.dobScore !== undefined ? `${Math.round(fieldScores.dobScore * 100)}%` : "Not Indexed"}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between py-1 border-b border-slate-50">
+                                        <span className="text-slate-500 font-semibold">Father / Guardian:</span>
+                                        <span className={`font-bold ${(fieldScores.fatherScore === undefined || fieldScores.fatherScore >= 0.8) ? "text-emerald-700" : "text-rose-700 font-black"}`}>
+                                          {fieldScores.fatherScore !== undefined ? `${Math.round(fieldScores.fatherScore * 100)}%` : "Not Indexed"}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between py-1 border-b border-slate-50">
+                                        <span className="text-slate-500 font-semibold">Address / Dist:</span>
+                                        <span className="font-bold text-slate-800">
+                                          {Math.round(((fieldScores.addressScore ?? 0.5) * 0.7 + (fieldScores.districtScore ?? 0.5) * 0.3) * 100)}%
+                                        </span>
+                                      </div>
+                                    </div>
+
+                                    {/* Matched vs Conflicting Fields */}
+                                    <div className="space-y-2 pt-1">
+                                      <div>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block mb-1">
+                                          Matched Fields:
+                                        </span>
+                                        <div className="flex flex-wrap gap-1">
+                                          {matchedFields.length > 0 ? (
+                                            matchedFields.map((f: string) => (
+                                              <span key={f} className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded font-medium">
+                                                ✓ {f.replace(/_/g, " ")}
+                                              </span>
+                                            ))
+                                          ) : (
+                                            <span className="text-[10px] text-slate-400">None</span>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {conflictingFields.length > 0 && (
+                                        <div>
+                                          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 block mb-1">
+                                            Conflicting Fields:
+                                          </span>
+                                          <div className="flex flex-wrap gap-1">
+                                            {conflictingFields.map((f: string) => (
+                                              <span key={f} className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-1.5 py-0.5 rounded font-medium">
+                                                ✕ {f.replace(/_/g, " ")}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Action Buttons */}
+                                  <div className="pt-3 mt-3 border-t border-slate-100">
+                                    {cand.review_status === "PENDING" ? (
+                                      <div className="flex flex-col gap-1.5">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleReviewEntityResolution(cand.id, "ACCEPT")}
+                                          disabled={isProcessing}
+                                          className="w-full py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                                        >
+                                          <Check className="w-3.5 h-3.5" />
+                                          <span>Accept Candidate</span>
+                                        </button>
+                                        <div className="grid grid-cols-2 gap-1.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleReviewEntityResolution(cand.id, "REJECT")}
+                                            disabled={isProcessing}
+                                            className="py-1.5 px-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 disabled:opacity-50 cursor-pointer"
+                                          >
+                                            <X className="w-3.5 h-3.5" />
+                                            <span>Reject</span>
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleReviewEntityResolution(cand.id, "VERIFICATION_REQUIRED")}
+                                            disabled={isProcessing}
+                                            className="py-1.5 px-1.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-[11px] rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 disabled:opacity-50 cursor-pointer"
+                                          >
+                                            <span>Proof Req</span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-1 bg-slate-100 rounded-xl text-xs font-bold text-slate-700">
+                                        Status: {cand.review_status}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Individual Candidate List Cards */}
                 {entityResolutions.map((cand) => {
                   const fieldScores = typeof cand.field_scores === "string" ? JSON.parse(cand.field_scores) : cand.field_scores || {};
                   return (

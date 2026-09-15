@@ -25,9 +25,11 @@ function assert(condition, message) {
 }
 
 async function runPhase3AiRouterTests() {
+  process.env.WORKFLOW_ROUTER_MODEL = "v1";
   console.log("\n========================================================");
-  console.log("   SEVA SAARTHI PHASE 3 - AI MODEL 1 WORKFLOW ROUTER TESTS");
+  console.log("   SEVA SAARTHI PHASE 3 - AI MODEL 1 WORKFLOW ROUTER TESTS (V1 BASELINE)");
   console.log("========================================================\n");
+
 
   // 1. High Confidence Routing for Scholarship
   console.log("--- 1. Classification & Routing for Post-Matric Scholarship ---");

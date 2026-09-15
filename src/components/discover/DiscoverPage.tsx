@@ -40,6 +40,7 @@ export function DiscoverPage() {
   const initialQuery = searchParams.get("q") || "";
 
   const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [quickFilter, setQuickFilter] = useState<"ALL" | "CENTRAL" | "STATE_SCHOLARSHIPS" | "DBT_DIRECT">("ALL");
   const [search, setSearch] = useState(initialQuery);
   const [onlyEligible, setOnlyEligible] = useState(false);
   const [selectedSchemeForDetails, setSelectedSchemeForDetails] = useState<SchemeMatchResult | null>(null);
@@ -78,6 +79,32 @@ export function DiscoverPage() {
     return schemeMatches.filter((item) => {
       if (onlyEligible && !item.isEligible) return false;
       if (selectedCategory !== "ALL" && item.scheme.category !== selectedCategory) return false;
+
+      // Quick Filters logic
+      if (quickFilter === "CENTRAL") {
+        const isCentral =
+          item.scheme.ministry.toLowerCase().includes("ministry") ||
+          item.scheme.description.toLowerCase().includes("centrally") ||
+          item.scheme.title.toLowerCase().includes("central") ||
+          item.scheme.title.toLowerCase().includes("pm") ||
+          item.scheme.title.toLowerCase().includes("pradhan") ||
+          item.scheme.portalDomain.includes("gov.in");
+        if (!isCentral) return false;
+      } else if (quickFilter === "STATE_SCHOLARSHIPS") {
+        const isScholarship =
+          item.scheme.category === "Higher Education & Scholarships" ||
+          item.scheme.title.toLowerCase().includes("scholarship") ||
+          item.scheme.description.toLowerCase().includes("scholarship");
+        if (!isScholarship) return false;
+      } else if (quickFilter === "DBT_DIRECT") {
+        const isDbt =
+          item.scheme.description.toLowerCase().includes("dbt") ||
+          item.scheme.benefitAmount.toLowerCase().includes("₹") ||
+          item.scheme.description.toLowerCase().includes("reimbursement") ||
+          item.scheme.processSteps?.some((s) => s.description.toLowerCase().includes("dbt") || s.description.toLowerCase().includes("bank"));
+        if (!isDbt) return false;
+      }
+
       if (search.trim()) {
         const q = search.toLowerCase();
         return (
@@ -89,7 +116,7 @@ export function DiscoverPage() {
       }
       return true;
     });
-  }, [schemeMatches, selectedCategory, search, onlyEligible]);
+  }, [schemeMatches, selectedCategory, quickFilter, search, onlyEligible]);
 
   const eligibleCount = schemeMatches.filter((s) => s.isEligible).length;
 
@@ -201,6 +228,70 @@ export function DiscoverPage() {
         </div>
       </div>
 
+      {/* Quick Filter Chips (Phase 7B) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white rounded-2xl border border-slate-100 p-3 sm:px-4 shadow-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-700 whitespace-nowrap">Quick Filters:</span>
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Quick filter schemes">
+            <button
+              type="button"
+              onClick={() => setQuickFilter("ALL")}
+              aria-pressed={quickFilter === "ALL"}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer",
+                quickFilter === "ALL"
+                  ? "bg-slate-900 text-white shadow-2xs"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+              )}
+            >
+              All Types
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickFilter(quickFilter === "CENTRAL" ? "ALL" : "CENTRAL")}
+              aria-pressed={quickFilter === "CENTRAL"}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
+                quickFilter === "CENTRAL"
+                  ? "bg-indigo-600 text-white shadow-2xs"
+                  : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100"
+              )}
+            >
+              <span>🏛️ Central Schemes</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickFilter(quickFilter === "STATE_SCHOLARSHIPS" ? "ALL" : "STATE_SCHOLARSHIPS")}
+              aria-pressed={quickFilter === "STATE_SCHOLARSHIPS"}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
+                quickFilter === "STATE_SCHOLARSHIPS"
+                  ? "bg-indigo-600 text-white shadow-2xs"
+                  : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100"
+              )}
+            >
+              <span>🎓 State Scholarships</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickFilter(quickFilter === "DBT_DIRECT" ? "ALL" : "DBT_DIRECT")}
+              aria-pressed={quickFilter === "DBT_DIRECT"}
+              className={cn(
+                "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
+                quickFilter === "DBT_DIRECT"
+                  ? "bg-indigo-600 text-white shadow-2xs"
+                  : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100"
+              )}
+            >
+              <span>⚡ DBT Direct</span>
+            </button>
+          </div>
+        </div>
+        <div className="text-[11px] text-slate-500 font-medium">
+          Showing <strong>{filteredSchemes.length}</strong> of {schemeMatches.length} schemes
+        </div>
+      </div>
+
       {/* Category Pills & Search Bar */}
       <div className="bg-white rounded-2xl border border-slate-100 p-3 sm:p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
@@ -209,7 +300,7 @@ export function DiscoverPage() {
               key={cat}
               onClick={() => setSelectedCategory(cat)}
               className={cn(
-                "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all",
+                "px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer",
                 selectedCategory === cat
                   ? "bg-indigo-600 text-white shadow-2xs"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"

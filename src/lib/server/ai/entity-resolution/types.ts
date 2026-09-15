@@ -55,6 +55,9 @@ export interface CandidateMatchResult {
   isCollisionWarning: boolean;
   collisionReason?: string;
   corroborationReason?: string;
+  supportingRegistries?: RegistryKey[];
+  supportingRecordIds?: string[];
+  identityRecordCount?: number;
   explanation: string;
   rawRecord: Record<string, any>;
 }

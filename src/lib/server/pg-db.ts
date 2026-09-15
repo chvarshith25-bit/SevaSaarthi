@@ -103,9 +103,54 @@ async function initSchema(db: PGlite) {
       // Test read on users table to verify relation integrity
       await db.query(`SELECT id FROM users LIMIT 1`);
       await db.query(`UPDATE employees SET is_active = true WHERE employee_code = 'OFF-PAN-7042'`).catch(() => {});
-      await seedInitialData(db);
+      // Ensure router_shadow_log and model2_shadow_log tables exist (Phase 7D.2 / Phase 7E.2)
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS router_shadow_log (
+          id                uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          request_id        text NOT NULL,
+          user_id           text,
+          v1_service_id     uuid,
+          v1_confidence    numeric(5,3) NOT NULL,
+          v2_service_id     uuid,
+          v2_probability   numeric(5,3) NOT NULL,
+          v2_tier          text NOT NULL CHECK (v2_tier IN ('AUTOMATIC_RECOMMENDATION','HUMAN_CONFIRMATION_REQUIRED','MANUAL_REVIEW')),
+          ood_flag          boolean NOT NULL,
+          agreement         boolean NOT NULL,
+          recommendation_diff text,
+          v1_version        text NOT NULL,
+          v2_version        text NOT NULL,
+          created_at        timestamptz NOT NULL DEFAULT now()
+        );
+        CREATE INDEX IF NOT EXISTS idx_router_shadow_req ON router_shadow_log(request_id);
+        CREATE INDEX IF NOT EXISTS idx_router_shadow_created ON router_shadow_log(created_at);
+
+        CREATE TABLE IF NOT EXISTS model2_shadow_log (
+          id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+          request_id              text NOT NULL,
+          created_at              timestamptz NOT NULL DEFAULT now(),
+          v1_model_version        text NOT NULL,
+          v2_model_version        text NOT NULL,
+          v1_top_candidate_id     text,
+          v1_confidence           numeric(5,4),
+          v1_tier                 text,
+          v2_top_candidate_id     text,
+          v2_probability          numeric(5,4),
+          v2_tier                 text,
+          is_ambiguous            boolean NOT NULL DEFAULT false,
+          collision_warning       boolean NOT NULL DEFAULT false,
+          agreement               boolean NOT NULL,
+          disagreement_category   text,
+          fallback_used           boolean NOT NULL DEFAULT false,
+          v1_latency_ms           numeric(8,2) NOT NULL DEFAULT 0.0,
+          v2_latency_ms           numeric(8,2) NOT NULL DEFAULT 0.0
+        );
+        CREATE INDEX IF NOT EXISTS idx_model2_shadow_req ON model2_shadow_log(request_id);
+        CREATE INDEX IF NOT EXISTS idx_model2_shadow_agreement ON model2_shadow_log(agreement);
+        CREATE INDEX IF NOT EXISTS idx_model2_shadow_created ON model2_shadow_log(created_at);
+      `);
       return; // Already initialized and healthy
     }
+
   } catch (err) {
     console.warn("[PGlite] Existing tables need migration/rebuilding:", err);
   }
@@ -191,6 +236,20 @@ async function initSchema(db: PGlite) {
 
   // 5. Seed initial employees & users for government & citizen
   await seedInitialData(db);
+
+  // Apply router_shadow_log migration (Phase 7D2)
+  const shadowLogPath = path.resolve(process.cwd(), "supabase/migrations/20240915_create_router_shadow_log.sql");
+  if (fs.existsSync(shadowLogPath)) {
+    const shadowSql = fs.readFileSync(shadowLogPath, "utf8");
+    await db.exec(cleanSqlForPglite(shadowSql));
+  }
+
+  // Apply model2_shadow_log migration (Phase 7E.2)
+  const model2ShadowLogPath = path.resolve(process.cwd(), "supabase/migrations/20240915_create_model2_shadow_log.sql");
+  if (fs.existsSync(model2ShadowLogPath)) {
+    const model2ShadowSql = fs.readFileSync(model2ShadowLogPath, "utf8");
+    await db.exec(cleanSqlForPglite(model2ShadowSql));
+  }
 }
 
 function hashPassword(password: string, salt?: string): { hash: string; salt: string } {

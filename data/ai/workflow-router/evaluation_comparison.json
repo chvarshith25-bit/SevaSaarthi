@@ -1,0 +1,210 @@
+{
+  "v1_metrics": {
+    "accuracy": 0.30727762803234504,
+    "macro_precision": 0.9628571428571429,
+    "macro_recall": 0.307277628032345,
+    "macro_f1": 0.4201093037336023,
+    "ece": 0.30789218328840967,
+    "per_class": {
+      "AYUSHMAN_BHARAT": {
+        "precision": 1.0,
+        "recall": 0.1509433962264151,
+        "f1": 0.26229508196721313,
+        "support": 53
+      },
+      "INCOME_CERTIFICATE": {
+        "precision": 0.74,
+        "recall": 0.6981132075471698,
+        "f1": 0.7184466019417476,
+        "support": 53
+      },
+      "INSTANT_E_PAN": {
+        "precision": 1.0,
+        "recall": 0.20754716981132076,
+        "f1": 0.34375000000000006,
+        "support": 53
+      },
+      "LAND_RECORD": {
+        "precision": 1.0,
+        "recall": 0.1320754716981132,
+        "f1": 0.23333333333333334,
+        "support": 53
+      },
+      "PM_AWAS": {
+        "precision": 1.0,
+        "recall": 0.4339622641509434,
+        "f1": 0.6052631578947368,
+        "support": 53
+      },
+      "PM_KISAN": {
+        "precision": 1.0,
+        "recall": 0.4339622641509434,
+        "f1": 0.6052631578947368,
+        "support": 53
+      },
+      "POST_MATRIC_SCHOLARSHIP": {
+        "precision": 1.0,
+        "recall": 0.09433962264150944,
+        "f1": 0.1724137931034483,
+        "support": 53
+      }
+    },
+    "reliability_bins": [
+      {
+        "bin": "0.1-0.2",
+        "count": 13,
+        "avg_conf": 0.1588,
+        "accuracy": 0.0
+      },
+      {
+        "bin": "0.2-0.3",
+        "count": 42,
+        "avg_conf": 0.2482,
+        "accuracy": 0.0
+      },
+      {
+        "bin": "0.3-0.4",
+        "count": 59,
+        "avg_conf": 0.3536,
+        "accuracy": 0.0
+      },
+      {
+        "bin": "0.4-0.5",
+        "count": 71,
+        "avg_conf": 0.4519,
+        "accuracy": 0.0
+      },
+      {
+        "bin": "0.5-0.6",
+        "count": 59,
+        "avg_conf": 0.5481,
+        "accuracy": 0.0
+      },
+      {
+        "bin": "0.6-0.7",
+        "count": 51,
+        "avg_conf": 0.6455,
+        "accuracy": 0.8627
+      },
+      {
+        "bin": "0.7-0.8",
+        "count": 30,
+        "avg_conf": 0.7516,
+        "accuracy": 0.8
+      },
+      {
+        "bin": "0.8-0.9",
+        "count": 20,
+        "avg_conf": 0.8487,
+        "accuracy": 1.0
+      },
+      {
+        "bin": "0.9-1.0",
+        "count": 26,
+        "avg_conf": 0.9655,
+        "accuracy": 1.0
+      }
+    ]
+  },
+  "v2_metrics": {
+    "accuracy": 0.9730458221024259,
+    "macro_precision": 0.9773242630385487,
+    "macro_recall": 0.9730458221024259,
+    "macro_f1": 0.9739746296396543,
+    "ece": 0.020614285714285467,
+    "per_class": {
+      "AYUSHMAN_BHARAT": {
+        "precision": 1.0,
+        "recall": 0.9622641509433962,
+        "f1": 0.9807692307692307,
+        "support": 53
+      },
+      "INCOME_CERTIFICATE": {
+        "precision": 0.8412698412698413,
+        "recall": 1.0,
+        "f1": 0.9137931034482758,
+        "support": 53
+      },
+      "INSTANT_E_PAN": {
+        "precision": 1.0,
+        "recall": 0.9811320754716981,
+        "f1": 0.9904761904761905,
+        "support": 53
+      },
+      "LAND_RECORD": {
+        "precision": 1.0,
+        "recall": 0.9811320754716981,
+        "f1": 0.9904761904761905,
+        "support": 53
+      },
+      "PM_AWAS": {
+        "precision": 1.0,
+        "recall": 0.9622641509433962,
+        "f1": 0.9807692307692307,
+        "support": 53
+      },
+      "PM_KISAN": {
+        "precision": 1.0,
+        "recall": 0.9622641509433962,
+        "f1": 0.9807692307692307,
+        "support": 53
+      },
+      "POST_MATRIC_SCHOLARSHIP": {
+        "precision": 1.0,
+        "recall": 0.9622641509433962,
+        "f1": 0.9807692307692307,
+        "support": 53
+      }
+    },
+    "reliability_bins": [
+      {
+        "bin": "0.5-0.6",
+        "count": 2,
+        "avg_conf": 0.5336,
+        "accuracy": 0.5
+      },
+      {
+        "bin": "0.7-0.8",
+        "count": 4,
+        "avg_conf": 0.7301,
+        "accuracy": 0.5
+      },
+      {
+        "bin": "0.8-0.9",
+        "count": 2,
+        "avg_conf": 0.8236,
+        "accuracy": 1.0
+      },
+      {
+        "bin": "0.9-1.0",
+        "count": 363,
+        "avg_conf": 0.9981,
+        "accuracy": 0.9807
+      }
+    ]
+  },
+  "v1_ood": {
+    "total_ood": 400,
+    "rejected": 355,
+    "false_routed": 45,
+    "rejection_rate": 0.8875,
+    "false_acceptance_rate": 0.1125,
+    "routes_by_class": {
+      "INCOME_CERTIFICATE": 41,
+      "LAND_RECORD": 1,
+      "AYUSHMAN_BHARAT": 1,
+      "INSTANT_E_PAN": 2
+    }
+  },
+  "v2_ood": {
+    "total_ood": 400,
+    "rejected": 373,
+    "false_routed": 27,
+    "rejection_rate": 0.9325,
+    "false_acceptance_rate": 0.0675,
+    "routes_by_class": {
+      "INCOME_CERTIFICATE": 25,
+      "PM_KISAN": 2
+    }
+  }
+}

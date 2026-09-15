@@ -1,0 +1,87 @@
+{
+  "timestamp": "2026-09-14T17:51:48.583Z",
+  "steps": {
+    "citizen_login": "PASS",
+    "scholarship_submission": {
+      "status": "PASS",
+      "applicationId": "PAN-2026-0005",
+      "service": "Instant e-PAN & Physical Card Issuance"
+    },
+    "ai_model_1": {
+      "status": "PASS",
+      "service": "Instant e-PAN & Physical Card Issuance (Form 49A)",
+      "department": "Income Tax Department (CBDT)",
+      "workflow": "eb000000-0000-0000-0000-000000000001",
+      "confidence": "0.879",
+      "tier": "AI_RECOMMENDED"
+    },
+    "consent_enforcement": {
+      "status": "PASS",
+      "consentId": "354cce74-66aa-455f-8622-d2e9da48308c",
+      "consentStatus": "GRANTED",
+      "denyBlocked": true
+    },
+    "ai_model_2": {
+      "status": "PASS",
+      "candidatesCount": 62,
+      "topCandidate": "PAN-70112",
+      "topRegistry": "pan_tax_registry",
+      "score": "0.722",
+      "tier": "MEDIUM",
+      "fieldScores": {
+        "dobScore": 0.5,
+        "nameScore": 0.869023569023569,
+        "fatherScore": 0.5,
+        "addressScore": 0.5,
+        "pincodeScore": 0.5,
+        "districtScore": 0.5,
+        "embeddingScore": 0.7589
+      }
+    },
+    "semantic_mapper": {
+      "status": "PASS",
+      "checks": []
+    },
+    "officer_workspace_ui": "PASS",
+    "officer_action": {
+      "status": "PASS",
+      "action": "ACCEPT",
+      "resolutionId": "cdb50c21-c21e-4ef6-8f05-872d60ee2768",
+      "reviewedStatus": "ACCEPTED"
+    },
+    "collision_test": {
+      "status": "PASS",
+      "collisionsDetected": 1,
+      "demotedToAmbiguous": true
+    },
+    "audit_trail": {
+      "status": "PASS",
+      "eventsCount": 3,
+      "allHashed": true
+    }
+  },
+  "uxFindings": [
+    {
+      "page": "Citizen Dashboard",
+      "severity": "Minor",
+      "observation": "Dashboard provides quick action cards for scholarship and PAN, but search filters could offer sub-category chips."
+    },
+    {
+      "page": "Officer Workspace",
+      "severity": "Minor",
+      "observation": "Field score breakdown is clear and color-coded. Candidate cards display all 6 identity metrics with intuitive confidence badges."
+    },
+    {
+      "page": "Platform Separation",
+      "severity": "Info",
+      "observation": "Port 3000 (Citizen) and Port 3001 (Government) maintain strict boundary separation with zero cross-linking."
+    }
+  ],
+  "edgeCases": {
+    "unconsentedBlocked": "PASS",
+    "oodFallbackTier": "MANUAL_REVIEW",
+    "oodFallbackMode": "MANUAL_REVIEW_REQUIRED",
+    "emptyQueryCandidateCount": 0
+  },
+  "overallStatus": "PASS"
+}

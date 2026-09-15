@@ -1,0 +1,478 @@
+{
+  "totalRequests": 1025,
+  "crossRegCasesCount": 311,
+  "genuineSamePersonCount": 311,
+  "crossRegTrueTargetMatches": 277,
+  "v3DeferralsCount": 208,
+  "correctDeferrals": 208,
+  "unnecessaryDeferrals": 0,
+  "incorrectDeferrals": 0,
+  "trueCollisions": 193,
+  "sparseCases": 3,
+  "genuineAmbiguities": 0,
+  "correctMatchHiddenBelowThreshold": 0,
+  "rankingProblems": 0,
+  "bothPlausibleCount": 51,
+  "bpSameMasterCount": 0,
+  "bpDiffMasterCount": 51,
+  "bpV1CorrectCount": 5,
+  "bpV3CorrectCount": 10,
+  "bpNeitherCorrectCount": 36,
+  "bpShouldManualReview": 51,
+  "taxonomyCounts": {
+    "A. Same citizen, different registry": 311,
+    "B. Both correctly defer": 120,
+    "C. V3.1 correctly defers, V1 overconfident": 5,
+    "D. V3.1 unnecessarily defers": 0,
+    "E. V1 correct, V3.1 wrong": 104,
+    "F. V3.1 correct, V1 wrong": 18,
+    "G. Both plausible": 0,
+    "H. Candidate retrieval failure": 12,
+    "I. Collision/homonym": 61,
+    "J. Sparse record": 102,
+    "K. Other": 292
+  },
+  "safety": {
+    "v1FMR": "4.50",
+    "v3FMR": "10.00",
+    "v1UnsafeHigh": 9,
+    "v3UnsafeHigh": 20,
+    "v1UnsafeMed": 0,
+    "v3UnsafeMed": 0,
+    "v1HomonymBypassed": 9,
+    "v3HomonymBypassed": 20
+  },
+  "ranking": {
+    "v1Top1Hits": 691,
+    "v3Top1Hits": 599,
+    "v1Top3Hits": 746,
+    "v3Top3Hits": 712,
+    "v1RetrievalHits": 813,
+    "v3RetrievalHits": 813,
+    "v1RankDist": {
+      "Rank 1": 691,
+      "Rank 2": 38,
+      "Rank 3": 17,
+      "Rank >3": 67,
+      "Absent": 12
+    },
+    "v3RankDist": {
+      "Rank 1": 599,
+      "Rank 2": 61,
+      "Rank 3": 52,
+      "Rank >3": 101,
+      "Absent": 12
+    },
+    "v3Top1CorrectButDefers": 250,
+    "v3Top3CorrectNotTop1": 113,
+    "v3AbsentCount": 12
+  },
+  "gapAnalysis": {
+    "totalGap": 127,
+    "gapCauseSparsity": 23,
+    "gapCauseAmbiguityTie": 75,
+    "gapCauseInitialsWeight": 0,
+    "gapCauseNgramDrift": 29
+  },
+  "sampleCrossReg": [
+    {
+      "requestId": "M2-V3-REQ-0002",
+      "category": "EXACT_MATCH",
+      "queryName": "Venkatesh Patel",
+      "sharedMasterCitizen": "CIT-00145",
+      "targetMasterCitizen": "CIT-00145",
+      "isTrueTarget": true,
+      "v1Candidate": {
+        "id": "REV-10145",
+        "registry": "revenue_registry",
+        "score": 1,
+        "tier": "AMBIGUOUS"
+      },
+      "v3Candidate": {
+        "id": "HLT-40097",
+        "registry": "health_registry",
+        "score": 0.9286,
+        "tier": "HIGH"
+      }
+    },
+    {
+      "requestId": "M2-V3-REQ-0005",
+      "category": "EXACT_MATCH",
+      "queryName": "Karthik Patel",
+      "sharedMasterCitizen": "CIT-00149",
+      "targetMasterCitizen": "CIT-00149",
+      "isTrueTarget": true,
+      "v1Candidate": {
+        "id": "PAN-70139",
+        "registry": "pan_tax_registry",
+        "score": 1,
+        "tier": "AMBIGUOUS"
+      },
+      "v3Candidate": {
+        "id": "REV-10149",
+        "registry": "revenue_registry",
+        "score": 0.9737,
+        "tier": "HIGH"
+      }
+    },
+    {
+      "requestId": "M2-V3-REQ-0010",
+      "category": "EXACT_MATCH",
+      "queryName": "Aparna Yadav",
+      "sharedMasterCitizen": "CIT-00038",
+      "targetMasterCitizen": "CIT-00038",
+      "isTrueTarget": true,
+      "v1Candidate": {
+        "id": "REV-10038",
+        "registry": "revenue_registry",
+        "score": 1,
+        "tier": "AMBIGUOUS"
+      },
+      "v3Candidate": {
+        "id": "LND-60020",
+        "registry": "land_registry",
+        "score": 0.9391,
+        "tier": "HIGH"
+      }
+    },
+    {
+      "requestId": "M2-V3-REQ-0012",
+      "category": "EXACT_MATCH",
+      "queryName": "Deepak Naidu",
+      "sharedMasterCitizen": "CIT-00003",
+      "targetMasterCitizen": "CIT-00003",
+      "isTrueTarget": true,
+      "v1Candidate": {
+        "id": "REV-10003",
+        "registry": "revenue_registry",
+        "score": 1,
+        "tier": "AMBIGUOUS"
+      },
+      "v3Candidate": {
+        "id": "HLT-40002",
+        "registry": "health_registry",
+        "score": 0.9286,
+        "tier": "HIGH"
+      }
+    },
+    {
+      "requestId": "M2-V3-REQ-0014",
+      "category": "EXACT_MATCH",
+      "queryName": "Karthik Patel",
+      "sharedMasterCitizen": "CIT-00009",
+      "targetMasterCitizen": "CIT-00009",
+      "isTrueTarget": true,
+      "v1Candidate": {
+        "id": "HLT-40006",
+        "registry": "health_registry",
+        "score": 1,
+        "tier": "AMBIGUOUS"
+      },
+      "v3Candidate": {
+        "id": "REV-10009",
+        "registry": "revenue_registry",
+        "score": 0.9652,
+        "tier": "HIGH"
+      }
+    }
+  ],
+  "sampleDeferrals": [
+    {
+      "requestId": "M2-V3-REQ-0001",
+      "category": "EXACT_MATCH",
+      "query": {
+        "name": "Mahesh Naidu",
+        "dateOfBirth": "1994-08-20",
+        "fatherName": "Venkatesh Naidu",
+        "address": "H.No 20/5, Cross Road 10, Kurnool",
+        "district": "Kurnool",
+        "pincode": "502603",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "subCategory": "Demographic Conflict / Collision Defense",
+      "isCorrect": true,
+      "isNegative": false,
+      "v3TopScore": 0.9046,
+      "v3Tier": "HIGH",
+      "v3AmbiguityDetected": false,
+      "v1TopScore": 1,
+      "v1Tier": "AMBIGUOUS",
+      "notes": "Exact biographical match for Mahesh Naidu"
+    },
+    {
+      "requestId": "M2-V3-REQ-0003",
+      "category": "EXACT_MATCH",
+      "query": {
+        "name": "Anitha Yadav",
+        "dateOfBirth": "1991-03-07",
+        "fatherName": "Suresh Yadav",
+        "address": "H.No 27/12, Cross Road 7, Mysuru",
+        "district": "Mysuru",
+        "pincode": "520002",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "subCategory": "Demographic Conflict / Collision Defense",
+      "isCorrect": true,
+      "isNegative": false,
+      "v3TopScore": 0.9366,
+      "v3Tier": "HIGH",
+      "v3AmbiguityDetected": true,
+      "v1TopScore": 1,
+      "v1Tier": "AMBIGUOUS",
+      "notes": "Exact biographical match for Anitha Yadav"
+    },
+    {
+      "requestId": "M2-V3-REQ-0006",
+      "category": "EXACT_MATCH",
+      "query": {
+        "name": "Radha Kumar",
+        "dateOfBirth": "1989-01-05",
+        "fatherName": "Arjun Kumar",
+        "address": "H.No 25/10, Cross Road 5, Nizamabad",
+        "district": "Nizamabad",
+        "pincode": "519728",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "subCategory": "Demographic Conflict / Collision Defense",
+      "isCorrect": true,
+      "isNegative": false,
+      "v3TopScore": 0.9053,
+      "v3Tier": "MEDIUM",
+      "v3AmbiguityDetected": false,
+      "v1TopScore": 1,
+      "v1Tier": "AMBIGUOUS",
+      "notes": "Exact biographical match for Radha Kumar"
+    },
+    {
+      "requestId": "M2-V3-REQ-0015",
+      "category": "EXACT_MATCH",
+      "query": {
+        "name": "Bhavana Yadav",
+        "dateOfBirth": "1995-07-11",
+        "fatherName": "Naveen Yadav",
+        "address": "H.No 31/1, Cross Road 1, Hyderabad",
+        "district": "Hyderabad",
+        "pincode": "520550",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "subCategory": "Demographic Conflict / Collision Defense",
+      "isCorrect": true,
+      "isNegative": false,
+      "v3TopScore": 0.7152,
+      "v3Tier": "MEDIUM",
+      "v3AmbiguityDetected": true,
+      "v1TopScore": 1,
+      "v1Tier": "AMBIGUOUS",
+      "notes": "Exact biographical match for Bhavana Yadav"
+    },
+    {
+      "requestId": "M2-V3-REQ-0018",
+      "category": "EXACT_MATCH",
+      "query": {
+        "name": "Priya Kumar",
+        "dateOfBirth": "1977-09-25",
+        "fatherName": "Rahul Kumar",
+        "address": "H.No 81/6, Cross Road 1, Bengaluru Urban",
+        "district": "Bengaluru Urban",
+        "pincode": "510960",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "subCategory": "Demographic Conflict / Collision Defense",
+      "isCorrect": true,
+      "isNegative": false,
+      "v3TopScore": 0.7129,
+      "v3Tier": "MEDIUM",
+      "v3AmbiguityDetected": true,
+      "v1TopScore": 1,
+      "v1Tier": "AMBIGUOUS",
+      "notes": "Exact biographical match for Priya Kumar"
+    }
+  ],
+  "sampleBothPlausible": [
+    {
+      "requestId": "M2-V3-REQ-0503",
+      "category": "MISSING_FIELDS",
+      "query": {
+        "name": "Vikram Naidu",
+        "fatherName": "Karthik Naidu",
+        "district": "Visakhapatnam",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "targetM": "CIT-00055",
+      "v1M": "CIT-00015",
+      "v3M": "CIT-00135",
+      "v1Correct": false,
+      "v3Correct": false,
+      "v1TopScore": 1,
+      "v3TopScore": 0.9332,
+      "scoreMargin": 0.0668,
+      "notes": "Sparsity: Name + Father + District"
+    },
+    {
+      "requestId": "M2-V3-REQ-0506",
+      "category": "MISSING_FIELDS",
+      "query": {
+        "name": "Kiran Patel",
+        "district": "Prayagraj",
+        "pincode": "515481",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "targetM": "CIT-00113",
+      "v1M": "CIT-00013",
+      "v3M": "CIT-00033",
+      "v1Correct": false,
+      "v3Correct": false,
+      "v1TopScore": 1,
+      "v3TopScore": 0.9136,
+      "scoreMargin": 0.0864,
+      "notes": "Sparsity: Name + District + Pincode"
+    },
+    {
+      "requestId": "M2-V3-REQ-0507",
+      "category": "MISSING_FIELDS",
+      "query": {
+        "name": "Bhavana Yadav",
+        "fatherName": "Naveen Yadav",
+        "district": "Bengaluru Urban",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "targetM": "CIT-00110",
+      "v1M": "CIT-00030",
+      "v3M": "CIT-00050",
+      "v1Correct": false,
+      "v3Correct": false,
+      "v1TopScore": 1,
+      "v3TopScore": 0.9368,
+      "scoreMargin": 0.0632,
+      "notes": "Sparsity: Name + Father + District"
+    },
+    {
+      "requestId": "M2-V3-REQ-0511",
+      "category": "MISSING_FIELDS",
+      "query": {
+        "name": "Radha Kumar",
+        "fatherName": "Arjun Kumar",
+        "district": "East Delhi",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "targetM": "CIT-00004",
+      "v1M": "CIT-00024",
+      "v3M": "CIT-00044",
+      "v1Correct": false,
+      "v3Correct": false,
+      "v1TopScore": 1,
+      "v3TopScore": 0.9353,
+      "scoreMargin": 0.0647,
+      "notes": "Sparsity: Name + Father + District"
+    },
+    {
+      "requestId": "M2-V3-REQ-0514",
+      "category": "MISSING_FIELDS",
+      "query": {
+        "name": "Amit Patel",
+        "district": "Kanpur Nagar",
+        "pincode": "513837",
+        "allowedRegistries": [
+          "revenue_registry",
+          "education_registry",
+          "agriculture_registry",
+          "health_registry",
+          "housing_registry",
+          "land_registry",
+          "pan_tax_registry"
+        ],
+        "consentVerified": true
+      },
+      "targetM": "CIT-00101",
+      "v1M": "CIT-00001",
+      "v3M": "CIT-00081",
+      "v1Correct": false,
+      "v3Correct": false,
+      "v1TopScore": 1,
+      "v3TopScore": 0.9138,
+      "scoreMargin": 0.0862,
+      "notes": "Sparsity: Name + District + Pincode"
+    }
+  ]
+}

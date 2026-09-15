@@ -59,7 +59,21 @@ interface ModelArtifact {
   service_metadata: Record<string, { department_id: string; sub_department_id: string; workflow_id: string }>;
 }
 
+export interface ModelV2Artifact {
+  model_version: string;
+  dataset_version: string;
+  training_timestamp: string;
+  temperature: number;
+  classes: string[];
+  service_metadata: Record<string, { department_id: string; sub_department_id: string; workflow_id: string }>;
+  ood_indicators: string[];
+  service_anchors: Record<string, string[]>;
+  idf: Record<string, number>;
+  class_word_counts: Record<string, Record<string, number>>;
+}
+
 let cachedModel: ModelArtifact | null = null;
+let cachedModelV2: ModelV2Artifact | null = null;
 
 function loadModel(): ModelArtifact {
   if (cachedModel) return cachedModel;
@@ -70,6 +84,17 @@ function loadModel(): ModelArtifact {
     return cachedModel!;
   }
   throw new Error("Model artifact not found at data/ai/workflow-router/model.json. Please run train.py first.");
+}
+
+export function loadModelV2(): ModelV2Artifact {
+  if (cachedModelV2) return cachedModelV2;
+  const modelPath = path.resolve(process.cwd(), "data/ai/workflow-router/model-v2.json");
+  if (fs.existsSync(modelPath)) {
+    const raw = fs.readFileSync(modelPath, "utf8");
+    cachedModelV2 = JSON.parse(raw);
+    return cachedModelV2!;
+  }
+  throw new Error("Model v2 artifact not found at data/ai/workflow-router/model-v2.json.");
 }
 
 const STOP_WORDS = new Set([
@@ -101,9 +126,64 @@ export function tokenizeInput(text: string): string[] {
 
 export class WorkflowRouter {
   /**
-   * Evaluates application routing input and produces a strictly registry-validated recommendation.
+   * Promoted AI Model 1 Router (Default: V2 with automatic safe fallback to V1 or MANUAL_REVIEW).
+   * Controllable via process.env.WORKFLOW_ROUTER_MODEL ('v2' | 'v1').
    */
   public static async routeApplication(
+    input: ApplicationRoutingInput
+  ): Promise<AIModel1RoutingRecommendation> {
+    const selectedModel = (process.env.WORKFLOW_ROUTER_MODEL || "v2").toLowerCase().trim();
+
+    if (selectedModel === "v1") {
+      return WorkflowRouter.routeApplicationV1(input);
+    }
+
+    try {
+      // Default production route: Model 1 V2 (Calibrated)
+      const v2Rec = await WorkflowRouter.routeApplicationV2(input);
+      // Extra safety check: Ensure output has valid recommendation format
+      if (v2Rec && typeof v2Rec.confidenceScore === "number" && v2Rec.modelVersion) {
+        return v2Rec;
+      }
+      throw new Error("Invalid V2 recommendation payload structure.");
+    } catch (err: any) {
+      console.warn("[WorkflowRouter] V2 routing failed or model unavailable, executing safe fallback to V1:", err?.message || err);
+      try {
+        const v1Rec = await WorkflowRouter.routeApplicationV1(input);
+        return {
+          ...v1Rec,
+          recommendationExplanation: `[FALLBACK from V2: ${err?.message || 'Error'}] ${v1Rec.recommendationExplanation}`,
+        };
+      } catch (fallbackErr: any) {
+        console.error("[WorkflowRouter] V1 fallback failed as well, dispatching to MANUAL_REVIEW:", fallbackErr);
+        return {
+          applicationId: input.applicationId,
+          suggestedServiceId: "",
+          suggestedServiceName: "Unclassified / Emergency Safety Fallback",
+          suggestedDepartmentId: "",
+          suggestedDepartmentName: "Manual Review Queue",
+          suggestedSubDepartmentId: "",
+          suggestedSubDepartmentName: "Nodal Allocation Desk",
+          suggestedOfficeId: "",
+          suggestedOfficeName: "Central Operations Centre",
+          suggestedWorkflowId: "",
+          suggestedWorkflowCode: "MANUAL_REVIEW",
+          requiredVerificationTypes: [],
+          confidenceScore: 0.0,
+          routingTier: "MANUAL_REVIEW",
+          recommendationExplanation: "System safe fallback triggered. Dispatched for manual review.",
+          modelVersion: "fallback-manual-review",
+          routingMode: "MANUAL_REVIEW_REQUIRED",
+        };
+      }
+    }
+  }
+
+  /**
+   * Authoritative AI Model 1 V1 Router (Baseline TF-IDF + Cosine Similarity).
+   * Preserved for explicit backwards compatibility and instant rollback.
+   */
+  public static async routeApplicationV1(
     input: ApplicationRoutingInput
   ): Promise<AIModel1RoutingRecommendation> {
     await getAuthoritativeDb();
@@ -277,6 +357,7 @@ export class WorkflowRouter {
     };
   }
 
+
   /**
    * Persists an AI routing recommendation into the database.
    */
@@ -329,4 +410,289 @@ export class WorkflowRouter {
     );
     return rows[0]?.id;
   }
+
+  /**
+   * Phase 7D.1: Upgraded Model v2 Evaluator
+   * Uses calibrated hybrid scoring + OOD indicator rejection + controlled registry validation.
+   */
+  public static async routeApplicationV2(
+    input: ApplicationRoutingInput
+  ): Promise<AIModel1RoutingRecommendation> {
+    await getAuthoritativeDb();
+    const modelV2 = loadModelV2();
+
+    const textCorpus = [
+      input.applicationTitle || "",
+      input.applicationDescription || "",
+      input.requestedBenefit || "",
+      input.serviceName || "",
+      input.category || "",
+      (input.documentTypes || []).join(" "),
+    ].filter(Boolean).join(" ");
+
+    const clean = textCorpus.toLowerCase().replace(/[^a-z0-9\s]/g, " ");
+    const words = clean.split(/\s+/).filter(Boolean);
+
+    // 1. OOD Indicator Guard
+    const isOod = words.some((w) => modelV2.ood_indicators.includes(w));
+    if (isOod) {
+      return {
+        applicationId: input.applicationId,
+        suggestedServiceId: "",
+        suggestedServiceName: "Unknown Service (Out of Distribution)",
+        suggestedDepartmentId: "",
+        suggestedDepartmentName: "Manual Review Queue",
+        suggestedSubDepartmentId: "",
+        suggestedSubDepartmentName: "Nodal Allocation Desk",
+        suggestedOfficeId: "",
+        suggestedOfficeName: "Central Operations Centre",
+        suggestedWorkflowId: "",
+        suggestedWorkflowCode: "MANUAL_REVIEW",
+        requiredVerificationTypes: [],
+        confidenceScore: 0.10,
+        routingTier: "MANUAL_REVIEW",
+        recommendationExplanation: "Out-of-distribution service request rejected to manual review.",
+        modelVersion: modelV2.model_version,
+        routingMode: "MANUAL_REVIEW_REQUIRED",
+      };
+    }
+
+    // 2. Compute logits using BM25 and domain anchors
+    const logits: Record<string, number> = {};
+    for (const c of modelV2.classes) {
+      let sc = 0.0;
+      const classWordCounts = modelV2.class_word_counts[c] || {};
+      const anchors = new Set(modelV2.service_anchors[c] || []);
+
+      for (const w of words) {
+        if (classWordCounts[w]) {
+          const tf = classWordCounts[w];
+          sc += Math.log(1.0 + tf) * (modelV2.idf[w] || 1.0);
+        }
+        if (anchors.has(w)) {
+          sc += 25.0; // Distinctive domain anchor boost
+        }
+      }
+      logits[c] = sc;
+    }
+
+    const maxLogit = Math.max(...Object.values(logits));
+    if (maxLogit <= 5.0) {
+      return {
+        applicationId: input.applicationId,
+        suggestedServiceId: "",
+        suggestedServiceName: "Unknown Service (Low Domain Evidence)",
+        suggestedDepartmentId: "",
+        suggestedDepartmentName: "Manual Review Queue",
+        suggestedSubDepartmentId: "",
+        suggestedSubDepartmentName: "Nodal Allocation Desk",
+        suggestedOfficeId: "",
+        suggestedOfficeName: "Central Operations Centre",
+        suggestedWorkflowId: "",
+        suggestedWorkflowCode: "MANUAL_REVIEW",
+        requiredVerificationTypes: [],
+        confidenceScore: 0.20,
+        routingTier: "MANUAL_REVIEW",
+        recommendationExplanation: "Insufficient distinctive domain evidence. Dispatched for manual review.",
+        modelVersion: modelV2.model_version,
+        routingMode: "MANUAL_REVIEW_REQUIRED",
+      };
+    }
+
+    // 3. Calibrated Softmax
+    const exps: Record<string, number> = {};
+    let sumExp = 0;
+    for (const c of modelV2.classes) {
+      const e = Math.exp((logits[c] - maxLogit) / modelV2.temperature);
+      exps[c] = e;
+      sumExp += e;
+    }
+
+    let topSvc = modelV2.classes[0];
+    let topProb = 0;
+    for (const c of modelV2.classes) {
+      const p = exps[c] / sumExp;
+      if (p > topProb) {
+        topProb = p;
+        topSvc = c;
+      }
+    }
+
+    // 4. Validate against Controlled Registry
+    const services = await getRegisteredServices();
+    const candidateService = services.find(
+      (s) => s.code === topSvc || s.id === topSvc || s.name.toUpperCase().includes(topSvc)
+    );
+
+    if (!candidateService) {
+      return {
+        applicationId: input.applicationId,
+        suggestedServiceId: "",
+        suggestedServiceName: "Unregistered Service",
+        suggestedDepartmentId: "",
+        suggestedDepartmentName: "Manual Review Queue",
+        suggestedSubDepartmentId: "",
+        suggestedSubDepartmentName: "Nodal Allocation Desk",
+        suggestedOfficeId: "",
+        suggestedOfficeName: "Central Operations Centre",
+        suggestedWorkflowId: "",
+        suggestedWorkflowCode: "MANUAL_REVIEW",
+        requiredVerificationTypes: [],
+        confidenceScore: topProb,
+        routingTier: "MANUAL_REVIEW",
+        recommendationExplanation: "Service not found in controlled registry.",
+        modelVersion: modelV2.model_version,
+        routingMode: "MANUAL_REVIEW_REQUIRED",
+      };
+    }
+
+    const [departments, subDepartments, offices, workflowData, requirements] = await Promise.all([
+      getRegisteredDepartments(),
+      getRegisteredSubDepartments(),
+      getRegisteredOffices(),
+      getServiceWorkflow(candidateService.id),
+      getServiceRequirements(candidateService.id),
+    ]);
+
+    const department = departments.find((d) => d.id === candidateService.department_id);
+    const subDepartment = subDepartments.find((sd) => sd.id === candidateService.sub_department_id);
+    const office = offices.find((o) => o.sub_department_id === candidateService.sub_department_id) || offices[0] || null;
+
+    let routingTier: "AUTOMATIC_RECOMMENDATION" | "HUMAN_CONFIRMATION_REQUIRED" | "MANUAL_REVIEW";
+    let routingMode: "RULE_BASED" | "AI_RECOMMENDED" | "AI_CONFIRMED" | "MANUAL_REVIEW_REQUIRED";
+
+    if (topProb >= 0.80) {
+      routingTier = "AUTOMATIC_RECOMMENDATION";
+      routingMode = "AI_RECOMMENDED";
+    } else if (topProb >= 0.50) {
+      routingTier = "HUMAN_CONFIRMATION_REQUIRED";
+      routingMode = "AI_RECOMMENDED";
+    } else {
+      routingTier = "MANUAL_REVIEW";
+      routingMode = "MANUAL_REVIEW_REQUIRED";
+    }
+
+    const requiredVerificationTypes = Array.from(
+      new Set(requirements.map((r) => r.requirement_type))
+    );
+
+    return {
+      applicationId: input.applicationId,
+      suggestedServiceId: candidateService.id,
+      suggestedServiceName: candidateService.name,
+      suggestedDepartmentId: department?.id || "",
+      suggestedDepartmentName: department?.name || "General Administration",
+      suggestedSubDepartmentId: subDepartment?.id || "",
+      suggestedSubDepartmentName: subDepartment?.name || "Central Operations",
+      suggestedOfficeId: office?.id || "",
+      suggestedOfficeName: office?.name || "Central Processing Centre",
+      suggestedWorkflowId: workflowData.definition?.id || "",
+      suggestedWorkflowCode: workflowData.definition?.code || "WF_DEFAULT",
+      requiredVerificationTypes,
+      confidenceScore: Math.round(topProb * 1000) / 1000,
+      routingTier,
+      recommendationExplanation: `Model v2 (Calibrated) predicted '${candidateService.name}' with ${(topProb * 100).toFixed(1)}% calibrated probability under ${department?.name || 'Department'}.`,
+      modelVersion: modelV2.model_version,
+      routingMode,
+    };
+  }
+
+  /**
+   * Comparison mode: evaluates an application with both v1 baseline and v2 calibrated model side-by-side.
+   */
+  public static async compareModels(input: ApplicationRoutingInput): Promise<{
+    baselineV1: AIModel1RoutingRecommendation;
+    calibratedV2: AIModel1RoutingRecommendation;
+    agreement: boolean;
+    recommendationDifference?: string;
+  }> {
+    const [baselineV1, calibratedV2] = await Promise.all([
+      WorkflowRouter.routeApplication(input),
+      WorkflowRouter.routeApplicationV2(input),
+    ]);
+
+    const agreement = baselineV1.suggestedServiceId === calibratedV2.suggestedServiceId;
+    let diff: string | undefined;
+    if (!agreement) {
+      diff = `V1 recommended '${baselineV1.suggestedServiceName}' (${(baselineV1.confidenceScore * 100).toFixed(1)}%) while V2 recommended '${calibratedV2.suggestedServiceName}' (${(calibratedV2.confidenceScore * 100).toFixed(1)}%)`;
+    }
+
+    return {
+      baselineV1,
+      calibratedV2,
+      agreement,
+      recommendationDifference: diff,
+    };
+  }
+  /**
+   * Shadow‑mode comparison: runs V1 and V2 side‑by‑side, logs the result, and returns V1 output.
+   * This function does **NOT** persist any routing decision.
+   */
+  public static async compareAndLog(input: ApplicationRoutingInput, requestId: string, userId?: string | null): Promise<AIModel1RoutingRecommendation> {
+    const comparison = await WorkflowRouter.compareModels(input);
+    // Persist shadow telemetry
+    await WorkflowRouter.logShadowResult({
+      ...comparison,
+      requestId,
+      userId: userId || null,
+    });
+    // Return authoritative V1 recommendation to caller
+    return comparison.baselineV1;
+  }
+
+
+  /**
+   * Insert a row into the shadow‑mode telemetry table.
+   * Expected table schema is defined in migration 20240915_create_router_shadow_log.sql.
+   */
+  public static async logShadowResult(record: {
+    baselineV1: AIModel1RoutingRecommendation;
+    calibratedV2: AIModel1RoutingRecommendation;
+    agreement: boolean;
+    recommendationDifference?: string;
+    requestId: string;
+    userId: string | null;
+  }): Promise<void> {
+    const {
+      baselineV1,
+      calibratedV2,
+      agreement,
+      recommendationDifference,
+      requestId,
+      userId,
+    } = record;
+    const v1SvcId = baselineV1.suggestedServiceId && baselineV1.suggestedServiceId.trim() !== '' ? baselineV1.suggestedServiceId : null;
+    const v2SvcId = calibratedV2.suggestedServiceId && calibratedV2.suggestedServiceId.trim() !== '' ? calibratedV2.suggestedServiceId : null;
+
+    await pgQuery(`INSERT INTO router_shadow_log (
+      request_id,
+      user_id,
+      v1_service_id,
+      v1_confidence,
+      v2_service_id,
+      v2_probability,
+      v2_tier,
+      ood_flag,
+      agreement,
+      recommendation_diff,
+      v1_version,
+      v2_version
+    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`, [
+      requestId,
+      userId,
+      v1SvcId,
+      baselineV1.confidenceScore,
+      v2SvcId,
+      calibratedV2.confidenceScore,
+      calibratedV2.routingTier,
+      calibratedV2.routingTier === 'MANUAL_REVIEW', // simplistic OOD flag
+      agreement,
+      recommendationDifference,
+      baselineV1.modelVersion,
+      calibratedV2.modelVersion,
+    ]);
+  }
+
+
 }
+

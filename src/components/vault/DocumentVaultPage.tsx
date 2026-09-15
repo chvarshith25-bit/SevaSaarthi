@@ -142,6 +142,24 @@ export function DocumentVaultPage() {
         </div>
       </div>
 
+      {/* Document Upload Guidelines Banner (Phase 7B) */}
+      <div className="bg-white rounded-2xl border border-indigo-100 p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-900">Upload & Verification Standards</h4>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Accepted Formats: <strong>PDF, JPG, PNG</strong> • Maximum File Size: <strong>5 MB</strong> per document • AES-256 Encrypted with AI OCR Extraction.
+            </p>
+          </div>
+        </div>
+        <div className="text-[11px] text-indigo-700 bg-indigo-50 font-semibold px-2.5 py-1 rounded-xl shrink-0 self-start sm:self-auto border border-indigo-100/80">
+          DPDP Act 2023 Compliant
+        </div>
+      </div>
+
       {/* Documents Grid */}
       {filteredDocs.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center shadow-xs">

@@ -1,0 +1,150 @@
+{
+  "baseline": {
+    "accuracy": 0.717,
+    "macro_precision": 0.9672,
+    "macro_recall": 0.717,
+    "macro_f1": 0.8149,
+    "ood_rejection_rate": 0.875,
+    "ece": 0.2333,
+    "brier_score": 0.1174
+  },
+  "model_v2": {
+    "accuracy": 0.973,
+    "macro_f1": 0.974,
+    "macro_precision": 0.9773,
+    "macro_recall": 0.973,
+    "ood_rejection_rate": 0.9325,
+    "ece": 0.0206,
+    "brier_score": 0.0224,
+    "per_class": {
+      "AYUSHMAN_BHARAT": {
+        "tp": 51,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.9622641509433962,
+        "f1": 0.9807692307692307
+      },
+      "INCOME_CERTIFICATE": {
+        "tp": 53,
+        "fp": 10,
+        "fn": 0,
+        "precision": 0.8412698412698413,
+        "recall": 1.0,
+        "f1": 0.9137931034482758
+      },
+      "INSTANT_E_PAN": {
+        "tp": 52,
+        "fp": 0,
+        "fn": 1,
+        "precision": 1.0,
+        "recall": 0.9811320754716981,
+        "f1": 0.9904761904761905
+      },
+      "LAND_RECORD": {
+        "tp": 52,
+        "fp": 0,
+        "fn": 1,
+        "precision": 1.0,
+        "recall": 0.9811320754716981,
+        "f1": 0.9904761904761905
+      },
+      "PM_AWAS": {
+        "tp": 51,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.9622641509433962,
+        "f1": 0.9807692307692307
+      },
+      "PM_KISAN": {
+        "tp": 51,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.9622641509433962,
+        "f1": 0.9807692307692307
+      },
+      "POST_MATRIC_SCHOLARSHIP": {
+        "tp": 51,
+        "fp": 0,
+        "fn": 2,
+        "precision": 1.0,
+        "recall": 0.9622641509433962,
+        "f1": 0.9807692307692307
+      }
+    },
+    "confusion_matrix": {
+      "AYUSHMAN_BHARAT": {
+        "AYUSHMAN_BHARAT": 51,
+        "INCOME_CERTIFICATE": 2,
+        "INSTANT_E_PAN": 0,
+        "LAND_RECORD": 0,
+        "PM_AWAS": 0,
+        "PM_KISAN": 0,
+        "POST_MATRIC_SCHOLARSHIP": 0,
+        "MANUAL_REVIEW": 0
+      },
+      "INCOME_CERTIFICATE": {
+        "AYUSHMAN_BHARAT": 0,
+        "INCOME_CERTIFICATE": 53,
+        "INSTANT_E_PAN": 0,
+        "LAND_RECORD": 0,
+        "PM_AWAS": 0,
+        "PM_KISAN": 0,
+        "POST_MATRIC_SCHOLARSHIP": 0,
+        "MANUAL_REVIEW": 0
+      },
+      "INSTANT_E_PAN": {
+        "AYUSHMAN_BHARAT": 0,
+        "INCOME_CERTIFICATE": 1,
+        "INSTANT_E_PAN": 52,
+        "LAND_RECORD": 0,
+        "PM_AWAS": 0,
+        "PM_KISAN": 0,
+        "POST_MATRIC_SCHOLARSHIP": 0,
+        "MANUAL_REVIEW": 0
+      },
+      "LAND_RECORD": {
+        "AYUSHMAN_BHARAT": 0,
+        "INCOME_CERTIFICATE": 1,
+        "INSTANT_E_PAN": 0,
+        "LAND_RECORD": 52,
+        "PM_AWAS": 0,
+        "PM_KISAN": 0,
+        "POST_MATRIC_SCHOLARSHIP": 0,
+        "MANUAL_REVIEW": 0
+      },
+      "PM_AWAS": {
+        "AYUSHMAN_BHARAT": 0,
+        "INCOME_CERTIFICATE": 2,
+        "INSTANT_E_PAN": 0,
+        "LAND_RECORD": 0,
+        "PM_AWAS": 51,
+        "PM_KISAN": 0,
+        "POST_MATRIC_SCHOLARSHIP": 0,
+        "MANUAL_REVIEW": 0
+      },
+      "PM_KISAN": {
+        "AYUSHMAN_BHARAT": 0,
+        "INCOME_CERTIFICATE": 2,
+        "INSTANT_E_PAN": 0,
+        "LAND_RECORD": 0,
+        "PM_AWAS": 0,
+        "PM_KISAN": 51,
+        "POST_MATRIC_SCHOLARSHIP": 0,
+        "MANUAL_REVIEW": 0
+      },
+      "POST_MATRIC_SCHOLARSHIP": {
+        "AYUSHMAN_BHARAT": 0,
+        "INCOME_CERTIFICATE": 2,
+        "INSTANT_E_PAN": 0,
+        "LAND_RECORD": 0,
+        "PM_AWAS": 0,
+        "PM_KISAN": 0,
+        "POST_MATRIC_SCHOLARSHIP": 51,
+        "MANUAL_REVIEW": 0
+      }
+    }
+  }
+}

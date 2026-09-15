@@ -1,0 +1,1260 @@
+[
+  {
+    "applicationId": "app-001",
+    "naturalText": "I need financial support for college tuition fees under post matric scholarship",
+    "category": "Education",
+    "stateCode": "KA",
+    "documentTypes": [
+      "COLLEGE_ID",
+      "MARKSHEET",
+      "INCOME_CERT"
+    ],
+    "requestedBenefit": "Scholarship"
+  },
+  {
+    "applicationId": "app-002",
+    "naturalText": "Apply for scholarship higher studies engineering degree",
+    "category": "Education",
+    "stateCode": "MH",
+    "documentTypes": [
+      "MARKSHEET",
+      "FEE_RECEIPT"
+    ],
+    "requestedBenefit": "Fee Reimbursement"
+  },
+  {
+    "applicationId": "app-003",
+    "naturalText": "post matric scholarship",
+    "category": "Education",
+    "stateCode": "TN",
+    "documentTypes": [
+      "CASTE_CERT",
+      "MARKSHEET"
+    ],
+    "requestedBenefit": "Scholarship"
+  },
+  {
+    "applicationId": "app-004",
+    "naturalText": "scholarship for sc st obc students in polytechnic",
+    "category": "Education",
+    "stateCode": "UP",
+    "documentTypes": [
+      "ID_PROOF",
+      "INCOME_CERT"
+    ],
+    "requestedBenefit": "Tuition waiver"
+  },
+  {
+    "applicationId": "app-005",
+    "naturalText": "my daughter passed 12th class wants money assistance for college admission fees",
+    "category": "Education",
+    "stateCode": "DL",
+    "documentTypes": [
+      "MARKSHEET",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Education Grant"
+  },
+  {
+    "applicationId": "app-006",
+    "naturalText": "Need renewal of my pre-existing college scholarship disbursement",
+    "category": "Education",
+    "stateCode": "TS",
+    "documentTypes": [
+      "MARKSHEET",
+      "BANK_PASSBOOK"
+    ],
+    "requestedBenefit": "Scholarship"
+  },
+  {
+    "applicationId": "app-007",
+    "naturalText": "postmatric schlorship portal registration error",
+    "category": "Education",
+    "stateCode": "KA",
+    "documentTypes": [
+      "MARKSHEET"
+    ],
+    "requestedBenefit": "Scholarship"
+  },
+  {
+    "applicationId": "app-008",
+    "naturalText": "Financial aid for master degree studies in government university",
+    "category": "Education",
+    "stateCode": "WB",
+    "documentTypes": [
+      "COLLEGE_ID",
+      "INCOME_CERT"
+    ],
+    "requestedBenefit": "Financial Support"
+  },
+  {
+    "applicationId": "app-009",
+    "naturalText": "Hostel fees and book grant for engineering post matric student",
+    "category": "Education",
+    "stateCode": "MH",
+    "documentTypes": [
+      "HOSTEL_RECEIPT",
+      "STUDENT_ID"
+    ],
+    "requestedBenefit": "Maintenance Allowance"
+  },
+  {
+    "applicationId": "app-010",
+    "naturalText": "apply for higher education scholarship fund",
+    "category": "Education",
+    "stateCode": "MP",
+    "documentTypes": [
+      "MARKSHEET"
+    ],
+    "requestedBenefit": "Scholarship"
+  },
+  {
+    "applicationId": "app-011",
+    "naturalText": "sholarship form submit",
+    "category": "Education",
+    "stateCode": "GJ",
+    "documentTypes": [
+      "MARKSHEET"
+    ],
+    "requestedBenefit": "Scholarship"
+  },
+  {
+    "applicationId": "app-012",
+    "naturalText": "fee concession scholarship for backward classes college student",
+    "category": "Education",
+    "stateCode": "AP",
+    "documentTypes": [
+      "CASTE_CERT",
+      "INCOME_CERT"
+    ],
+    "requestedBenefit": "Concession"
+  },
+  {
+    "applicationId": "app-013",
+    "naturalText": "Apply for new PAN card online with instant e-pan facility",
+    "category": "Finance",
+    "stateCode": "DL",
+    "documentTypes": [
+      "AADHAAR",
+      "PHOTO"
+    ],
+    "requestedBenefit": "PAN Card"
+  },
+  {
+    "applicationId": "app-014",
+    "naturalText": "instant pan card download through aadhaar ekyc",
+    "category": "Finance",
+    "stateCode": "MH",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "e-PAN"
+  },
+  {
+    "applicationId": "app-015",
+    "naturalText": "pan",
+    "category": "Identity",
+    "stateCode": "KA",
+    "documentTypes": [
+      "ID_PROOF"
+    ],
+    "requestedBenefit": "PAN"
+  },
+  {
+    "applicationId": "app-016",
+    "naturalText": "Urgent need 10 digit permanent account number for opening bank account",
+    "category": "Finance",
+    "stateCode": "TN",
+    "documentTypes": [
+      "AADHAAR",
+      "VOTER_ID"
+    ],
+    "requestedBenefit": "PAN Number"
+  },
+  {
+    "applicationId": "app-017",
+    "naturalText": "generate instant e-PAN form 49A paperless application",
+    "category": "Finance",
+    "stateCode": "UP",
+    "documentTypes": [
+      "AADHAAR",
+      "SIGNATURE"
+    ],
+    "requestedBenefit": "Form 49A"
+  },
+  {
+    "applicationId": "app-018",
+    "naturalText": "lost my physical pan card need duplicate or digital copy immediately",
+    "category": "Finance",
+    "stateCode": "WB",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Duplicate PAN"
+  },
+  {
+    "applicationId": "app-019",
+    "naturalText": "PAN card correction and reissuance request",
+    "category": "Finance",
+    "stateCode": "GJ",
+    "documentTypes": [
+      "AADHAAR",
+      "OLD_PAN"
+    ],
+    "requestedBenefit": "PAN Card"
+  },
+  {
+    "applicationId": "app-020",
+    "naturalText": "i want pan card urgently for income tax filing",
+    "category": "Tax",
+    "stateCode": "TS",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "PAN Card"
+  },
+  {
+    "applicationId": "app-021",
+    "naturalText": "pan card form 49a online application",
+    "category": "Finance",
+    "stateCode": "MP",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Tax Identity"
+  },
+  {
+    "applicationId": "app-022",
+    "naturalText": "apply pan",
+    "category": "Finance",
+    "stateCode": "RJ",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "PAN"
+  },
+  {
+    "applicationId": "app-023",
+    "naturalText": "instant epan reprint and card dispatch to residential address",
+    "category": "Finance",
+    "stateCode": "KL",
+    "documentTypes": [
+      "AADHAAR",
+      "ADDRESS_PROOF"
+    ],
+    "requestedBenefit": "Physical Card"
+  },
+  {
+    "applicationId": "app-024",
+    "naturalText": "e-pan card banwana hai urgently",
+    "category": "Finance",
+    "stateCode": "HR",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "e-PAN"
+  },
+  {
+    "applicationId": "app-025",
+    "naturalText": "Application for annual family income certificate from tahsildar office",
+    "category": "Revenue",
+    "stateCode": "KA",
+    "documentTypes": [
+      "SALARY_SLIP",
+      "RATION_CARD",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Income Certificate"
+  },
+  {
+    "applicationId": "app-026",
+    "naturalText": "income certificate",
+    "category": "Revenue",
+    "stateCode": "MH",
+    "documentTypes": [
+      "AADHAAR",
+      "AFFIDAVIT"
+    ],
+    "requestedBenefit": "Certificate"
+  },
+  {
+    "applicationId": "app-027",
+    "naturalText": "Need tahsil income certificate to prove household earnings below 1 lakh for subsidy",
+    "category": "Revenue",
+    "stateCode": "UP",
+    "documentTypes": [
+      "ELECTRICITY_BILL",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Income Proof"
+  },
+  {
+    "applicationId": "app-028",
+    "naturalText": "certified proof of gross family income for government reservation quota",
+    "category": "Revenue",
+    "stateCode": "TN",
+    "documentTypes": [
+      "SALARY_CERT",
+      "VOTER_ID"
+    ],
+    "requestedBenefit": "Income Certificate"
+  },
+  {
+    "applicationId": "app-029",
+    "naturalText": "revenue department income certificate issuance for ew category",
+    "category": "Revenue",
+    "stateCode": "TS",
+    "documentTypes": [
+      "AADHAAR",
+      "TAX_RETURN"
+    ],
+    "requestedBenefit": "Income Certificate"
+  },
+  {
+    "applicationId": "app-030",
+    "naturalText": "request for revenue inspector inquiry and income certificate",
+    "category": "Revenue",
+    "stateCode": "WB",
+    "documentTypes": [
+      "AFFIDAVIT",
+      "RATION_CARD"
+    ],
+    "requestedBenefit": "Income Certificate"
+  },
+  {
+    "applicationId": "app-031",
+    "naturalText": "income cert for admission fee rebate",
+    "category": "Revenue",
+    "stateCode": "GJ",
+    "documentTypes": [
+      "SALARY_SLIP"
+    ],
+    "requestedBenefit": "Fee Rebate"
+  },
+  {
+    "applicationId": "app-032",
+    "naturalText": "incom certificate urgent requirement",
+    "category": "Revenue",
+    "stateCode": "MP",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Certificate"
+  },
+  {
+    "applicationId": "app-033",
+    "naturalText": "statutory income declaration certificate for scholarship application",
+    "category": "Revenue",
+    "stateCode": "AP",
+    "documentTypes": [
+      "INCOME_DECLARATION",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Income Verification"
+  },
+  {
+    "applicationId": "app-034",
+    "naturalText": "tahsildar signed income proof certificate",
+    "category": "Revenue",
+    "stateCode": "KL",
+    "documentTypes": [
+      "TAX_RECEIPT",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Income Certificate"
+  },
+  {
+    "applicationId": "app-035",
+    "naturalText": "patwari verified annual household income certificate",
+    "category": "Revenue",
+    "stateCode": "HR",
+    "documentTypes": [
+      "RATION_CARD",
+      "VOTER_ID"
+    ],
+    "requestedBenefit": "Income Certificate"
+  },
+  {
+    "applicationId": "app-036",
+    "naturalText": "income cert",
+    "category": "Revenue",
+    "stateCode": "DL",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Certificate"
+  },
+  {
+    "applicationId": "app-037",
+    "naturalText": "Certified copy of RoR 1B record of rights and land title sketch",
+    "category": "Land",
+    "stateCode": "KA",
+    "documentTypes": [
+      "SURVEY_NO",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "RoR 1B"
+  },
+  {
+    "applicationId": "app-038",
+    "naturalText": "land record",
+    "category": "Revenue",
+    "stateCode": "MH",
+    "documentTypes": [
+      "KHATA_NO"
+    ],
+    "requestedBenefit": "7/12 Extract"
+  },
+  {
+    "applicationId": "app-039",
+    "naturalText": "Request 7/12 extract and 8A land revenue ownership document",
+    "category": "Land",
+    "stateCode": "GJ",
+    "documentTypes": [
+      "SURVEY_NUMBER",
+      "ID_PROOF"
+    ],
+    "requestedBenefit": "Land Records"
+  },
+  {
+    "applicationId": "app-040",
+    "naturalText": "mutation of agricultural land title after inheritance partition",
+    "category": "Land",
+    "stateCode": "UP",
+    "documentTypes": [
+      "DEATH_CERT",
+      "SALE_DEED",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Land Mutation"
+  },
+  {
+    "applicationId": "app-041",
+    "naturalText": "patta chitta digital copy for farm land survey number 45",
+    "category": "Revenue",
+    "stateCode": "TN",
+    "documentTypes": [
+      "PATTA_NUMBER"
+    ],
+    "requestedBenefit": "Patta Chitta"
+  },
+  {
+    "applicationId": "app-042",
+    "naturalText": "check land title encumbrance certificate and khasra khatauni details",
+    "category": "Land",
+    "stateCode": "MP",
+    "documentTypes": [
+      "KHASRA_NO"
+    ],
+    "requestedBenefit": "Khasra Khatauni"
+  },
+  {
+    "applicationId": "app-043",
+    "naturalText": "land record verification and boundary sketch map copy",
+    "category": "Land",
+    "stateCode": "AP",
+    "documentTypes": [
+      "SURVEY_NO",
+      "TITLE_DEED"
+    ],
+    "requestedBenefit": "Survey Map"
+  },
+  {
+    "applicationId": "app-044",
+    "naturalText": "online land ror record verification",
+    "category": "Land",
+    "stateCode": "TS",
+    "documentTypes": [
+      "PASSBOOK_NO"
+    ],
+    "requestedBenefit": "Land Record"
+  },
+  {
+    "applicationId": "app-045",
+    "naturalText": "certified land ownership extract for bank agriculture mortgage",
+    "category": "Land",
+    "stateCode": "WB",
+    "documentTypes": [
+      "KHATIAN_NO",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Ownership Extract"
+  },
+  {
+    "applicationId": "app-046",
+    "naturalText": "land title dispute verification revenue records",
+    "category": "Land",
+    "stateCode": "RJ",
+    "documentTypes": [
+      "SALE_DEED"
+    ],
+    "requestedBenefit": "Verification"
+  },
+  {
+    "applicationId": "app-047",
+    "naturalText": "khasra number check and jamabandi copy",
+    "category": "Land",
+    "stateCode": "HR",
+    "documentTypes": [
+      "JAMABANDI_NO"
+    ],
+    "requestedBenefit": "Jamabandi"
+  },
+  {
+    "applicationId": "app-048",
+    "naturalText": "land records",
+    "category": "Revenue",
+    "stateCode": "KL",
+    "documentTypes": [
+      "TAX_RECEIPT"
+    ],
+    "requestedBenefit": "Land Records"
+  },
+  {
+    "applicationId": "app-049",
+    "naturalText": "Enrollment in PM Kisan Samman Nidhi scheme for 6000 annual installment",
+    "category": "Agriculture",
+    "stateCode": "UP",
+    "documentTypes": [
+      "LAND_ROR",
+      "AADHAAR",
+      "BANK_PASSBOOK"
+    ],
+    "requestedBenefit": "Income Support"
+  },
+  {
+    "applicationId": "app-050",
+    "naturalText": "pm kisan",
+    "category": "Agriculture",
+    "stateCode": "MH",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "PM Kisan"
+  },
+  {
+    "applicationId": "app-051",
+    "naturalText": "PM-Kisan 16th installment not credited in bank account ekyc update",
+    "category": "Agriculture",
+    "stateCode": "MP",
+    "documentTypes": [
+      "AADHAAR",
+      "BANK_PASSBOOK"
+    ],
+    "requestedBenefit": "Installment Credit"
+  },
+  {
+    "applicationId": "app-052",
+    "naturalText": "farmer direct benefit transfer scheme registration for small marginal farmers",
+    "category": "Agriculture",
+    "stateCode": "KA",
+    "documentTypes": [
+      "LAND_EXTRACT",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "DBT Transfer"
+  },
+  {
+    "applicationId": "app-053",
+    "naturalText": "apply for pradhan mantri kisan samman nidhi quarterly payment",
+    "category": "Agriculture",
+    "stateCode": "GJ",
+    "documentTypes": [
+      "LAND_TITLE",
+      "AADHAAR",
+      "BANK_DETAILS"
+    ],
+    "requestedBenefit": "Kisan Support"
+  },
+  {
+    "applicationId": "app-054",
+    "naturalText": "farmer financial relief scheme 2000 rupees direct transfer",
+    "category": "Agriculture",
+    "stateCode": "AP",
+    "documentTypes": [
+      "PATTADAR_PASSBOOK",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Direct Benefit"
+  },
+  {
+    "applicationId": "app-055",
+    "naturalText": "pmkisan samman nidhi registration new farmer",
+    "category": "Agriculture",
+    "stateCode": "RJ",
+    "documentTypes": [
+      "JAMABANDI",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Enrollment"
+  },
+  {
+    "applicationId": "app-056",
+    "naturalText": "pm kisan ekyc biometric linkage and land seeding status",
+    "category": "Agriculture",
+    "stateCode": "TN",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "eKYC Seeding"
+  },
+  {
+    "applicationId": "app-057",
+    "naturalText": "pradhan mantri kisan assistance application",
+    "category": "Agriculture",
+    "stateCode": "WB",
+    "documentTypes": [
+      "LAND_RECORD",
+      "BANK_PASSBOOK"
+    ],
+    "requestedBenefit": "Financial Aid"
+  },
+  {
+    "applicationId": "app-058",
+    "naturalText": "pm-kisan installment assistance",
+    "category": "Agriculture",
+    "stateCode": "TS",
+    "documentTypes": [
+      "AADHAAR",
+      "LAND_TITLE"
+    ],
+    "requestedBenefit": "Installment"
+  },
+  {
+    "applicationId": "app-059",
+    "naturalText": "kisan samman nidhi kist release request",
+    "category": "Agriculture",
+    "stateCode": "HR",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "PM-Kisan"
+  },
+  {
+    "applicationId": "app-060",
+    "naturalText": "pm kisan",
+    "category": "Agriculture",
+    "stateCode": "DL",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Farmer Aid"
+  },
+  {
+    "applicationId": "app-061",
+    "naturalText": "Enrollment in Ayushman Bharat PM-JAY for 5 lakh medical health coverage",
+    "category": "Health",
+    "stateCode": "UP",
+    "documentTypes": [
+      "RATION_CARD",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Health Insurance"
+  },
+  {
+    "applicationId": "app-062",
+    "naturalText": "ayushman",
+    "category": "Health",
+    "stateCode": "MH",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Ayushman Card"
+  },
+  {
+    "applicationId": "app-063",
+    "naturalText": "Golden card download and hospital empanelment under PMJAY scheme",
+    "category": "Health",
+    "stateCode": "DL",
+    "documentTypes": [
+      "AADHAAR",
+      "SECC_PROOF"
+    ],
+    "requestedBenefit": "Golden Card"
+  },
+  {
+    "applicationId": "app-064",
+    "naturalText": "Ayushman card for family cashless surgery treatment in private hospital",
+    "category": "Health",
+    "stateCode": "GJ",
+    "documentTypes": [
+      "RATION_CARD",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Hospitalization"
+  },
+  {
+    "applicationId": "app-065",
+    "naturalText": "Pradhan Mantri Jan Arogya Yojana medical treatment insurance benefit",
+    "category": "Health",
+    "stateCode": "KA",
+    "documentTypes": [
+      "AADHAAR",
+      "FAMILY_CARD"
+    ],
+    "requestedBenefit": "Medical Cover"
+  },
+  {
+    "applicationId": "app-066",
+    "naturalText": "card creation under national health authority ayushman bharat",
+    "category": "Health",
+    "stateCode": "TN",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Health Cover"
+  },
+  {
+    "applicationId": "app-067",
+    "naturalText": "urgent hospital admission cashless claim under ayushman health card",
+    "category": "Health",
+    "stateCode": "MP",
+    "documentTypes": [
+      "HOSPITAL_SLIP",
+      "AYUSHMAN_CARD"
+    ],
+    "requestedBenefit": "Cashless Treatment"
+  },
+  {
+    "applicationId": "app-068",
+    "naturalText": "ayushman bharat pm jay card registration",
+    "category": "Health",
+    "stateCode": "WB",
+    "documentTypes": [
+      "RATION_CARD",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Ayushman Card"
+  },
+  {
+    "applicationId": "app-069",
+    "naturalText": "pmjay medical health card for cancer treatment expenses",
+    "category": "Health",
+    "stateCode": "RJ",
+    "documentTypes": [
+      "MEDICAL_REPORTS",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Tertiary Healthcare"
+  },
+  {
+    "applicationId": "app-070",
+    "naturalText": "ayushman health insurance card",
+    "category": "Health",
+    "stateCode": "AP",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Health Insurance"
+  },
+  {
+    "applicationId": "app-071",
+    "naturalText": "ayushman golden card",
+    "category": "Health",
+    "stateCode": "TS",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Golden Card"
+  },
+  {
+    "applicationId": "app-072",
+    "naturalText": "apply for ayushman bharat benefit",
+    "category": "Health",
+    "stateCode": "KL",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Health Cover"
+  },
+  {
+    "applicationId": "app-073",
+    "naturalText": "Financial subsidy for constructing pucca house under Pradhan Mantri Awas Yojana PMAY",
+    "category": "Housing",
+    "stateCode": "UP",
+    "documentTypes": [
+      "BPL_CARD",
+      "LAND_PHOTO",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Housing Subsidy"
+  },
+  {
+    "applicationId": "app-074",
+    "naturalText": "pm awas",
+    "category": "Housing",
+    "stateCode": "MP",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "PMAY"
+  },
+  {
+    "applicationId": "app-075",
+    "naturalText": "PMAY Gramin rural house construction grant instalment release",
+    "category": "Housing",
+    "stateCode": "MH",
+    "documentTypes": [
+      "AADHAAR",
+      "GEO_TAG_PHOTO"
+    ],
+    "requestedBenefit": "House Construction"
+  },
+  {
+    "applicationId": "app-076",
+    "naturalText": "Urban affordable housing credit linked subsidy scheme under PM Awas",
+    "category": "Housing",
+    "stateCode": "GJ",
+    "documentTypes": [
+      "INCOME_PROOF",
+      "PROPERTY_PAPERS"
+    ],
+    "requestedBenefit": "Home Loan Subsidy"
+  },
+  {
+    "applicationId": "app-077",
+    "naturalText": "homeless family grant to construct permanent brick house pmay",
+    "category": "Housing",
+    "stateCode": "KA",
+    "documentTypes": [
+      "AADHAAR",
+      "CASTE_CERT"
+    ],
+    "requestedBenefit": "Housing Assistance"
+  },
+  {
+    "applicationId": "app-078",
+    "naturalText": "apply for pradhan mantri awas yojana list inclusion",
+    "category": "Housing",
+    "stateCode": "TN",
+    "documentTypes": [
+      "RATION_CARD",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "PMAY Beneficiary"
+  },
+  {
+    "applicationId": "app-079",
+    "naturalText": "pm awas yojana urban house sanction letter",
+    "category": "Housing",
+    "stateCode": "DL",
+    "documentTypes": [
+      "ALLOTMENT_LETTER",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Sanction Letter"
+  },
+  {
+    "applicationId": "app-080",
+    "naturalText": "subsidy money for building bathroom and roof under awas scheme",
+    "category": "Housing",
+    "stateCode": "WB",
+    "documentTypes": [
+      "HOUSE_PHOTO",
+      "BANK_PASSBOOK"
+    ],
+    "requestedBenefit": "Construction Grant"
+  },
+  {
+    "applicationId": "app-081",
+    "naturalText": "pmay house allotment list check and second kist release",
+    "category": "Housing",
+    "stateCode": "RJ",
+    "documentTypes": [
+      "BENEFICIARY_ID"
+    ],
+    "requestedBenefit": "Installment"
+  },
+  {
+    "applicationId": "app-082",
+    "naturalText": "pradhan mantri awas yojana registration",
+    "category": "Housing",
+    "stateCode": "TS",
+    "documentTypes": [
+      "AADHAAR",
+      "INCOME_CERT"
+    ],
+    "requestedBenefit": "Housing"
+  },
+  {
+    "applicationId": "app-083",
+    "naturalText": "pm awas gramin form",
+    "category": "Housing",
+    "stateCode": "AP",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "PMAY-G"
+  },
+  {
+    "applicationId": "app-084",
+    "naturalText": "housing assistance for poor rural family under pm awas",
+    "category": "Housing",
+    "stateCode": "KL",
+    "documentTypes": [
+      "BPL_RATION_CARD"
+    ],
+    "requestedBenefit": "Housing Aid"
+  },
+  {
+    "applicationId": "app-085",
+    "naturalText": "Passport renewal application and police verification appointment",
+    "category": "Passport",
+    "stateCode": "DL",
+    "documentTypes": [
+      "OLD_PASSPORT",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Passport"
+  },
+  {
+    "applicationId": "app-086",
+    "naturalText": "driving license renewal and learner permit test booking",
+    "category": "Transport",
+    "stateCode": "KA",
+    "documentTypes": [
+      "LEARNER_LICENCE",
+      "MEDICAL_FORM"
+    ],
+    "requestedBenefit": "Driving Licence"
+  },
+  {
+    "applicationId": "app-087",
+    "naturalText": "Electricity bill high meter complaint and reading check",
+    "category": "Utilities",
+    "stateCode": "UP",
+    "documentTypes": [
+      "ELECTRICITY_BILL"
+    ],
+    "requestedBenefit": "Bill Correction"
+  },
+  {
+    "applicationId": "app-088",
+    "naturalText": "Register marriage certificate under special marriage act",
+    "category": "Civic",
+    "stateCode": "MH",
+    "documentTypes": [
+      "MARRIAGE_AFFIDAVIT",
+      "PHOTOS"
+    ],
+    "requestedBenefit": "Marriage Certificate"
+  },
+  {
+    "applicationId": "app-089",
+    "naturalText": "Birth certificate issuance for newborn child from municipal corporation",
+    "category": "Civic",
+    "stateCode": "TN",
+    "documentTypes": [
+      "HOSPITAL_DISCHARGE",
+      "PARENT_IDS"
+    ],
+    "requestedBenefit": "Birth Certificate"
+  },
+  {
+    "applicationId": "app-090",
+    "naturalText": "Complaint against fraudulent online ecommerce seller in consumer court",
+    "category": "Consumer",
+    "stateCode": "DL",
+    "documentTypes": [
+      "PURCHASE_INVOICE"
+    ],
+    "requestedBenefit": "Consumer Redressal"
+  },
+  {
+    "applicationId": "app-091",
+    "naturalText": "Vehicle registration transfer and RC book NOC certificate",
+    "category": "Transport",
+    "stateCode": "GJ",
+    "documentTypes": [
+      "RC_BOOK",
+      "INSURANCE"
+    ],
+    "requestedBenefit": "RC Transfer"
+  },
+  {
+    "applicationId": "app-092",
+    "naturalText": "Voter ID card new enrollment form 6 and election epic number",
+    "category": "Election",
+    "stateCode": "WB",
+    "documentTypes": [
+      "AGE_PROOF",
+      "ADDRESS_PROOF"
+    ],
+    "requestedBenefit": "Voter ID"
+  },
+  {
+    "applicationId": "app-093",
+    "naturalText": "Municipal water connection pipeline leakage complaint",
+    "category": "Civic",
+    "stateCode": "MP",
+    "documentTypes": [
+      "WATER_BILL"
+    ],
+    "requestedBenefit": "Repair"
+  },
+  {
+    "applicationId": "app-094",
+    "naturalText": "Trade license application for retail garment shop",
+    "category": "Commercial",
+    "stateCode": "RJ",
+    "documentTypes": [
+      "RENT_AGREEMENT",
+      "NOC"
+    ],
+    "requestedBenefit": "Trade License"
+  },
+  {
+    "applicationId": "app-095",
+    "naturalText": "Dog license and rabies vaccination token from municipal corporation",
+    "category": "Municipal",
+    "stateCode": "KA",
+    "documentTypes": [
+      "VACCINATION_CARD"
+    ],
+    "requestedBenefit": "Pet License"
+  },
+  {
+    "applicationId": "app-096",
+    "naturalText": "Fire department safety NOC certificate for commercial building",
+    "category": "Safety",
+    "stateCode": "MH",
+    "documentTypes": [
+      "BUILDING_PLAN"
+    ],
+    "requestedBenefit": "Fire NOC"
+  },
+  {
+    "applicationId": "app-097",
+    "naturalText": "Arms gun license fresh application and background check",
+    "category": "Home",
+    "stateCode": "UP",
+    "documentTypes": [
+      "POLICE_VERIFICATION"
+    ],
+    "requestedBenefit": "Gun License"
+  },
+  {
+    "applicationId": "app-098",
+    "naturalText": "Property tax online payment and assessment receipt printout",
+    "category": "Municipal",
+    "stateCode": "TS",
+    "documentTypes": [
+      "PROPERTY_ASSESSMENT_NO"
+    ],
+    "requestedBenefit": "Tax Receipt"
+  },
+  {
+    "applicationId": "app-099",
+    "naturalText": "Old age pension monthly allowance under social security",
+    "category": "Pension",
+    "stateCode": "AP",
+    "documentTypes": [
+      "AGE_PROOF",
+      "BPL_CARD"
+    ],
+    "requestedBenefit": "Pension"
+  },
+  {
+    "applicationId": "app-100",
+    "naturalText": "Food safety FSSAI registration license for bakery kitchen",
+    "category": "Commerce",
+    "stateCode": "TN",
+    "documentTypes": [
+      "PAN",
+      "AADHAAR"
+    ],
+    "requestedBenefit": "FSSAI License"
+  },
+  {
+    "applicationId": "app-101",
+    "naturalText": "Tree cutting permission request due to danger to residential house",
+    "category": "Forest",
+    "stateCode": "KL",
+    "documentTypes": [
+      "SITE_PHOTO"
+    ],
+    "requestedBenefit": "Tree Cutting Permit"
+  },
+  {
+    "applicationId": "app-102",
+    "naturalText": "Street light not functioning in sector 4 complaint",
+    "category": "Municipal",
+    "stateCode": "HR",
+    "documentTypes": [
+      "WARD_NO"
+    ],
+    "requestedBenefit": "Civic Repair"
+  },
+  {
+    "applicationId": "app-103",
+    "naturalText": "Death certificate copy after cremation register entry",
+    "category": "Civic",
+    "stateCode": "DL",
+    "documentTypes": [
+      "CREMATION_RECEIPT"
+    ],
+    "requestedBenefit": "Death Certificate"
+  },
+  {
+    "applicationId": "app-104",
+    "naturalText": "Caste certificate verification and non-creamy layer renewal",
+    "category": "Welfare",
+    "stateCode": "MH",
+    "documentTypes": [
+      "CASTE_RECORD"
+    ],
+    "requestedBenefit": "OBC NCL Certificate"
+  },
+  {
+    "applicationId": "app-105",
+    "naturalText": "skolership",
+    "category": "Education",
+    "stateCode": "KA",
+    "documentTypes": [
+      "MARKSHEET"
+    ],
+    "requestedBenefit": "Scholarship"
+  },
+  {
+    "applicationId": "app-106",
+    "naturalText": "pancard",
+    "category": "Finance",
+    "stateCode": "MH",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "PAN"
+  },
+  {
+    "applicationId": "app-107",
+    "naturalText": "incme certifcate",
+    "category": "Revenue",
+    "stateCode": "UP",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Certificate"
+  },
+  {
+    "applicationId": "app-108",
+    "naturalText": "pm kisan yojana 2000 rupaye kisan",
+    "category": "Agriculture",
+    "stateCode": "MP",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Farmer money"
+  },
+  {
+    "applicationId": "app-109",
+    "naturalText": "ayushman hospital 5 lakh",
+    "category": "Health",
+    "stateCode": "DL",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Medical"
+  },
+  {
+    "applicationId": "app-110",
+    "naturalText": "awas ghar",
+    "category": "Housing",
+    "stateCode": "GJ",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Home"
+  },
+  {
+    "applicationId": "app-111",
+    "naturalText": "land survey map 7 12",
+    "category": "Land",
+    "stateCode": "MH",
+    "documentTypes": [
+      "SURVEY"
+    ],
+    "requestedBenefit": "Land record"
+  },
+  {
+    "applicationId": "app-112",
+    "naturalText": "Help me please my application",
+    "category": "Unknown",
+    "stateCode": "KA",
+    "documentTypes": [],
+    "requestedBenefit": "Unknown"
+  },
+  {
+    "applicationId": "app-113",
+    "naturalText": "I need financial aid for my family livelihood",
+    "category": "General",
+    "stateCode": "WB",
+    "documentTypes": [
+      "AADHAAR"
+    ],
+    "requestedBenefit": "Welfare"
+  },
+  {
+    "applicationId": "app-114",
+    "naturalText": "Government money transfer in my bank account",
+    "category": "Finance",
+    "stateCode": "UP",
+    "documentTypes": [
+      "BANK_DETAILS"
+    ],
+    "requestedBenefit": "DBT"
+  },
+  {
+    "applicationId": "app-115",
+    "naturalText": "urgent assistance needed immediately",
+    "category": "Emergency",
+    "stateCode": "DL",
+    "documentTypes": [],
+    "requestedBenefit": "Aid"
+  },
+  {
+    "applicationId": "app-116",
+    "naturalText": "status of my submitted case file 9832",
+    "category": "Inquiry",
+    "stateCode": "TN",
+    "documentTypes": [],
+    "requestedBenefit": "Status Check"
+  },
+  {
+    "applicationId": "app-117",
+    "naturalText": "download certificate",
+    "category": "General",
+    "stateCode": "TS",
+    "documentTypes": [],
+    "requestedBenefit": "Certificate Download"
+  },
+  {
+    "applicationId": "app-118",
+    "naturalText": "free medical card for poor people",
+    "category": "Health",
+    "stateCode": "RJ",
+    "documentTypes": [
+      "BPL_CARD"
+    ],
+    "requestedBenefit": "Free Medical"
+  },
+  {
+    "applicationId": "app-119",
+    "naturalText": "money for studying engineering college",
+    "category": "Education",
+    "stateCode": "AP",
+    "documentTypes": [
+      "COLLEGE_ID"
+    ],
+    "requestedBenefit": "College Money"
+  },
+  {
+    "applicationId": "app-120",
+    "naturalText": "farming seeds subsidy and pesticide grant",
+    "category": "Agriculture",
+    "stateCode": "HR",
+    "documentTypes": [
+      "FARMER_ID"
+    ],
+    "requestedBenefit": "Farming Subsidy"
+  }
+]

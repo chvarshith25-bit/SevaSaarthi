@@ -1,0 +1,17 @@
+{
+  "retrievalFailuresV2": [],
+  "missedTop1PositivesV2": [],
+  "negativeFalseMatchesV2": [],
+  "caseComparison": {
+    "v1_correct_v2_incorrect": [],
+    "v1_incorrect_v2_correct": [],
+    "both_correct": [],
+    "both_ambiguous": [],
+    "both_incorrect": []
+  },
+  "featureDistributionsSummary": {
+    "trueMatchesCount": 953,
+    "falseMatchesCount": 0,
+    "ambiguousCount": 183034
+  }
+}

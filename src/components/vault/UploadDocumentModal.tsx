@@ -47,9 +47,9 @@ export function UploadDocumentModal({ isOpen, onClose, onSuccess, initialType }:
   ];
 
   const handleFile = (f: File) => {
-    // Validate size (max 10MB)
-    if (f.size > 10 * 1024 * 1024) {
-      toast.error("File exceeds 10MB limit. Please upload a smaller file.");
+    // Validate size (max 5MB)
+    if (f.size > 5 * 1024 * 1024) {
+      toast.error("File exceeds 5MB limit. Please upload a file under 5 MB.");
       return;
     }
     // Validate type
@@ -188,11 +188,24 @@ export function UploadDocumentModal({ isOpen, onClose, onSuccess, initialType }:
               <div className="text-xs font-bold text-slate-800">
                 Click to select or drag & drop file
               </div>
-              <div className="text-[11px] text-slate-400 mt-0.5">
-                Supports PDF, JPG, PNG up to 10MB
+              <div className="text-[11px] text-slate-500 mt-1 font-medium">
+                Supports PDF, JPG, PNG • Maximum 5 MB per file
               </div>
             </div>
           )}
+        </div>
+
+        {/* Upload Guidance Banner (Phase 7B) */}
+        <div className="mt-3 p-3 bg-indigo-50/60 border border-indigo-100 rounded-2xl text-[11px] text-slate-600 space-y-1">
+          <div className="font-bold text-indigo-950 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Document Upload & Verification Guidelines</span>
+          </div>
+          <ul className="list-disc list-inside space-y-0.5 text-slate-600 pl-1 text-[10.5px]">
+            <li><strong>Accepted Formats:</strong> PDF, JPG, PNG</li>
+            <li><strong>Maximum File Size:</strong> 5 MB per document</li>
+            <li><strong>Purpose:</strong> Encrypted (AES-256) & OCR-analyzed for automated verification and instant form autofill.</li>
+          </ul>
         </div>
 
         {/* Quick Sample Selector for Demo Testing */}

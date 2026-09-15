@@ -1,0 +1,358 @@
+{
+  "totalRequests": 1025,
+  "totalPositives": 825,
+  "totalNegatives": 200,
+  "totalHomonyms": 75,
+  "rowAgreeRate": "44.39",
+  "rowAgreementCount": 455,
+  "personAgreeRate": "74.73",
+  "personAgreementCount": 766,
+  "decisionConcordanceRate": "14.54",
+  "decisionConcordanceCount": 149,
+  "v1Top1Acc": "83.76",
+  "v1Top1Hits": 691,
+  "v3Top1Acc": "72.61",
+  "v3Top1Hits": 599,
+  "v1Top3Rec": "90.42",
+  "v1Top3Hits": 746,
+  "v3Top3Rec": "86.30",
+  "v3Top3Hits": 712,
+  "v1RetrievalRec": "98.55",
+  "v1RetrievalHits": 813,
+  "v3RetrievalRec": "98.55",
+  "v3RetrievalHits": 813,
+  "v1FMR": "7.00",
+  "v1FalseMatches": 14,
+  "v3FMR": "37.00",
+  "v3FalseMatches": 74,
+  "v1FNR": "0.73",
+  "v1FalseNegatives": 6,
+  "v3FNR": "0.24",
+  "v3FalseNegatives": 2,
+  "correctMRRate": "63.00",
+  "correctManualReviewCount": 126,
+  "unnecMRRate": "0.00",
+  "unnecessaryManualReviewCountV3": 0,
+  "v1HomonymFMR": "12.00",
+  "v1HomonymCollisionsBypassed": 9,
+  "v3HomonymFMR": "98.67",
+  "v3HomonymCollisionsBypassed": 74,
+  "v1Latencies": {
+    "p50": "17.17",
+    "p95": "25.42",
+    "p99": "30.43"
+  },
+  "v3Latencies": {
+    "p50": "19.00",
+    "p95": "30.54",
+    "p99": "36.16"
+  },
+  "disagreementCategoryCounts": {
+    "A. V3.1 clearly better": 0,
+    "B. V1 clearly better": 0,
+    "C. Both plausible": 51,
+    "D. V3.1 should defer to manual review": 208,
+    "E. V1 should defer to manual review": 0,
+    "F. Cross-registry equivalent": 311,
+    "NONE": 455
+  },
+  "sampleDisagreementsByCategory": {
+    "A. V3.1 clearly better": [],
+    "B. V1 clearly better": [],
+    "C. Both plausible": [
+      {
+        "requestId": "M2-V3-REQ-0503",
+        "category": "MISSING_FIELDS",
+        "query": {
+          "name": "Vikram Naidu",
+          "fatherName": "Karthik Naidu",
+          "district": "Visakhapatnam",
+          "allowedRegistries": [
+            "revenue_registry",
+            "education_registry",
+            "agriculture_registry",
+            "health_registry",
+            "housing_registry",
+            "land_registry",
+            "pan_tax_registry"
+          ],
+          "consentVerified": true
+        },
+        "gtCitizenId": "CIT-00055",
+        "v1Top": "HLT-40010",
+        "v1Master": "CIT-00015",
+        "v1Confidence": 1,
+        "v1Tier": "AMBIGUOUS",
+        "v3Top": "REV-10135",
+        "v3Master": "CIT-00135",
+        "v3Probability": 0.9332,
+        "v3Tier": "HIGH",
+        "disagreementCategory": "C. Both plausible",
+        "notes": "Sparsity: Name + Father + District"
+      },
+      {
+        "requestId": "M2-V3-REQ-0506",
+        "category": "MISSING_FIELDS",
+        "query": {
+          "name": "Kiran Patel",
+          "district": "Prayagraj",
+          "pincode": "515481",
+          "allowedRegistries": [
+            "revenue_registry",
+            "education_registry",
+            "agriculture_registry",
+            "health_registry",
+            "housing_registry",
+            "land_registry",
+            "pan_tax_registry"
+          ],
+          "consentVerified": true
+        },
+        "gtCitizenId": "CIT-00113",
+        "v1Top": "HLT-40009",
+        "v1Master": "CIT-00013",
+        "v1Confidence": 1,
+        "v1Tier": "AMBIGUOUS",
+        "v3Top": "LND-60017",
+        "v3Master": "CIT-00033",
+        "v3Probability": 0.9136,
+        "v3Tier": "HIGH",
+        "disagreementCategory": "C. Both plausible",
+        "notes": "Sparsity: Name + District + Pincode"
+      },
+      {
+        "requestId": "M2-V3-REQ-0507",
+        "category": "MISSING_FIELDS",
+        "query": {
+          "name": "Bhavana Yadav",
+          "fatherName": "Naveen Yadav",
+          "district": "Bengaluru Urban",
+          "allowedRegistries": [
+            "revenue_registry",
+            "education_registry",
+            "agriculture_registry",
+            "health_registry",
+            "housing_registry",
+            "land_registry",
+            "pan_tax_registry"
+          ],
+          "consentVerified": true
+        },
+        "gtCitizenId": "CIT-00110",
+        "v1Top": "EDU-20015",
+        "v1Master": "CIT-00030",
+        "v1Confidence": 1,
+        "v1Tier": "AMBIGUOUS",
+        "v3Top": "LND-60026",
+        "v3Master": "CIT-00050",
+        "v3Probability": 0.9368,
+        "v3Tier": "HIGH",
+        "disagreementCategory": "C. Both plausible",
+        "notes": "Sparsity: Name + Father + District"
+      }
+    ],
+    "D. V3.1 should defer to manual review": [
+      {
+        "requestId": "M2-V3-REQ-0001",
+        "category": "EXACT_MATCH",
+        "query": {
+          "name": "Mahesh Naidu",
+          "dateOfBirth": "1994-08-20",
+          "fatherName": "Venkatesh Naidu",
+          "address": "H.No 20/5, Cross Road 10, Kurnool",
+          "district": "Kurnool",
+          "pincode": "502603",
+          "allowedRegistries": [
+            "revenue_registry",
+            "education_registry",
+            "agriculture_registry",
+            "health_registry",
+            "housing_registry",
+            "land_registry",
+            "pan_tax_registry"
+          ],
+          "consentVerified": true
+        },
+        "gtCitizenId": "CIT-00019",
+        "v1Top": "REV-10019",
+        "v1Master": "CIT-00019",
+        "v1Confidence": 1,
+        "v1Tier": "AMBIGUOUS",
+        "v3Top": "HLT-40082",
+        "v3Master": "CIT-00123",
+        "v3Probability": 0.9046,
+        "v3Tier": "HIGH",
+        "disagreementCategory": "D. V3.1 should defer to manual review",
+        "notes": "Exact biographical match for Mahesh Naidu"
+      },
+      {
+        "requestId": "M2-V3-REQ-0003",
+        "category": "EXACT_MATCH",
+        "query": {
+          "name": "Anitha Yadav",
+          "dateOfBirth": "1991-03-07",
+          "fatherName": "Suresh Yadav",
+          "address": "H.No 27/12, Cross Road 7, Mysuru",
+          "district": "Mysuru",
+          "pincode": "520002",
+          "allowedRegistries": [
+            "revenue_registry",
+            "education_registry",
+            "agriculture_registry",
+            "health_registry",
+            "housing_registry",
+            "land_registry",
+            "pan_tax_registry"
+          ],
+          "consentVerified": true
+        },
+        "gtCitizenId": "CIT-00146",
+        "v1Top": "REV-10146",
+        "v1Master": "CIT-00146",
+        "v1Confidence": 1,
+        "v1Tier": "AMBIGUOUS",
+        "v3Top": "LND-60014",
+        "v3Master": "CIT-00026",
+        "v3Probability": 0.9366,
+        "v3Tier": "HIGH",
+        "disagreementCategory": "D. V3.1 should defer to manual review",
+        "notes": "Exact biographical match for Anitha Yadav"
+      },
+      {
+        "requestId": "M2-V3-REQ-0006",
+        "category": "EXACT_MATCH",
+        "query": {
+          "name": "Radha Kumar",
+          "dateOfBirth": "1989-01-05",
+          "fatherName": "Arjun Kumar",
+          "address": "H.No 25/10, Cross Road 5, Nizamabad",
+          "district": "Nizamabad",
+          "pincode": "519728",
+          "allowedRegistries": [
+            "revenue_registry",
+            "education_registry",
+            "agriculture_registry",
+            "health_registry",
+            "housing_registry",
+            "land_registry",
+            "pan_tax_registry"
+          ],
+          "consentVerified": true
+        },
+        "gtCitizenId": "CIT-00144",
+        "v1Top": "REV-10144",
+        "v1Master": "CIT-00144",
+        "v1Confidence": 1,
+        "v1Tier": "AMBIGUOUS",
+        "v3Top": "HLT-40027",
+        "v3Master": "CIT-00040",
+        "v3Probability": 0.9053,
+        "v3Tier": "MEDIUM",
+        "disagreementCategory": "D. V3.1 should defer to manual review",
+        "notes": "Exact biographical match for Radha Kumar"
+      }
+    ],
+    "E. V1 should defer to manual review": [],
+    "F. Cross-registry equivalent": [
+      {
+        "requestId": "M2-V3-REQ-0002",
+        "category": "EXACT_MATCH",
+        "query": {
+          "name": "Venkatesh Patel",
+          "dateOfBirth": "1990-02-06",
+          "fatherName": "Mahesh Patel",
+          "address": "H.No 26/11, Cross Road 6, Visakhapatnam",
+          "district": "Visakhapatnam",
+          "pincode": "519865",
+          "allowedRegistries": [
+            "revenue_registry",
+            "education_registry",
+            "agriculture_registry",
+            "health_registry",
+            "housing_registry",
+            "land_registry",
+            "pan_tax_registry"
+          ],
+          "consentVerified": true
+        },
+        "gtCitizenId": "CIT-00145",
+        "v1Top": "REV-10145",
+        "v1Master": "CIT-00145",
+        "v1Confidence": 1,
+        "v1Tier": "AMBIGUOUS",
+        "v3Top": "HLT-40097",
+        "v3Master": "CIT-00145",
+        "v3Probability": 0.9286,
+        "v3Tier": "HIGH",
+        "disagreementCategory": "F. Cross-registry equivalent",
+        "notes": "Exact biographical match for Venkatesh Patel"
+      },
+      {
+        "requestId": "M2-V3-REQ-0005",
+        "category": "EXACT_MATCH",
+        "query": {
+          "name": "Karthik Patel",
+          "dateOfBirth": "1994-06-10",
+          "fatherName": "Vikram Patel",
+          "address": "H.No 30/15, Cross Road 10, Noida",
+          "district": "Noida",
+          "pincode": "520413",
+          "allowedRegistries": [
+            "revenue_registry",
+            "education_registry",
+            "agriculture_registry",
+            "health_registry",
+            "housing_registry",
+            "land_registry",
+            "pan_tax_registry"
+          ],
+          "consentVerified": true
+        },
+        "gtCitizenId": "CIT-00149",
+        "v1Top": "PAN-70139",
+        "v1Master": "CIT-00149",
+        "v1Confidence": 1,
+        "v1Tier": "AMBIGUOUS",
+        "v3Top": "REV-10149",
+        "v3Master": "CIT-00149",
+        "v3Probability": 0.9737,
+        "v3Tier": "HIGH",
+        "disagreementCategory": "F. Cross-registry equivalent",
+        "notes": "Exact biographical match for Karthik Patel"
+      },
+      {
+        "requestId": "M2-V3-REQ-0010",
+        "category": "EXACT_MATCH",
+        "query": {
+          "name": "Aparna Yadav",
+          "dateOfBirth": "1987-03-11",
+          "fatherName": "Manoj Yadav",
+          "address": "H.No 39/9, Cross Road 9, Mangaluru",
+          "district": "Mangaluru",
+          "pincode": "505206",
+          "allowedRegistries": [
+            "revenue_registry",
+            "education_registry",
+            "agriculture_registry",
+            "health_registry",
+            "housing_registry",
+            "land_registry",
+            "pan_tax_registry"
+          ],
+          "consentVerified": true
+        },
+        "gtCitizenId": "CIT-00038",
+        "v1Top": "REV-10038",
+        "v1Master": "CIT-00038",
+        "v1Confidence": 1,
+        "v1Tier": "AMBIGUOUS",
+        "v3Top": "LND-60020",
+        "v3Master": "CIT-00038",
+        "v3Probability": 0.9391,
+        "v3Tier": "HIGH",
+        "disagreementCategory": "F. Cross-registry equivalent",
+        "notes": "Exact biographical match for Aparna Yadav"
+      }
+    ]
+  }
+}
