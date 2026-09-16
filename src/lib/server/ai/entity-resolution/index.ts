@@ -40,3 +40,23 @@ export {
 export {
   CrossRegistryGraphCorroborator,
 } from './graph';
+
+export {
+  EntityResolutionEngineV4,
+  MultilingualE5BaseTransformerProvider,
+  EmbeddingCache,
+  SemanticSimilarityEngine,
+  V4HybridScorer,
+  V4CollisionGuard,
+  V4IdentityConsolidator,
+  DEFAULT_V4_CONFIG,
+  EXPECTED_V4_FEATURE_NAMES,
+} from './v4-transformer';
+export type {
+  Model2V4Weights,
+  V4CandidateMatchResult,
+  V4EntityResolutionResponse,
+  V4FieldSimilarityScores,
+  SemanticRepresentation,
+  V4EngineOptions,
+} from './v4-transformer';

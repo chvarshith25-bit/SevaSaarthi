@@ -1,0 +1,63 @@
+{
+  "version": "v4.0.0-experimental",
+  "model_name": "entity-resolver-v4-transformer-hybrid",
+  "model_type": "Calibrated Multilingual Transformer Hybrid Entity Resolution",
+  "transformer_model_id": "intfloat/multilingual-e5-base",
+  "transformer_dimension": 768,
+  "transformer_architecture": "XLM-RoBERTa (12 layers, 768 hidden dim, 12 attention heads)",
+  "max_tokens": 512,
+  "status": "EXPERIMENTAL",
+  "production": "DISABLED",
+  "seed": 42,
+  "feature_names": [
+    "name_similarity",
+    "initials_compatibility",
+    "dob_similarity",
+    "father_similarity",
+    "address_similarity",
+    "district_similarity",
+    "pincode_similarity",
+    "transformer_e5_similarity",
+    "graph_corroboration",
+    "available_field_count",
+    "conflicting_field_count",
+    "missing_dob",
+    "missing_father",
+    "missing_address",
+    "missing_district",
+    "missing_pincode"
+  ],
+  "weights": [
+    0.22,
+    1.25,
+    0.20,
+    0.20,
+    0.20,
+    0.25,
+    0.20,
+    0.35,
+    0.20,
+    0.00,
+    -6.50,
+    0.00,
+    0.00,
+    0.00,
+    0.00,
+    0.00
+  ],
+  "bias": -0.12,
+  "temperature": 0.68,
+  "fusion_coefficients": {
+    "alpha_structured": 0.55,
+    "beta_transformer": 0.30,
+    "gamma_graph": 0.15,
+    "conflict_penalty_weight": 1.0
+  },
+  "thresholds": {
+    "HIGH_CONFIDENCE": 0.85,
+    "MEDIUM_CONFIDENCE": 0.60,
+    "LOW_CONFIDENCE": 0.35,
+    "HARD_CONFLICT_CAP": 0.25,
+    "AMBIGUITY_SCORE_DELTA": 0.05
+  }
+}

@@ -1,0 +1,1169 @@
+[
+  {
+    "id": "ML-001",
+    "category": "MULTILINGUAL",
+    "language": "en",
+    "expectedCitizenId": "CIT-00001",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "Amit Patel",
+      "dateOfBirth": "1976-02-02",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "pan_tax_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-002",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00001",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "dateOfBirth": "1976-02-02",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "pan_tax_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-003",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00001",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "dateOfBirth": "1976-02-02",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "pan_tax_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-004",
+    "category": "TRANSLITERATION",
+    "language": "transliterated_hi",
+    "expectedCitizenId": "CIT-00002",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "Kavita Yadav",
+      "fatherName": "Gopal Yadav",
+      "dateOfBirth": "1977-03-03",
+      "district": "Hubballi",
+      "allowedRegistries": [
+        "revenue_registry",
+        "education_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-005",
+    "category": "TRANSLITERATION",
+    "language": "transliterated_te",
+    "expectedCitizenId": "CIT-00003",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "Deepak Nayudu",
+      "fatherName": "Amit Naidu",
+      "dateOfBirth": "1978-04-04",
+      "district": "Thane",
+      "allowedRegistries": [
+        "revenue_registry",
+        "agriculture_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-006",
+    "category": "MULTILINGUAL",
+    "language": "mixed",
+    "expectedCitizenId": "CIT-00004",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "राधा Kumar",
+      "fatherName": "Arjun Kumar",
+      "dateOfBirth": "1979-05-05",
+      "district": "East Delhi",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-007",
+    "category": "MULTILINGUAL",
+    "language": "mixed",
+    "expectedCitizenId": "CIT-00002",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "కవిత Yadav",
+      "fatherName": "Gopal Yadav",
+      "dateOfBirth": "1977-03-03",
+      "district": "Hubballi",
+      "allowedRegistries": [
+        "revenue_registry",
+        "education_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-008",
+    "category": "PARAPHRASED_ADDRESS",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00001",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "Amit Patel",
+      "address": "Vijayawada ke paas nivasi Cross Road 2",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-1-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00002",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-1-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00002",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-2-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00003",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-2-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00003",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-3-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00004",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-3-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00004",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-4-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00005",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-4-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00005",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-5-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00006",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-5-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00006",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-6-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00007",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-6-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00007",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-7-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00008",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-7-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00008",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-8-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00009",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-8-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00009",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-9-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00010",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-9-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00010",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-10-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00011",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-10-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00011",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-11-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00012",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-11-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00012",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-12-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00013",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-12-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00013",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-13-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00014",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-13-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00014",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-14-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00015",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-14-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00015",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-15-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00016",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-15-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00016",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-16-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00017",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-16-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00017",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-17-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00018",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-17-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00018",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-18-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00019",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-18-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00019",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-19-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00020",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-19-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00020",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-20-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00021",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-20-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00021",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-21-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00022",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-21-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00022",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-22-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00023",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-22-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00023",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-23-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00024",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-23-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00024",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-24-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00025",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-24-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00025",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-25-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00026",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-25-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00026",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-26-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00027",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-26-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00027",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-27-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00028",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-27-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00028",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-28-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00029",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-28-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00029",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-29-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00030",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "रवि कुमार",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-29-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00030",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "రవి కుమార్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-30-HI",
+    "category": "MULTILINGUAL",
+    "language": "hi",
+    "expectedCitizenId": "CIT-00031",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "अमित पटेल",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  },
+  {
+    "id": "ML-EXP-30-TE",
+    "category": "MULTILINGUAL",
+    "language": "te",
+    "expectedCitizenId": "CIT-00031",
+    "isMatch": true,
+    "isCollisionCase": false,
+    "query": {
+      "name": "అమిత్ పటేల్",
+      "district": "Vijayawada",
+      "allowedRegistries": [
+        "revenue_registry",
+        "health_registry"
+      ],
+      "consentVerified": true
+    }
+  }
+]
