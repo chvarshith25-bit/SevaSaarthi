@@ -1,6 +1,6 @@
 {
   "benchmark_version": "v4.2.0-seed20202-selective-transformer-gating",
-  "timestamp": "2026-09-16T17:03:02.857Z",
+  "timestamp": "2026-09-16T17:34:39.923Z",
   "seed": 20202,
   "total_queries": 2000,
   "population_breakdown": {
@@ -34,9 +34,9 @@
       "romanizedTop1": 100,
       "multilingualTop3": 98.86,
       "transliterationTop3": 100,
-      "p50LatencyMs": 0.27,
+      "p50LatencyMs": 0.28,
       "p95LatencyMs": 0.62,
-      "p99LatencyMs": 0.98
+      "p99LatencyMs": 1.03
     },
     "v3_1_structured": {
       "modelType": "V3.1 Structured",
@@ -59,9 +59,9 @@
       "romanizedTop1": 100,
       "multilingualTop3": 100,
       "transliterationTop3": 100,
-      "p50LatencyMs": 0.82,
-      "p95LatencyMs": 1.86,
-      "p99LatencyMs": 2.84
+      "p50LatencyMs": 0.84,
+      "p95LatencyMs": 1.98,
+      "p99LatencyMs": 2.76
     },
     "transformer_only": {
       "modelType": "Transformer-Only",
@@ -84,9 +84,9 @@
       "romanizedTop1": 36.26,
       "multilingualTop3": 89.14,
       "transliterationTop3": 91.81,
-      "p50LatencyMs": 0.56,
-      "p95LatencyMs": 1.42,
-      "p99LatencyMs": 129.52
+      "p50LatencyMs": 0.54,
+      "p95LatencyMs": 1.4,
+      "p99LatencyMs": 127.05
     },
     "v4_1_global_hybrid": {
       "modelType": "V4.1 Global Hybrid",
@@ -110,14 +110,14 @@
       "multilingualTop3": 100,
       "transliterationTop3": 100,
       "p50LatencyMs": 1.49,
-      "p95LatencyMs": 3.64,
-      "p99LatencyMs": 130.8
+      "p95LatencyMs": 3.74,
+      "p99LatencyMs": 128.66
     },
     "v4_2_selective_gating": {
       "modelType": "V4.2 Selective Gating",
       "totalQueries": 2000,
       "candidateRetrievalRecall": 100,
-      "top1Accuracy": 89.95,
+      "top1Accuracy": 90.09,
       "top3Recall": 99.41,
       "collisionDetectionRate": 90.79,
       "collisionReviewRate": 90.79,
@@ -127,16 +127,16 @@
       "homonymCollisionFMR": 9.2105,
       "unsafeAutomaticMatchRate": 0.7,
       "correctManualReviewRate": 90.79,
-      "unnecessaryManualReviewRate": 23.51,
-      "englishTop1": 87.09,
+      "unnecessaryManualReviewRate": 23.37,
+      "englishTop1": 87.26,
       "hindiTop1": 100,
       "teluguTop1": 100,
       "romanizedTop1": 99.42,
       "multilingualTop3": 100,
       "transliterationTop3": 100,
-      "p50LatencyMs": 1.49,
-      "p95LatencyMs": 3.32,
-      "p99LatencyMs": 130.58
+      "p50LatencyMs": 1.53,
+      "p95LatencyMs": 3.58,
+      "p99LatencyMs": 128.61
     }
   },
   "fusion_experiments": {
@@ -161,9 +161,9 @@
       "romanizedTop1": 100,
       "multilingualTop3": 100,
       "transliterationTop3": 100,
-      "p50LatencyMs": 0.82,
-      "p95LatencyMs": 1.86,
-      "p99LatencyMs": 2.84
+      "p50LatencyMs": 0.84,
+      "p95LatencyMs": 1.98,
+      "p99LatencyMs": 2.76
     },
     "exp_b_transformer_only": {
       "modelType": "Transformer-Only",
@@ -186,9 +186,9 @@
       "romanizedTop1": 36.26,
       "multilingualTop3": 89.14,
       "transliterationTop3": 91.81,
-      "p50LatencyMs": 0.56,
-      "p95LatencyMs": 1.42,
-      "p99LatencyMs": 129.52
+      "p50LatencyMs": 0.54,
+      "p95LatencyMs": 1.4,
+      "p99LatencyMs": 127.05
     },
     "exp_c_linear_90_10": {
       "modelType": "Exp C: Linear 90/10",
@@ -211,9 +211,9 @@
       "romanizedTop1": 99.42,
       "multilingualTop3": 100,
       "transliterationTop3": 100,
-      "p50LatencyMs": 1.02,
-      "p95LatencyMs": 1.81,
-      "p99LatencyMs": 129.89
+      "p50LatencyMs": 1,
+      "p95LatencyMs": 1.82,
+      "p99LatencyMs": 127.45
     },
     "exp_d_linear_80_20": {
       "modelType": "Exp D: Linear 80/20",
@@ -236,9 +236,9 @@
       "romanizedTop1": 98.25,
       "multilingualTop3": 100,
       "transliterationTop3": 100,
-      "p50LatencyMs": 1.02,
-      "p95LatencyMs": 1.81,
-      "p99LatencyMs": 129.89
+      "p50LatencyMs": 1,
+      "p95LatencyMs": 1.82,
+      "p99LatencyMs": 127.45
     },
     "exp_e_cond_med_amb": {
       "modelType": "Exp E: Cond Med/Amb Only",
@@ -261,16 +261,16 @@
       "romanizedTop1": 97.08,
       "multilingualTop3": 97.14,
       "transliterationTop3": 98.83,
-      "p50LatencyMs": 1.02,
-      "p95LatencyMs": 1.81,
-      "p99LatencyMs": 129.89
+      "p50LatencyMs": 1,
+      "p95LatencyMs": 1.82,
+      "p99LatencyMs": 127.45
     },
     "exp_f_cond_multi_only": {
       "modelType": "Exp F: Cond Multi Only",
       "totalQueries": 2000,
       "candidateRetrievalRecall": 100,
-      "top1Accuracy": 87.39,
-      "top3Recall": 97.37,
+      "top1Accuracy": 89.43,
+      "top3Recall": 99.08,
       "collisionDetectionRate": 90.79,
       "collisionReviewRate": 90.79,
       "collisionFalseMatchRate": 9.21,
@@ -279,22 +279,22 @@
       "homonymCollisionFMR": 9.2105,
       "unsafeAutomaticMatchRate": 0.7,
       "correctManualReviewRate": 90.79,
-      "unnecessaryManualReviewRate": 23.7,
-      "englishTop1": 84.79,
+      "unnecessaryManualReviewRate": 23.64,
+      "englishTop1": 87.34,
       "hindiTop1": 90.7,
       "teluguTop1": 96.63,
-      "romanizedTop1": 98.83,
+      "romanizedTop1": 99.42,
       "multilingualTop3": 97.14,
-      "transliterationTop3": 98.83,
-      "p50LatencyMs": 1.02,
-      "p95LatencyMs": 1.81,
-      "p99LatencyMs": 129.89
+      "transliterationTop3": 100,
+      "p50LatencyMs": 1,
+      "p95LatencyMs": 1.82,
+      "p99LatencyMs": 127.45
     },
     "exp_g_selective_gating_v4_2": {
       "modelType": "V4.2 Selective Gating",
       "totalQueries": 2000,
       "candidateRetrievalRecall": 100,
-      "top1Accuracy": 89.95,
+      "top1Accuracy": 90.09,
       "top3Recall": 99.41,
       "collisionDetectionRate": 90.79,
       "collisionReviewRate": 90.79,
@@ -304,16 +304,16 @@
       "homonymCollisionFMR": 9.2105,
       "unsafeAutomaticMatchRate": 0.7,
       "correctManualReviewRate": 90.79,
-      "unnecessaryManualReviewRate": 23.51,
-      "englishTop1": 87.09,
+      "unnecessaryManualReviewRate": 23.37,
+      "englishTop1": 87.26,
       "hindiTop1": 100,
       "teluguTop1": 100,
       "romanizedTop1": 99.42,
       "multilingualTop3": 100,
       "transliterationTop3": 100,
-      "p50LatencyMs": 1.49,
-      "p95LatencyMs": 3.32,
-      "p99LatencyMs": 130.58
+      "p50LatencyMs": 1.53,
+      "p95LatencyMs": 3.58,
+      "p99LatencyMs": 128.61
     },
     "exp_h_learned_v4_1": {
       "modelType": "V4.1 Global Hybrid",
@@ -337,8 +337,8 @@
       "multilingualTop3": 100,
       "transliterationTop3": 100,
       "p50LatencyMs": 1.49,
-      "p95LatencyMs": 3.64,
-      "p99LatencyMs": 130.8
+      "p95LatencyMs": 3.74,
+      "p99LatencyMs": 128.66
     }
   }
 }
