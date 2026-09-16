@@ -28,6 +28,7 @@ import {
   jaroWinklerSimilarity,
 } from './similarity';
 import { CrossRegistryGraphCorroborator } from './graph';
+import { retrieveAuthorizedCandidates } from './candidate-retriever';
 import { getAuthoritativeDb } from '../../pg-db';
 
 export interface Model2V3Weights {
@@ -452,61 +453,12 @@ export class EntityResolutionEngineV3 {
       };
     }
 
-    const db = await getAuthoritativeDb();
     let candidateResults: CandidateMatchResult[] = [];
+    const rawCandidates = await retrieveAuthorizedCandidates(input, 50);
 
-    const norm = normalizeName(input.name);
-    const searchTokens = norm.tokens.filter(t => t.length >= 2);
-    if (searchTokens.length === 0 && norm.normalized) {
-      searchTokens.push(norm.normalized);
-    }
-
-    const uniqueRegistries = Array.from(new Set(input.allowedRegistries));
-
-    for (const regKey of uniqueRegistries) {
-      const regNorm = ((regKey as string) === 'pan' || regKey === 'pan_tax_registry')
-        ? 'pan_tax_registry'
-        : ((regKey as string).endsWith('_registry') ? regKey : (regKey + '_registry')) as RegistryKey;
-      const mapping = REGISTRY_TABLE_MAPPING[regNorm] || REGISTRY_TABLE_MAPPING.revenue_registry;
-
-      const conditions: string[] = [];
-      const params: any[] = [];
-      const tokenConditions: string[] = [];
-
-      for (const tok of searchTokens) {
-        params.push('%' + tok + '%');
-        tokenConditions.push(mapping.nameCol + ' ILIKE $' + params.length);
-      }
-
-      if (mapping.refCol) {
-        const refVal = (regNorm === 'pan_tax_registry' && input.panReference)
-          ? input.panReference
-          : input.identityReference;
-        if (refVal) {
-          params.push(refVal);
-          tokenConditions.push(mapping.refCol + ' = $' + params.length);
-        }
-      }
-
-      if (tokenConditions.length === 0) continue;
-      conditions.push('(' + tokenConditions.join(' OR ') + ')');
-
-      const querySql = 'SELECT * FROM ' + mapping.tableName + ' WHERE ' + conditions.join(' AND ') + ' LIMIT 50';
-      try {
-        const res = await db.query(querySql, params);
-        const rows = res.rows as Record<string, any>[];
-
-        for (const row of rows) {
-          const candName = row[mapping.nameCol] || row.name || row.full_name || '';
-          const nameSim = computeNameSimilarity(input.name, candName);
-          if (nameSim < 0.35) continue;
-
-          const candidate = this.evaluateCandidateV3(input, row, regNorm, 0.0);
-          candidateResults.push(candidate);
-        }
-      } catch (queryErr) {
-        console.warn('[EntityResolutionEngineV3] Query error on registry ' + regKey + ':', queryErr);
-      }
+    for (const item of rawCandidates) {
+      const candidate = this.evaluateCandidateV3(input, item.row, item.registry, 0.0);
+      candidateResults.push(candidate);
     }
 
     if (input.enableGraphCorroboration !== false && candidateResults.length > 0) {

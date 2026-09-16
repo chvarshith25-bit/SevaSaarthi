@@ -198,7 +198,30 @@ export class MultilingualE5BaseTransformerProvider implements EmbeddingProvider 
   public async embedBatch(texts: string[]): Promise<Float32Array[]> {
     if (!texts || texts.length === 0) return [];
     
-    // Process sequentially or in small chunks for stable CPU inference
+    try {
+      const pipe = await this.getPipeline();
+      const output = await pipe(texts, {
+        pooling: 'mean',
+        normalize: true,
+      });
+
+      const data = output.data;
+      if (data && data.length >= texts.length * this.dimension) {
+        const results: Float32Array[] = [];
+        for (let i = 0; i < texts.length; i++) {
+          const start = i * this.dimension;
+          const end = start + this.dimension;
+          const anyData = data as any;
+          const slice = anyData.subarray ? anyData.subarray(start, end) : anyData.slice(start, end);
+          const floatArray = slice instanceof Float32Array ? new Float32Array(slice) : new Float32Array(slice as any);
+          results.push(this.normalize(floatArray));
+        }
+        return results;
+      }
+    } catch (err) {
+      // Fallback to sequential
+    }
+
     const results: Float32Array[] = [];
     for (const text of texts) {
       results.push(await this.embed(text));

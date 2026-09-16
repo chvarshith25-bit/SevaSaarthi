@@ -44,13 +44,16 @@ export interface EmbeddingProvider {
 }
 
 export type FusionStrategy =
-  | 'STRUCTURED_ONLY'       // Strategy A
-  | 'TRANSFORMER_ONLY'      // Strategy B
-  | 'LINEAR_90_10'          // Strategy C: 0.90 structured + 0.10 transformer
-  | 'LINEAR_80_20'          // Strategy D: 0.80 structured + 0.20 transformer
-  | 'LINEAR_70_30'          // Strategy E: 0.70 structured + 0.30 transformer
-  | 'LINEAR_60_40'          // Strategy F: 0.60 structured + 0.40 transformer
-  | 'LEARNED_FUSION';       // Strategy G: Learned field-aware hybrid fusion layer
+  | 'STRUCTURED_ONLY'                 // Strategy A: V3.1 structured evidence only
+  | 'TRANSFORMER_ONLY'                // Strategy B: Pure transformer cosine similarity
+  | 'LINEAR_90_10'                    // Strategy C: 0.90 structured + 0.10 transformer
+  | 'LINEAR_80_20'                    // Strategy D: 0.80 structured + 0.20 transformer
+  | 'LINEAR_70_30'                    // 0.70 structured + 0.30 transformer
+  | 'LINEAR_60_40'                    // 0.60 structured + 0.40 transformer
+  | 'CONDITIONAL_MEDIUM_AMBIGUOUS'   // Strategy E: Conditional transformer for MEDIUM/AMBIGUOUS only
+  | 'CONDITIONAL_MULTILINGUAL_ONLY'   // Strategy F: Conditional transformer for multilingual only
+  | 'CONDITIONAL_SELECTIVE'           // Strategy G: V4.2 Selective Transformer Gating (Multilingual + Uncertain)
+  | 'LEARNED_FUSION';                 // Strategy H: Learned field-aware hybrid fusion layer
 
 export interface Model2V4Weights {
   version: string;
@@ -147,6 +150,14 @@ export interface V4CandidateMatchResult {
   supportingRegistries?: RegistryKey[];
   supportingRecordIds?: string[];
   identityRecordCount?: number;
+  gatingDecision?: {
+    mode: string;
+    alphaStructured: number;
+    betaTransformer: number;
+    reason: string;
+    detectedLanguage: string;
+    isMultilingual: boolean;
+  };
   explanation: string;
   rawRecord: Record<string, any>;
 }

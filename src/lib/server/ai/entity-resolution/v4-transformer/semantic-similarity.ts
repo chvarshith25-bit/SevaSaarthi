@@ -177,10 +177,13 @@ export class SemanticSimilarityEngine {
       normB += b * b;
     }
 
-    if (normA <= 0.0 || normB <= 0.0) return 0.0;
+    if (normA <= 0.0 || normB <= 0.0 || !Number.isFinite(normA) || !Number.isFinite(normB)) return 0.0;
     const cosine = dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    if (!Number.isFinite(cosine) || Number.isNaN(cosine)) return 0.0;
     
     // Scale cosine from [-1.0, 1.0] to [0.0, 1.0]
-    return Math.max(0.0, Math.min(1.0, (cosine + 1.0) / 2.0));
+    const scaled = (cosine + 1.0) / 2.0;
+    if (!Number.isFinite(scaled) || Number.isNaN(scaled)) return 0.0;
+    return Math.max(0.0, Math.min(1.0, scaled));
   }
 }

@@ -1,6 +1,7 @@
 export * from './types';
 export * from './normalizer';
 export * from './similarity';
+export * from './candidate-retriever';
 export * from './scorer';
 export * from './engine';
 export * from './v2-engine';

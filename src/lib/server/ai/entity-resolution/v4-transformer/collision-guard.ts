@@ -40,9 +40,12 @@ export class V4CollisionGuard {
     let hasAddressConflict = false;
 
     // 1. High Name Similarity is a prerequisite for a homonym collision check
-    const highNameSimilarity = fieldScores.nameScore >= 0.60;
+    const highNameSimilarity =
+      fieldScores.nameScore >= 0.60 ||
+      (fieldScores.nameSemanticScore !== undefined && fieldScores.nameSemanticScore >= 0.70) ||
+      (fieldScores.transformerScore !== undefined && fieldScores.transformerScore >= 0.70);
 
-    // 2. Date of Birth Contradiction Check
+    // 2. Date of Birth Contradiction Check (Strictly structured)
     const rowDob = row.dob || row.date_of_birth || row.birth_date;
     if (input.dateOfBirth && rowDob) {
       if (fieldScores.dobScore < 0.60) {
@@ -52,23 +55,23 @@ export class V4CollisionGuard {
       }
     }
 
-    // 3. Father / Guardian Name Contradiction Check
+    // 3. Father / Guardian Name Contradiction Check (Strictly structured)
     const rowFather = row.father_name || row.guardian_name || row.father;
-    if (input.fatherName && rowFather) {
+    const queryFather = input.fatherName || input.guardianName;
+    if (queryFather && rowFather) {
       if (fieldScores.fatherScore < 0.60) {
         hasFatherConflict = true;
-        // If name matches strongly but father is completely different, flag collision
         if (highNameSimilarity) {
           isCollision = true;
-          reasons.push(`Father name conflict (Query: ${input.fatherName} vs Registry: ${rowFather})`);
+          reasons.push(`Father name conflict (Query: ${queryFather} vs Registry: ${rowFather})`);
         }
       }
     }
 
-    // 4. District Contradiction Check
+    // 4. District Contradiction Check (Strictly structured)
     const rowDistrict = row.district;
     if (input.district && rowDistrict) {
-      if (fieldScores.districtScore < 0.75) {
+      if (fieldScores.districtScore < 0.60) {
         hasDistrictConflict = true;
         if (highNameSimilarity) {
           isCollision = true;
@@ -77,10 +80,21 @@ export class V4CollisionGuard {
       }
     }
 
-    // 5. Complete Address Contradiction Check (when both full addresses exist)
+    // 5. Pincode Contradiction Check (Strictly structured)
+    const rowPincode = row.pincode || row.pin_code;
+    if (input.pincode && rowPincode) {
+      if (fieldScores.pincodeScore < 0.60) {
+        if (highNameSimilarity) {
+          isCollision = true;
+          reasons.push(`Pincode contradiction (Query: ${input.pincode} vs Registry: ${rowPincode})`);
+        }
+      }
+    }
+
+    // 6. Complete Address Contradiction Check
     const rowAddress = row.address || row.village;
     if (input.address && rowAddress && highNameSimilarity) {
-      if (fieldScores.addressScore < 0.20 && hasDistrictConflict) {
+      if (fieldScores.addressScore < 0.15) {
         hasAddressConflict = true;
         isCollision = true;
         reasons.push(`Full address contradiction (Query: ${input.address} vs Registry: ${rowAddress})`);

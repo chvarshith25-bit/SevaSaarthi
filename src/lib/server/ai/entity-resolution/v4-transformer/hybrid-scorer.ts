@@ -17,6 +17,7 @@ import {
   V4CandidateMatchResult,
   Model2V4Weights,
   EXPECTED_V4_FEATURE_NAMES,
+  EXPECTED_V4_1_FEATURE_NAMES,
   V4FieldSimilarityScores,
 } from './types';
 import {
@@ -29,6 +30,8 @@ import {
 } from '../similarity';
 import { normalizeName, normalizeDate, normalizeAddress, normalizePincode } from '../normalizer';
 import { V4CollisionGuard } from './collision-guard';
+import { LanguageRouter } from './language-router';
+import { SelectiveGater, GatingDecision } from './selective-gater';
 
 export const DEFAULT_V4_CONFIG: Model2V4Weights = {
   version: 'v4.0.0-experimental',
@@ -79,28 +82,7 @@ export const DEFAULT_V4_1_CONFIG: Model2V4Weights = {
   model_type: 'Calibrated Field-Aware Multilingual Transformer Hybrid Entity Resolution',
   transformer_model_id: 'intfloat/multilingual-e5-base',
   transformer_dimension: 768,
-  feature_names: [
-    'name_similarity',
-    'initials_compatibility',
-    'dob_similarity',
-    'father_similarity',
-    'address_similarity',
-    'district_similarity',
-    'pincode_similarity',
-    'ngram_similarity',
-    'graph_corroboration',
-    'available_field_count',
-    'conflicting_field_count',
-    'missing_dob',
-    'missing_father',
-    'missing_address',
-    'missing_district',
-    'missing_pincode',
-    'transformer_name_similarity',
-    'transformer_address_similarity',
-    'transformer_district_similarity',
-    'transformer_profile_similarity',
-  ],
+  feature_names: EXPECTED_V4_1_FEATURE_NAMES,
   fusion_strategy: 'LEARNED_FUSION',
   weights: [
     0.2200,  // 0: name_similarity
@@ -141,10 +123,57 @@ export const DEFAULT_V4_1_CONFIG: Model2V4Weights = {
   },
 };
 
+export const DEFAULT_V4_2_CONFIG: Model2V4Weights = {
+  version: 'v4.2.0-selective-gating',
+  model_name: 'entity-resolver-v4.2-selective-transformer',
+  model_type: 'Selective Gated Multilingual Transformer Hybrid Entity Resolution',
+  transformer_model_id: 'intfloat/multilingual-e5-base',
+  transformer_dimension: 768,
+  feature_names: EXPECTED_V4_1_FEATURE_NAMES,
+  fusion_strategy: 'CONDITIONAL_SELECTIVE',
+  weights: [
+    0.2200,  // 0: name_similarity
+    1.3500,  // 1: initials_compatibility
+    0.2200,  // 2: dob_similarity
+    0.2200,  // 3: father_similarity
+    0.2000,  // 4: address_similarity
+    0.2600,  // 5: district_similarity
+    0.2000,  // 6: pincode_similarity
+    0.2000,  // 7: ngram_similarity
+    0.2000,  // 8: graph_corroboration
+    0.0000,  // 9: available_field_count
+    -6.5000, // 10: conflicting_field_count (strictly negative hard conflict penalty)
+    0.0000,  // 11: missing_dob
+    0.0000,  // 12: missing_father
+    0.0000,  // 13: missing_address
+    0.0000,  // 14: missing_district
+    0.0000,  // 15: missing_pincode
+    0.2800,  // 16: transformer_name_similarity
+    0.1500,  // 17: transformer_address_similarity
+    0.1000,  // 18: transformer_district_similarity
+    0.2200,  // 19: transformer_profile_similarity
+  ],
+  bias: -0.1500,
+  temperature: 0.68,
+  fusion_coefficients: {
+    alpha_structured: 0.85,
+    beta_transformer: 0.15,
+    gamma_graph: 0.10,
+    conflict_penalty_weight: 1.0,
+  },
+  thresholds: {
+    HIGH_CONFIDENCE: 0.85,
+    MEDIUM_CONFIDENCE: 0.60,
+    LOW_CONFIDENCE: 0.35,
+    HARD_CONFLICT_CAP: 0.25,
+    AMBIGUITY_SCORE_DELTA: 0.05,
+  },
+};
+
 export class V4HybridScorer {
   private readonly config: Model2V4Weights;
 
-  constructor(config: Model2V4Weights = DEFAULT_V4_1_CONFIG) {
+  constructor(config: Model2V4Weights = DEFAULT_V4_2_CONFIG) {
     this.config = config;
     this.validateWeights();
   }
@@ -260,11 +289,11 @@ export class V4HybridScorer {
     if (input.dateOfBirth && candDob) {
       missingDob = 0.0;
       dobScore = computeDobSimilarity(input.dateOfBirth, candDob);
-      if (dobScore >= 0.90) matchedFields.push('dob');
+      if (dobScore >= 0.80) matchedFields.push('dob');
       else if (dobScore < 0.60) dobConflict = true;
     }
 
-    // Father similarity (fusing lexical and specific father semantic)
+    // Father similarity (strictly structured for conflict checks)
     let fatherScore = 0.0;
     let missingFather = 1.0;
     let fatherConflict = false;
@@ -275,47 +304,44 @@ export class V4HybridScorer {
 
     if (queryFather && candFather) {
       missingFather = 0.0;
-      const rawFatherScore = jaroWinklerSimilarity(
+      fatherScore = jaroWinklerSimilarity(
         normalizeName(queryFather).normalized,
         normalizeName(candFather).normalized
       );
-      fatherScore = Math.max(rawFatherScore, fatherSemanticSim);
       if (fatherScore >= 0.70) matchedFields.push('fatherName');
       else if (fatherScore < 0.60) fatherConflict = true;
     }
 
-    // Address similarity (fusing lexical and semantic)
+    // Address similarity (strictly structured for conflict checks)
     let addressScore = 0.0;
     let missingAddress = 1.0;
     let addressConflict = false;
     if (input.address && candAddress) {
       missingAddress = 0.0;
-      const rawAddressScore = computeAddressSimilarity(input.address, candAddress);
-      addressScore = Math.max(rawAddressScore, addressSemanticSim);
+      addressScore = computeAddressSimilarity(input.address, candAddress);
       if (addressScore >= 0.60) matchedFields.push('address');
-      else if (addressScore < 0.15 && addressSemanticSim < 0.50) addressConflict = true;
+      else if (addressScore < 0.15) addressConflict = true;
     }
 
-    // District similarity (fusing lexical and semantic)
+    // District similarity (strictly structured for conflict checks)
     let districtScore = 0.0;
     let missingDistrict = 1.0;
     let districtConflict = false;
     if (input.district && candDistrict) {
       missingDistrict = 0.0;
-      const rawDistrictScore = computeDistrictSimilarity(input.district, candDistrict);
-      districtScore = Math.max(rawDistrictScore, districtSemanticSim);
+      districtScore = computeDistrictSimilarity(input.district, candDistrict);
       if (districtScore >= 0.80) matchedFields.push('district');
-      else if (districtScore < 0.75 && districtSemanticSim < 0.75) districtConflict = true;
+      else if (districtScore < 0.60) districtConflict = true;
     }
 
-    // Pincode similarity (numeric)
+    // Pincode similarity (strictly numeric)
     let pincodeScore = 0.0;
     let missingPincode = 1.0;
     let pincodeConflict = false;
     if (input.pincode && candPincode) {
       missingPincode = 0.0;
       pincodeScore = computePincodeSimilarity(input.pincode, candPincode);
-      if (pincodeScore >= 0.90) matchedFields.push('pincode');
+      if (pincodeScore >= 0.80) matchedFields.push('pincode');
       else if (pincodeScore < 0.60) pincodeConflict = true;
     }
 
@@ -355,7 +381,7 @@ export class V4HybridScorer {
     if (fatherConflict) conflictCount++;
     if (districtConflict) conflictCount++;
     if (pincodeConflict) conflictCount++;
-    if (addressConflict && districtConflict) conflictCount++;
+    if (addressConflict) conflictCount++;
 
     // Composite structured score
     const structuredScore = Number(
@@ -414,9 +440,25 @@ export class V4HybridScorer {
     };
 
     // Determine strategy
-    const strategy = this.config.fusion_strategy || 'LEARNED_FUSION';
+    const strategy = this.config.fusion_strategy || 'CONDITIONAL_SELECTIVE';
     let uncalibratedScore = 0.0;
     let calibratedProb = 0.0;
+    let gatingDecisionResult: GatingDecision | undefined;
+
+    // Pre-evaluate collision guard for gating decisions
+    const collisionResult = V4CollisionGuard.evaluateCollision(input, row, fieldScores);
+    const isCollision = collisionResult.isCollision || conflictCount > 0;
+
+    let structuredTier: 'HIGH' | 'MEDIUM' | 'LOW' | 'AMBIGUOUS' = 'AMBIGUOUS';
+    if (isCollision) {
+      structuredTier = 'AMBIGUOUS';
+    } else if (structuredCalibratedProb >= this.config.thresholds.HIGH_CONFIDENCE && conflictCount === 0 && nameScore >= 0.70 && availableCount >= 3) {
+      structuredTier = 'HIGH';
+    } else if (structuredCalibratedProb >= this.config.thresholds.MEDIUM_CONFIDENCE && conflictCount === 0 && nameScore >= 0.60) {
+      structuredTier = 'MEDIUM';
+    } else if (structuredCalibratedProb >= this.config.thresholds.LOW_CONFIDENCE) {
+      structuredTier = 'LOW';
+    }
 
     if (strategy === 'STRUCTURED_ONLY') {
       calibratedProb = structuredCalibratedProb;
@@ -436,8 +478,47 @@ export class V4HybridScorer {
     } else if (strategy === 'LINEAR_60_40') {
       calibratedProb = 0.60 * structuredCalibratedProb + 0.40 * primaryTransformerSim;
       uncalibratedScore = 0.60 * structuredScore + 0.40 * primaryTransformerSim;
+    } else if (strategy === 'CONDITIONAL_MEDIUM_AMBIGUOUS') {
+      // Strategy E: Conditional for MEDIUM / AMBIGUOUS only
+      if (structuredTier === 'HIGH') {
+        calibratedProb = structuredCalibratedProb;
+      } else if (structuredTier === 'MEDIUM') {
+        calibratedProb = 0.85 * structuredCalibratedProb + 0.15 * primaryTransformerSim;
+      } else {
+        calibratedProb = 0.55 * structuredCalibratedProb + 0.45 * primaryTransformerSim;
+      }
+      uncalibratedScore = calibratedProb;
+    } else if (strategy === 'CONDITIONAL_MULTILINGUAL_ONLY') {
+      // Strategy F: Conditional for Multilingual queries only
+      const lang = LanguageRouter.detectQueryLanguage(input);
+      if (lang.isMultilingualOrTransliterated) {
+        const sem = 0.60 * (nameSemanticSim || primaryTransformerSim) + 0.40 * profileSemanticSim;
+        calibratedProb = 0.30 * structuredCalibratedProb + 0.70 * sem;
+      } else {
+        calibratedProb = structuredCalibratedProb;
+      }
+      uncalibratedScore = calibratedProb;
+    } else if (strategy === 'CONDITIONAL_SELECTIVE') {
+      // Strategy G: V4.2 Selective Gating (Multilingual + Uncertain cases)
+      const qText = `${input.name || ''} ${input.address || ''} ${input.district || ''}`;
+      gatingDecisionResult = SelectiveGater.evaluateGate({
+        queryText: qText,
+        structuredCalibratedScore: structuredCalibratedProb,
+        structuredConfidenceTier: structuredTier,
+        nameScore,
+        conflictCount,
+        isCollision,
+        availableFieldCount: availableCount,
+      });
+
+      calibratedProb = SelectiveGater.computeGatedScore(
+        structuredCalibratedProb,
+        fieldScores,
+        gatingDecisionResult
+      );
+      uncalibratedScore = calibratedProb;
     } else {
-      // LEARNED_FUSION (Strategy G)
+      // LEARNED_FUSION (Strategy H)
       let featureVector: number[];
       if (this.config.weights.length === 20) {
         featureVector = [
@@ -494,13 +575,12 @@ export class V4HybridScorer {
       uncalibratedScore = calibratedProb;
     }
 
-    // 5. Evaluate Collision Guard (HARD CONSTRAINT)
-    const collisionResult = V4CollisionGuard.evaluateCollision(input, row, fieldScores);
-    const isCollision = collisionResult.isCollision || conflictCount > 0;
-
-    // 6. Assign final confidence tier & score
+    // 5. Assign final confidence tier & score
     let totalScore = Number(calibratedProb.toFixed(4));
     let confidenceTier: 'HIGH' | 'MEDIUM' | 'LOW' | 'AMBIGUOUS';
+
+    const isMultilingualQuery = gatingDecisionResult?.isMultilingual ?? false;
+    const effectiveNameScore = isMultilingualQuery ? Math.max(nameScore, nameSemanticSim) : nameScore;
 
     if (isCollision) {
       // Hard cap <= 0.25 unconditionally
@@ -512,14 +592,14 @@ export class V4HybridScorer {
       if (
         totalScore >= this.config.thresholds.HIGH_CONFIDENCE &&
         conflictCount === 0 &&
-        nameScore >= 0.70 &&
-        availableCount >= 3
+        effectiveNameScore >= 0.70 &&
+        (availableCount >= 3 || (isMultilingualQuery && effectiveNameScore >= 0.85))
       ) {
         confidenceTier = 'HIGH';
       } else if (
         totalScore >= this.config.thresholds.MEDIUM_CONFIDENCE &&
         conflictCount === 0 &&
-        nameScore >= 0.60
+        effectiveNameScore >= 0.60
       ) {
         confidenceTier = 'MEDIUM';
       } else if (totalScore >= this.config.thresholds.LOW_CONFIDENCE) {
@@ -549,6 +629,7 @@ export class V4HybridScorer {
       confidenceTier,
       isCollisionWarning: isCollision,
       collisionReason,
+      gatingDecision: gatingDecisionResult,
       explanation,
       rawRecord: row,
     };

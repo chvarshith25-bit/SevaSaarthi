@@ -14,6 +14,7 @@ import {
 } from './types';
 import { evaluateCandidate } from './scorer';
 import { normalizeName } from './normalizer';
+import { retrieveAuthorizedCandidates } from './candidate-retriever';
 import { getEmbeddingProvider } from './embeddings';
 import { CrossRegistryGraphCorroborator } from './graph';
 
@@ -124,53 +125,13 @@ export class EntityResolutionEngine {
       searchTokens.push(norm.normalized);
     }
 
-    // Deduplicate allowed registries
     const uniqueRegistries = Array.from(new Set(input.allowedRegistries));
     const rawCandidates: { regKey: RegistryKey; row: Record<string, any>; embeddingScore?: number }[] = [];
+    const retrievedRows = await retrieveAuthorizedCandidates(input, 50);
 
-    // 2. Query ONLY allowed registries
-    for (const regKey of uniqueRegistries) {
-      const mapping = REGISTRY_TABLE_MAPPING[regKey];
-      if (!mapping) continue;
-
-      const conditions: string[] = [];
-      const params: any[] = [];
-      const tokenConditions: string[] = [];
-
-      for (const tok of searchTokens) {
-        params.push('%' + tok + '%');
-        tokenConditions.push(mapping.nameCol + ' ILIKE $' + params.length);
-      }
-
-      // Check for registry-specific or authorized identity references
-      if (mapping.refCol) {
-        const refVal = (regKey === 'pan_tax_registry' && input.panReference)
-          ? input.panReference
-          : input.identityReference;
-        if (refVal) {
-          params.push(refVal);
-          tokenConditions.push(mapping.refCol + ' = $' + params.length);
-        }
-      }
-
-      // If no valid search tokens and no reference identifiers exist, skip table to avoid unbounded scan
-      if (tokenConditions.length === 0) {
-        continue;
-      }
-
-      conditions.push('(' + tokenConditions.join(' OR ') + ')');
-
-      let querySql = 'SELECT * FROM ' + mapping.tableName;
-      if (conditions.length > 0) {
-        querySql += ' WHERE ' + conditions.join(' AND ');
-      }
-      querySql += ' LIMIT 50';
-
-      try {
-        const res = await db.query(querySql, params);
-        const rows = res.rows as Record<string, any>[];
-
-        for (const row of rows) {
+    for (const candItem of retrievedRows) {
+      const row = candItem.row;
+      const regKey = candItem.registry;
           let embeddingScore: number | undefined = undefined;
           if (useEmbeddings && queryNameVec) {
             const candName = row.name || row.student_name || row.farmer_name || row.beneficiary_name || row.applicant_name || row.owner_name || '';
@@ -195,10 +156,6 @@ export class EntityResolutionEngine {
             row,
             embeddingScore,
           });
-        }
-      } catch (queryErr) {
-        console.warn('[EntityResolutionEngine] Query error on registry ' + regKey + ':', queryErr);
-      }
     }
 
     // 3. Initial Pass Scoring

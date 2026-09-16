@@ -52,12 +52,13 @@ import {
 import { MultilingualE5BaseTransformerProvider } from './transformer-provider';
 import { EmbeddingCache } from './embedding-cache';
 import { SemanticSimilarityEngine } from './semantic-similarity';
-import { V4HybridScorer, DEFAULT_V4_CONFIG, DEFAULT_V4_1_CONFIG } from './hybrid-scorer';
+import { V4HybridScorer, DEFAULT_V4_CONFIG, DEFAULT_V4_1_CONFIG, DEFAULT_V4_2_CONFIG } from './hybrid-scorer';
 import { V4IdentityConsolidator } from './identity-consolidator';
 import { normalizeName } from '../normalizer';
 import { computeNameSimilarity } from '../similarity';
 import { CrossRegistryGraphCorroborator } from '../graph';
 import { EntityResolutionEngineV3 } from '../v3-engine';
+import { retrieveAuthorizedCandidates } from '../candidate-retriever';
 import { getAuthoritativeDb } from '../../../pg-db';
 
 const REGISTRY_TABLE_MAPPING: Record<
@@ -137,7 +138,7 @@ export class EntityResolutionEngineV4 {
   private readonly config: Model2V4Weights;
 
   constructor(options?: V4EngineOptions) {
-    this.config = options?.weightsConfig || DEFAULT_V4_1_CONFIG;
+    this.config = options?.weightsConfig || DEFAULT_V4_2_CONFIG;
     this.transformerProvider =
       options?.transformerProvider || new MultilingualE5BaseTransformerProvider();
     this.embeddingCache = EmbeddingCache.getInstance();
@@ -448,95 +449,14 @@ export class EntityResolutionEngineV4 {
   }
 
   /**
-   * Retrieves top-N candidate rows from authorized database registries using lexical search.
-   * Supports both Latin tokens and Indic transliterated tokens for initial candidate generation.
+   * Retrieves top-N candidate rows from authorized database registries using multi-tiered deterministic search.
+   * Supports Latin tokens, Indic transliterated tokens, and symmetric phonetic expansion.
    */
   private async retrieveCandidateRows(
     input: EntityResolutionInput,
     topN: number
   ): Promise<{ row: Record<string, any>; registry: RegistryKey }[]> {
-    const db = await getAuthoritativeDb();
-    const candidateRows: { row: Record<string, any>; registry: RegistryKey }[] = [];
-    
-    // 1. Extract Latin tokens
-    const normNameObj = normalizeName(input.name);
-    let searchTokens = normNameObj.tokens.filter((t) => t.length >= 2);
-
-    // 2. If no Latin tokens found (e.g., Hindi / Telugu Indic script), transliterate words
-    if (searchTokens.length === 0 && input.name) {
-      const words = input.name.trim().split(/\s+/);
-      const transliteratedTokens: string[] = [];
-      const indicMap: Record<string, string> = {
-        'अमित': 'AMIT', 'पटेल': 'PATEL', 'रवि': 'RAVI', 'कुमार': 'KUMAR',
-        'శర్మ': 'SHARMA', 'వర్మ': 'VERMA', 'సింగ్': 'SINGH', 'శ్రీనివాస్': 'SRINIVAS',
-        'అమిత్': 'AMIT', 'పటేల్': 'PATEL', 'రవి': 'RAVI', 'కుమార్': 'KUMAR',
-        'కవిత': 'KAVITHA', 'దీపక్': 'DEEPAK', 'నాయుడు': 'NAIDU', 'రాధ': 'RADHA',
-        'రాధా': 'RADHA', 'सुरेश': 'SURESH', 'वर्मा': 'VERMA', 'पूजा': 'POOJA',
-        'विजय': 'VIJAY', 'सिंह': 'SINGH', 'సురేష్': 'SURESH',
-        'పూజ': 'POOJA', 'విజయ్': 'VIJAY', 'సునీత': 'SUNITA', 'దేవి': 'DEVI',
-        'सुनीता': 'SUNITA', 'देवी': 'DEVI', 'मनीष': 'MANISH', 'మనీష్': 'MANISH',
-      };
-
-      for (const w of words) {
-        if (indicMap[w]) {
-          transliteratedTokens.push(indicMap[w]);
-        }
-      }
-      if (transliteratedTokens.length > 0) {
-        searchTokens = transliteratedTokens;
-      }
-    }
-
-    if (searchTokens.length === 0 && normNameObj.normalized) {
-      searchTokens.push(normNameObj.normalized);
-    }
-
-    const uniqueRegistries = Array.from(new Set(input.allowedRegistries));
-
-    for (const regKey of uniqueRegistries) {
-      const regNorm = ((regKey as string) === 'pan' || regKey === 'pan_tax_registry')
-        ? 'pan_tax_registry'
-        : ((regKey as string).endsWith('_registry') ? regKey : (regKey + '_registry')) as RegistryKey;
-      const mapping = REGISTRY_TABLE_MAPPING[regNorm] || REGISTRY_TABLE_MAPPING.revenue_registry;
-      if (!mapping) continue;
-
-      try {
-        const limitPerReg = Math.max(10, Math.ceil(topN / uniqueRegistries.length));
-        const conditions: string[] = [];
-        const params: any[] = [];
-        const tokenConditions: string[] = [];
-
-        for (const tok of searchTokens) {
-          params.push('%' + tok + '%');
-          tokenConditions.push(mapping.nameCol + ' ILIKE $' + params.length);
-        }
-
-        if (tokenConditions.length > 0) {
-          conditions.push('(' + tokenConditions.join(' OR ') + ')');
-        }
-
-        let querySql = `SELECT * FROM ${mapping.tableName}`;
-        if (conditions.length > 0) {
-          querySql += ` WHERE ${conditions.join(' AND ')}`;
-        }
-        querySql += ` LIMIT ${limitPerReg * 2}`;
-
-        const res = await db.query(querySql, params);
-        const rows = res.rows as Record<string, any>[];
-
-        for (const row of rows) {
-          const candName = row[mapping.nameCol] || row.name || row.full_name || '';
-          const nameSim = computeNameSimilarity(input.name, candName);
-          if (nameSim >= 0.20 || searchTokens.length > 0) {
-            candidateRows.push({ row, registry: regNorm });
-          }
-        }
-      } catch (qErr) {
-        console.warn(`[EntityResolutionEngineV4] Database retrieval error on ${regKey}:`, qErr);
-      }
-    }
-
-    return candidateRows.slice(0, topN);
+    return retrieveAuthorizedCandidates(input, topN);
   }
 
   /**
