@@ -613,7 +613,7 @@ export async function runAdversarialSuite() {
 
   try {
     const q19: EntityResolutionInput = {
-      name: 'Amit Patel',
+      name: 'अमित पटेल',
       dateOfBirth: '1976-02-02',
       district: 'Vijayawada',
       allowedRegistries: ['revenue_registry', 'pan_tax_registry'],

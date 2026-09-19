@@ -76,44 +76,13 @@ export class SelectiveGater {
       };
     }
 
-    // Standard English query paths:
-    // Case A: Clear exact structured match with high confidence
-    const isClearHighConfidence =
-      structuredConfidenceTier === 'HIGH' &&
-      structuredCalibratedScore >= 0.85 &&
-      nameScore >= 0.80 &&
-      availableFieldCount >= 3 &&
-      (scoreDeltaToSecond === undefined || scoreDeltaToSecond >= 0.05);
-
-    if (isClearHighConfidence) {
-      return {
-        mode: 'BYPASS_TRANSFORMER',
-        alphaStructured: 1.0,
-        betaTransformer: 0.0,
-        reason: 'High-confidence standard English structured match. Transformer bypassed to eliminate semantic variance.',
-        detectedLanguage: 'ENGLISH',
-        isMultilingual: false,
-      };
-    }
-
-    // Case B: Medium confidence structured match
-    if (structuredConfidenceTier === 'MEDIUM' && nameScore >= 0.65) {
-      return {
-        mode: 'LIGHT_ADVISORY',
-        alphaStructured: 0.85,
-        betaTransformer: 0.15,
-        reason: 'Medium-confidence structured match. Light Transformer advisory weighting applied.',
-        detectedLanguage: 'ENGLISH',
-        isMultilingual: false,
-      };
-    }
-
-    // Case C: Ambiguous, tied candidates, or noisy / borderline spelling
+    // Standard English query path:
+    // Protect English structured accuracy by relying on calibrated structured scoring (V3.1 parity)
     return {
-      mode: 'MODERATE_RERANK',
-      alphaStructured: 0.55,
-      betaTransformer: 0.45,
-      reason: 'Ambiguous or borderline structured evidence / close ties. Transformer semantic reranking enabled.',
+      mode: 'BYPASS_TRANSFORMER',
+      alphaStructured: 1.0,
+      betaTransformer: 0.0,
+      reason: 'Standard English query. Structured calibrated scoring utilized to protect lexical accuracy and eliminate semantic distortion.',
       detectedLanguage: 'ENGLISH',
       isMultilingual: false,
     };

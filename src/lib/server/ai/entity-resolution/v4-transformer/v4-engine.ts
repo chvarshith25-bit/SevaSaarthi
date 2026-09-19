@@ -59,6 +59,7 @@ import { computeNameSimilarity } from '../similarity';
 import { CrossRegistryGraphCorroborator } from '../graph';
 import { EntityResolutionEngineV3 } from '../v3-engine';
 import { retrieveAuthorizedCandidates } from '../candidate-retriever';
+import { LanguageRouter } from './language-router';
 import { getAuthoritativeDb } from '../../../pg-db';
 
 const REGISTRY_TABLE_MAPPING: Record<
@@ -241,55 +242,15 @@ export class EntityResolutionEngineV4 {
         };
       }
 
-      // 4. TRANSFORMER SEMANTIC ENCODING (multilingual-e5-base)
+      // 4. UPFRONT SELECTIVE GATING & TRANSFORMER SEMANTIC ENCODING
       embeddingStart = performance.now();
       let cacheHits = 0;
       let cacheMisses = 0;
 
-      const getCachedEmbedding = async (text: string, reg?: RegistryKey): Promise<Float32Array> => {
-        const cacheKey = EmbeddingCache.computeCacheKey(text, this.transformerProvider.modelId);
-        if (enableCache) {
-          const cached = this.embeddingCache.get(cacheKey);
-          if (cached) {
-            cacheHits++;
-            return cached;
-          }
-        }
-        cacheMisses++;
-        const emb = await this.transformerProvider.embed(text);
-        if (enableCache) {
-          this.embeddingCache.set(cacheKey, emb, text, reg);
-        }
-        return emb;
-      };
+      const qFullText = `${input.name || ''} ${input.address || ''} ${input.district || ''}`;
+      const langInfo = LanguageRouter.detectLanguage(qFullText);
+      const isMultilingual = langInfo.isMultilingualOrTransliterated;
 
-      // Query embeddings (Profile & Name)
-      const queryRep = SemanticSimilarityEngine.formatQuerySemanticText(input);
-      const queryProfileEmb = await getCachedEmbedding(queryRep.text);
-
-      const queryNameRep = SemanticSimilarityEngine.formatFieldSemanticText('name', input.name, true);
-      const queryNameEmb = await getCachedEmbedding(queryNameRep.text);
-
-      let queryFatherEmb: Float32Array | null = null;
-      const qFather = input.fatherName || input.guardianName;
-      if (qFather) {
-        const queryFatherRep = SemanticSimilarityEngine.formatFieldSemanticText('father', qFather, true);
-        queryFatherEmb = await getCachedEmbedding(queryFatherRep.text);
-      }
-
-      let queryAddrEmb: Float32Array | null = null;
-      if (input.address) {
-        const queryAddrRep = SemanticSimilarityEngine.formatFieldSemanticText('address', input.address, true);
-        queryAddrEmb = await getCachedEmbedding(queryAddrRep.text);
-      }
-
-      let queryDistEmb: Float32Array | null = null;
-      if (input.district) {
-        const queryDistRep = SemanticSimilarityEngine.formatFieldSemanticText('district', input.district, true);
-        queryDistEmb = await getCachedEmbedding(queryDistRep.text);
-      }
-
-      // Encode candidate passages with field-level representations
       const candidateEmbeddings: {
         row: Record<string, any>;
         registry: RegistryKey;
@@ -300,66 +261,125 @@ export class EntityResolutionEngineV4 {
         profileSim: number;
       }[] = [];
 
-      for (const candItem of rawCandidateRows) {
-        const candName =
-          candItem.row.name ||
-          candItem.row.student_name ||
-          candItem.row.farmer_name ||
-          candItem.row.beneficiary_name ||
-          candItem.row.applicant_name ||
-          candItem.row.owner_name ||
-          candItem.row.full_name ||
-          '';
-        const candFather = candItem.row.father_name || candItem.row.guardian_name || candItem.row.father;
-        const candAddress = candItem.row.address || candItem.row.village;
-        const candDistrict = candItem.row.district;
+      if (!isMultilingual) {
+        // Standard English query path: Bypass transformer embedding generation completely
+        for (const candItem of rawCandidateRows) {
+          candidateEmbeddings.push({
+            row: candItem.row,
+            registry: candItem.registry,
+            nameSim: 0.0,
+            fatherSim: 0.0,
+            addressSim: 0.0,
+            districtSim: 0.0,
+            profileSim: 0.0,
+          });
+        }
+      } else {
+        // Multilingual or Transliterated query path: Generate neural embeddings via intfloat/multilingual-e5-base
+        const getCachedEmbedding = async (text: string, reg?: RegistryKey): Promise<Float32Array> => {
+          const cacheKey = EmbeddingCache.computeCacheKey(text, this.transformerProvider.modelId);
+          if (enableCache) {
+            const cached = this.embeddingCache.get(cacheKey);
+            if (cached) {
+              cacheHits++;
+              return cached;
+            }
+          }
+          cacheMisses++;
+          const emb = await this.transformerProvider.embed(text);
+          if (enableCache) {
+            this.embeddingCache.set(cacheKey, emb, text, reg);
+          }
+          return emb;
+        };
 
-        // Profile embedding
-        const passageRep = SemanticSimilarityEngine.formatPassageSemanticText(
-          candItem.row,
-          candItem.registry
-        );
-        const candProfileEmb = await getCachedEmbedding(passageRep.text, candItem.registry);
-        const profileSim = SemanticSimilarityEngine.computeCosineSimilarity(queryProfileEmb, candProfileEmb);
+        // Query embeddings (Profile & Name)
+        const queryRep = SemanticSimilarityEngine.formatQuerySemanticText(input);
+        const queryProfileEmb = await getCachedEmbedding(queryRep.text);
 
-        // Name semantic embedding
-        const candNameRep = SemanticSimilarityEngine.formatFieldSemanticText('name', candName, false);
-        const candNameEmb = await getCachedEmbedding(candNameRep.text, candItem.registry);
-        const nameSim = SemanticSimilarityEngine.computeCosineSimilarity(queryNameEmb, candNameEmb);
+        const queryNameRep = SemanticSimilarityEngine.formatFieldSemanticText('name', input.name, true);
+        const queryNameEmb = await getCachedEmbedding(queryNameRep.text);
 
-        // Father semantic embedding
-        let fatherSim = 0.0;
-        if (queryFatherEmb && candFather) {
-          const candFatherRep = SemanticSimilarityEngine.formatFieldSemanticText('father', candFather, false);
-          const candFatherEmb = await getCachedEmbedding(candFatherRep.text, candItem.registry);
-          fatherSim = SemanticSimilarityEngine.computeCosineSimilarity(queryFatherEmb, candFatherEmb);
+        let queryFatherEmb: Float32Array | null = null;
+        const qFather = input.fatherName || input.guardianName;
+        if (qFather) {
+          const queryFatherRep = SemanticSimilarityEngine.formatFieldSemanticText('father', qFather, true);
+          queryFatherEmb = await getCachedEmbedding(queryFatherRep.text);
         }
 
-        // Address semantic embedding
-        let addressSim = 0.0;
-        if (queryAddrEmb && candAddress) {
-          const candAddrRep = SemanticSimilarityEngine.formatFieldSemanticText('address', candAddress, false);
-          const candAddrEmb = await getCachedEmbedding(candAddrRep.text, candItem.registry);
-          addressSim = SemanticSimilarityEngine.computeCosineSimilarity(queryAddrEmb, candAddrEmb);
+        let queryAddrEmb: Float32Array | null = null;
+        if (input.address) {
+          const queryAddrRep = SemanticSimilarityEngine.formatFieldSemanticText('address', input.address, true);
+          queryAddrEmb = await getCachedEmbedding(queryAddrRep.text);
         }
 
-        // District semantic embedding
-        let districtSim = 0.0;
-        if (queryDistEmb && candDistrict) {
-          const candDistRep = SemanticSimilarityEngine.formatFieldSemanticText('district', candDistrict, false);
-          const candDistEmb = await getCachedEmbedding(candDistRep.text, candItem.registry);
-          districtSim = SemanticSimilarityEngine.computeCosineSimilarity(queryDistEmb, candDistEmb);
+        let queryDistEmb: Float32Array | null = null;
+        if (input.district) {
+          const queryDistRep = SemanticSimilarityEngine.formatFieldSemanticText('district', input.district, true);
+          queryDistEmb = await getCachedEmbedding(queryDistRep.text);
         }
 
-        candidateEmbeddings.push({
-          row: candItem.row,
-          registry: candItem.registry,
-          nameSim,
-          fatherSim,
-          addressSim,
-          districtSim,
-          profileSim,
-        });
+        for (const candItem of rawCandidateRows) {
+          const candName =
+            candItem.row.name ||
+            candItem.row.student_name ||
+            candItem.row.farmer_name ||
+            candItem.row.beneficiary_name ||
+            candItem.row.applicant_name ||
+            candItem.row.owner_name ||
+            candItem.row.full_name ||
+            '';
+          const candFather = candItem.row.father_name || candItem.row.guardian_name || candItem.row.father;
+          const candAddress = candItem.row.address || candItem.row.village;
+          const candDistrict = candItem.row.district;
+
+          // Profile embedding
+          const passageRep = SemanticSimilarityEngine.formatPassageSemanticText(
+            candItem.row,
+            candItem.registry
+          );
+          const candProfileEmb = await getCachedEmbedding(passageRep.text, candItem.registry);
+          const profileSim = SemanticSimilarityEngine.computeCosineSimilarity(queryProfileEmb, candProfileEmb);
+
+          // Name semantic embedding
+          const candNameRep = SemanticSimilarityEngine.formatFieldSemanticText('name', candName, false);
+          const candNameEmb = await getCachedEmbedding(candNameRep.text, candItem.registry);
+          const nameSim = SemanticSimilarityEngine.computeCosineSimilarity(queryNameEmb, candNameEmb);
+
+          // Father semantic embedding
+          let fatherSim = 0.0;
+          if (queryFatherEmb && candFather) {
+            const candFatherRep = SemanticSimilarityEngine.formatFieldSemanticText('father', candFather, false);
+            const candFatherEmb = await getCachedEmbedding(candFatherRep.text, candItem.registry);
+            fatherSim = SemanticSimilarityEngine.computeCosineSimilarity(queryFatherEmb, candFatherEmb);
+          }
+
+          // Address semantic embedding
+          let addressSim = 0.0;
+          if (queryAddrEmb && candAddress) {
+            const candAddrRep = SemanticSimilarityEngine.formatFieldSemanticText('address', candAddress, false);
+            const candAddrEmb = await getCachedEmbedding(candAddrRep.text, candItem.registry);
+            addressSim = SemanticSimilarityEngine.computeCosineSimilarity(queryAddrEmb, candAddrEmb);
+          }
+
+          // District semantic embedding
+          let districtSim = 0.0;
+          if (queryDistEmb && candDistrict) {
+            const candDistRep = SemanticSimilarityEngine.formatFieldSemanticText('district', candDistrict, false);
+            const candDistEmb = await getCachedEmbedding(candDistRep.text, candItem.registry);
+            districtSim = SemanticSimilarityEngine.computeCosineSimilarity(queryDistEmb, candDistEmb);
+          }
+
+          candidateEmbeddings.push({
+            row: candItem.row,
+            registry: candItem.registry,
+            nameSim,
+            fatherSim,
+            addressSim,
+            districtSim,
+            profileSim,
+          });
+        }
       }
       embeddingEnd = performance.now();
 

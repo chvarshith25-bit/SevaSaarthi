@@ -264,22 +264,25 @@ export class V4HybridScorer {
 
     const matchedFields: string[] = [];
 
-    // Name similarity (fusing lexical and transformer semantic)
+    // Detect if query has multilingual markers
+    const langDetection = LanguageRouter.detectLanguage(`${input.name || ''} ${input.address || ''} ${input.district || ''}`);
+    const isMultilingualQuery = langDetection.isMultilingualOrTransliterated;
+
+    // Name similarity (pure lexical for English, fused semantic for multilingual)
     const rawNameScore = computeNameSimilarity(input.name, candName);
-    const nameScore = Math.max(rawNameScore, nameSemanticSim);
+    const nameScore = isMultilingualQuery ? Math.max(rawNameScore, nameSemanticSim) : rawNameScore;
     if (nameScore >= 0.60) matchedFields.push('name');
 
-    // Initials compatibility
+    // Initials compatibility (matches calibrated V3.1 behavior)
     let initialsScore = 0.0;
     const normQ = normalizeName(input.name);
     const normC = normalizeName(candName);
-    if (normQ.tokens.length > 0 && normC.tokens.length > 0) {
-      if (normQ.tokens[0][0] === normC.tokens[0][0]) {
-        initialsScore = 1.0;
-      }
-    }
-    if (nameSemanticSim >= 0.85) {
-      initialsScore = Math.max(initialsScore, 0.90);
+    const t1 = normQ.tokens;
+    const t2 = normC.tokens;
+    const hasInit = t1.some((t) => t.length === 1) || t2.some((t) => t.length === 1);
+    if (hasInit) {
+      const shared = t1.filter((t) => t.length > 1 && t2.includes(t));
+      if (shared.length > 0) initialsScore = 1.0;
     }
 
     // DOB similarity (strictly numeric/lexical)
@@ -579,8 +582,8 @@ export class V4HybridScorer {
     let totalScore = Number(calibratedProb.toFixed(4));
     let confidenceTier: 'HIGH' | 'MEDIUM' | 'LOW' | 'AMBIGUOUS';
 
-    const isMultilingualQuery = gatingDecisionResult?.isMultilingual ?? false;
-    const effectiveNameScore = isMultilingualQuery ? Math.max(nameScore, nameSemanticSim) : nameScore;
+    const isGatedMultilingual = gatingDecisionResult?.isMultilingual ?? isMultilingualQuery;
+    const effectiveNameScore = isGatedMultilingual ? Math.max(nameScore, nameSemanticSim) : nameScore;
 
     if (isCollision) {
       // Hard cap <= 0.25 unconditionally
@@ -589,11 +592,15 @@ export class V4HybridScorer {
       );
       confidenceTier = 'AMBIGUOUS';
     } else {
+      const hasPrimaryCorroboration =
+        dobScore >= 0.80 || fatherScore >= 0.70 || addressScore >= 0.60;
+
       if (
         totalScore >= this.config.thresholds.HIGH_CONFIDENCE &&
         conflictCount === 0 &&
         effectiveNameScore >= 0.70 &&
-        (availableCount >= 3 || (isMultilingualQuery && effectiveNameScore >= 0.85))
+        ((availableCount >= 3 && hasPrimaryCorroboration) ||
+          (isGatedMultilingual && effectiveNameScore >= 0.85))
       ) {
         confidenceTier = 'HIGH';
       } else if (
@@ -603,9 +610,9 @@ export class V4HybridScorer {
       ) {
         confidenceTier = 'MEDIUM';
       } else if (totalScore >= this.config.thresholds.LOW_CONFIDENCE) {
-        confidenceTier = 'LOW';
-      } else {
         confidenceTier = 'AMBIGUOUS';
+      } else {
+        confidenceTier = 'LOW';
       }
     }
 

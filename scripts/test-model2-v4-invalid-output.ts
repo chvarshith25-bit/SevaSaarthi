@@ -50,7 +50,7 @@ export async function runInvalidOutputAudit() {
   // Test Case 3: Transformer Provider Exception during matching -> Fallback to V3.1
   console.log('\nTest 3: Fail-closed fallback on Provider Exception...');
   const query = {
-    name: 'Amit Patel',
+    name: 'अमित पटेल',
     dateOfBirth: '1976-02-02',
     district: 'Vijayawada',
     allowedRegistries: ['revenue_registry', 'pan_tax_registry'] as any,
