@@ -97,6 +97,7 @@ export class V4IdentityConsolidator {
           supportingRecordIds: allSupportingRecordIds,
           identityRecordCount: records.length,
           explanation: `Model 2 V4 Hybrid Collision Guard: Identity ${citizenId} has conflicting demographic vectors in ${representative.registry}. Demoted to AMBIGUOUS for mandatory officer review.`,
+          gatingDecision: representative.gatingDecision,
           rawRecord: representative.rawRecord,
         });
       } else {
@@ -130,6 +131,7 @@ export class V4IdentityConsolidator {
           supportingRecordIds: allSupportingRecordIds,
           identityRecordCount: records.length,
           explanation: primaryRecord.explanation,
+          gatingDecision: primaryRecord.gatingDecision,
           rawRecord: primaryRecord.rawRecord,
         });
       }

@@ -1,0 +1,132 @@
+{
+  "summary": {
+    "totalQueries": 3000,
+    "totalPositive": 2125,
+    "totalNegative": 875,
+    "totalCollision": 375,
+    "v4RetrievalRecall": 100,
+    "v1": {
+      "top1Acc": 91.25,
+      "top3Rec": 97.08,
+      "highConfFmr": 29.71,
+      "p50": 0.4,
+      "p95": 0.69,
+      "p99": 1.03
+    },
+    "v3": {
+      "top1Acc": 89.36,
+      "top3Rec": 98.87,
+      "highConfFmr": 0,
+      "p50": 1.21,
+      "p95": 2.2,
+      "p99": 3.16
+    },
+    "v4": {
+      "top1Acc": 86.12,
+      "top3Rec": 93.41,
+      "highConfFmr": 0.8,
+      "homonymFmr": 1.867,
+      "unsafeMatches": 7,
+      "manualReviewRate": 54.73,
+      "transformerActivationRate": 19.4,
+      "fallbacks": 125,
+      "p50": 36.39,
+      "p95": 79.34,
+      "p99": 125.44,
+      "activeP50": 42.21,
+      "activeP95": 80.96,
+      "activeP99": 170.57,
+      "passiveP50": 32.26,
+      "passiveP95": 78.97,
+      "passiveP99": 124.52
+    }
+  },
+  "languageBreakdown": {
+    "English": {
+      "total": 2250,
+      "positive": 1375,
+      "v1Top1": 1196,
+      "v3Top1": 1195,
+      "v4Top1": 1086,
+      "v4Top3": 1235,
+      "v4Fmr": 7,
+      "v4ManualReview": 1505,
+      "v4TransformerActive": 181
+    },
+    "Indian English names": {
+      "total": 125,
+      "positive": 125,
+      "v1Top1": 122,
+      "v3Top1": 125,
+      "v4Top1": 125,
+      "v4Top3": 125,
+      "v4Fmr": 0,
+      "v4ManualReview": 16,
+      "v4TransformerActive": 9
+    },
+    "Hindi Devanagari": {
+      "total": 125,
+      "positive": 125,
+      "v1Top1": 124,
+      "v3Top1": 102,
+      "v4Top1": 124,
+      "v4Top3": 125,
+      "v4Fmr": 0,
+      "v4ManualReview": 21,
+      "v4TransformerActive": 125
+    },
+    "Telugu script": {
+      "total": 125,
+      "positive": 125,
+      "v1Top1": 123,
+      "v3Top1": 102,
+      "v4Top1": 122,
+      "v4Top3": 125,
+      "v4Fmr": 0,
+      "v4ManualReview": 25,
+      "v4TransformerActive": 125
+    },
+    "Romanized Hindi": {
+      "total": 125,
+      "positive": 125,
+      "v1Top1": 125,
+      "v3Top1": 125,
+      "v4Top1": 123,
+      "v4Top3": 125,
+      "v4Fmr": 0,
+      "v4ManualReview": 22,
+      "v4TransformerActive": 11
+    },
+    "Romanized Telugu": {
+      "total": 125,
+      "positive": 125,
+      "v1Top1": 125,
+      "v3Top1": 125,
+      "v4Top1": 125,
+      "v4Top3": 125,
+      "v4Fmr": 0,
+      "v4ManualReview": 20,
+      "v4TransformerActive": 6
+    },
+    "Mixed script": {
+      "total": 125,
+      "positive": 125,
+      "v1Top1": 124,
+      "v3Top1": 125,
+      "v4Top1": 125,
+      "v4Top3": 125,
+      "v4Fmr": 0,
+      "v4ManualReview": 33,
+      "v4TransformerActive": 125
+    }
+  },
+  "disagreementCounts": {
+    "A_EQUIVALENT": 130,
+    "B_V1_CORRECT": 16,
+    "C_V3_CORRECT": 153,
+    "D_V4_CORRECT": 1,
+    "E_BOTH_PLAUSIBLE": 294,
+    "F_UNSAFE_V4": 7,
+    "NONE_AGREED": 2399
+  }
+}
