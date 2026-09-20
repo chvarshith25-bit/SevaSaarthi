@@ -55,7 +55,7 @@ export default function GovernmentAdminPage() {
     {
       title: "System Overview",
       description: "Comprehensive health status of all system components, active microservices, and database connectors.",
-      href: "/government/admin/monitoring",
+      href: "/government/monitoring",
       icon: SlidersHorizontal,
       badge: "Operational",
       badgeColor: "bg-emerald-100 text-emerald-800",

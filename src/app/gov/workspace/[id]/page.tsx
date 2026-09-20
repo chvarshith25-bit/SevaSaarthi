@@ -66,11 +66,18 @@ export default function ApplicationWorkspacePage() {
   const [routingConsistency, setRoutingConsistency] = useState<string>("VALID");
   const [entityResolutions, setEntityResolutions] = useState<any[]>([]);
   const [selectedCandidateIdx, setSelectedCandidateIdx] = useState(0);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
 
   const fetchCaseDetails = async () => {
     try {
       setLoading(true);
+      setIsUnauthorized(false);
       const res = await fetch(`/api/gov/applications/${appId}`);
+      if (res.status === 403) {
+        setIsUnauthorized(true);
+        setApplication(null);
+        return;
+      }
       const data = await res.json();
       if (data.success && data.application) {
         setApplication(data.application);
@@ -79,11 +86,14 @@ export default function ApplicationWorkspacePage() {
         setRoutingConsistency(data.routingConsistency || (data.routingRecommendation ? "VALID" : "NOT_AVAILABLE"));
         setEntityResolutions(data.entityResolutions || []);
       } else {
-        toast.error("Application not found");
+        if (data.error && data.error.toLowerCase().includes("unauthorized")) {
+          setIsUnauthorized(true);
+        }
+        setApplication(null);
       }
     } catch (err) {
       console.error(err);
-      toast.error("Error loading application workspace");
+      setApplication(null);
     } finally {
       setLoading(false);
     }
@@ -253,12 +263,68 @@ export default function ApplicationWorkspacePage() {
     ];
   }, [application]);
 
-  if (loading || !application) {
+  if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-semibold text-slate-500">Loading Case Review Workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isUnauthorized) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-6 animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl border border-rose-200 p-8 max-w-md w-full text-center shadow-xs">
+          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-4 border border-rose-200">
+            <Shield className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900">Access Restricted</h2>
+          <div className="mt-2 text-xs font-mono font-bold text-slate-600 bg-slate-50 px-3 py-1 rounded-md inline-block">
+            Application ID: {appId || "UNKNOWN"}
+          </div>
+          <p className="text-xs text-slate-600 mt-3 leading-relaxed">
+            You are not authorized to review this application.
+          </p>
+          <div className="mt-6">
+            <Link
+              href="/government/applications"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Applications</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!application) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-6 animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-8 max-w-md w-full text-center shadow-xs">
+          <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-slate-900">Application Not Found</h2>
+          <div className="mt-2 text-xs font-mono font-bold text-slate-600 bg-slate-50 px-3 py-1 rounded-md inline-block">
+            Application ID: {appId || "INVALID-ID"}
+          </div>
+          <p className="text-xs text-slate-500 mt-3 leading-relaxed">
+            This application could not be found in the authorized workspace.
+          </p>
+          <div className="mt-6">
+            <Link
+              href="/government/applications"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Applications</span>
+            </Link>
+          </div>
         </div>
       </div>
     );

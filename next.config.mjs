@@ -10,20 +10,24 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/government",
-        destination: "/gov",
+        source: "/gov",
+        destination: "/government/dashboard",
       },
       {
-        source: "/government/applications",
-        destination: "/gov/queue",
+        source: "/gov/queue",
+        destination: "/government/applications",
       },
       {
-        source: "/government/applications/:id",
-        destination: "/gov/workspace/:id",
+        source: "/gov/workspace/:id",
+        destination: "/government/applications/:id/review",
       },
       {
-        source: "/government/:path*",
-        destination: "/gov/:path*",
+        source: "/gov/workspace/:id/review",
+        destination: "/government/applications/:id/review",
+      },
+      {
+        source: "/gov/:path*",
+        destination: "/government/:path*",
       },
     ];
   },

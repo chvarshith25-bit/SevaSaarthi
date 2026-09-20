@@ -97,9 +97,16 @@ export function middleware(request: NextRequest) {
     if (pathname === "/applications") {
       return NextResponse.rewrite(new URL("/government/applications", request.url));
     }
+    const appReviewMatch = pathname.match(/^\/applications\/([A-Za-z0-9_-]+)\/review$/);
+    if (appReviewMatch) {
+      return NextResponse.rewrite(new URL(`/government/applications/${appReviewMatch[1]}/review`, request.url));
+    }
     const appMatch = pathname.match(/^\/applications\/([A-Za-z0-9_-]+)$/);
     if (appMatch) {
       return NextResponse.rewrite(new URL(`/government/applications/${appMatch[1]}`, request.url));
+    }
+    if (pathname === "/admin") {
+      return NextResponse.rewrite(new URL("/government/admin", request.url));
     }
     if (pathname === "/my-queue") {
       return NextResponse.rewrite(new URL("/government/my-queue", request.url));
