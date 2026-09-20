@@ -54,6 +54,7 @@ export default function ApplicationWorkspacePage() {
   // Dialog States
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [viewInstructionsModalOpen, setViewInstructionsModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [manualReviewModalOpen, setManualReviewModalOpen] = useState(false);
 
@@ -321,6 +322,21 @@ export default function ApplicationWorkspacePage() {
     ];
   }, [application]);
 
+  const latestReturnLog = useMemo(() => {
+    return auditLogs.find((l) => l.action === "RETURN" || l.action === "RETURNED_FOR_CORRECTION");
+  }, [auditLogs]);
+
+  const latestReturnReason = useMemo(() => {
+    return (
+      latestReturnLog?.details ||
+      (application as any)?.returnReason ||
+      (application as any)?.correctionInstructions ||
+      "Please upload a clear, legible digital copy of your document or details."
+    );
+  }, [latestReturnLog, application]);
+
+  const isReturned = application?.status === "RETURNED_FOR_CORRECTION";
+
   // Issues Requiring Attention (Requirement 17)
   const issuesList = useMemo(() => {
     const issues: Array<{ id: string; type: string; title: string; description: string; severity: "CRITICAL" | "WARNING" | "INFO"; actionLabel?: string }> = [];
@@ -351,42 +367,34 @@ export default function ApplicationWorkspacePage() {
       });
     }
 
-    if (application?.status === "RETURNED_FOR_CORRECTION") {
+    if (isReturned) {
       issues.push({
         id: "correction-pending",
-        type: "Correction Required",
-        title: "Returned for Citizen Rectification",
-        description: "Application is currently awaiting citizen submission of corrected documents or details.",
+        type: "Correction In Progress",
+        title: "Awaiting Citizen Resubmission",
+        description: latestReturnReason
+          ? `Instructions sent to citizen: "${latestReturnReason}"`
+          : "Application is currently awaiting citizen submission of corrected documents or details.",
         severity: "WARNING",
         actionLabel: "View Instructions",
       });
-    }
-
-    documentList.forEach((doc) => {
-      if (doc.status !== "VERIFIED") {
-        issues.push({
-          id: `doc-${doc.key}`,
-          type: "Document Issue",
-          title: `${doc.type} Issue`,
-          description: doc.note || "Document requires manual inspection or re-submission.",
-          severity: "WARNING",
-          actionLabel: "Request Correction",
-        });
-      }
-    });
-
-    if (application?.priority === "URGENT" && slaText.includes("Overdue")) {
-      issues.push({
-        id: "sla-risk",
-        type: "SLA Risk",
-        title: "Statutory SLA Overdue",
-        description: "Case processing time has exceeded standard citizen service delivery window.",
-        severity: "WARNING",
+    } else {
+      documentList.forEach((doc) => {
+        if (doc.status !== "VERIFIED") {
+          issues.push({
+            id: `doc-${doc.key}`,
+            type: "Document Issue",
+            title: `${doc.type} Issue`,
+            description: doc.note || "Document requires manual inspection or re-submission.",
+            severity: "WARNING",
+            actionLabel: "Request Correction",
+          });
+        }
       });
     }
 
     return issues;
-  }, [application, hasConflict, isApproved, documentList, slaText]);
+  }, [application, hasConflict, isApproved, isReturned, documentList, latestReturnReason]);
 
   // Overall Verification Status (Requirements 5, 6, 19)
   const overallVerificationStatus = useMemo(() => {
@@ -1351,6 +1359,12 @@ export default function ApplicationWorkspacePage() {
                               );
                             }
                             setReturnModalOpen(true);
+                          } else if (issue.actionLabel === "View Instructions") {
+                            setViewInstructionsModalOpen(true);
+                          } else if (issue.actionLabel === "Review Conflict") {
+                            const conflictElem = document.getElementById("ai-identity-match");
+                            if (conflictElem) conflictElem.scrollIntoView({ behavior: "smooth" });
+                            else toast.info("Review demographic attributes under AI-Assisted Identity Match");
                           } else {
                             toast.info(`Investigating ${issue.type}`);
                           }
@@ -1519,23 +1533,23 @@ export default function ApplicationWorkspacePage() {
               {/* Approve Button */}
               <button
                 onClick={() => setApproveModalOpen(true)}
-                disabled={isProcessing || isTerminal}
-                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer"
+                disabled={isProcessing || isTerminal || isReturned}
+                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>
-                  Approve Application
+                  {isReturned ? "Awaiting Citizen Resubmission" : "Approve Application"}
                 </span>
               </button>
 
               {/* Request Correction */}
               <button
                 onClick={() => setReturnModalOpen(true)}
-                disabled={isProcessing || isTerminal}
-                className="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2 cursor-pointer"
+                disabled={isProcessing || isTerminal || isReturned}
+                className="w-full py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4 text-amber-700" />
-                <span>Request Correction</span>
+                <span>{isReturned ? "Correction Already Requested" : "Request Correction"}</span>
               </button>
 
               {/* Send to Manual Review */}
@@ -1797,6 +1811,56 @@ export default function ApplicationWorkspacePage() {
                 className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs disabled:opacity-40 cursor-pointer"
               >
                 {isProcessing ? "Processing..." : "Send Request to Citizen"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* VIEW CITIZEN CORRECTION INSTRUCTIONS MODAL                   */}
+      {/* ============================================================ */}
+      {viewInstructionsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-amber-700 font-bold">
+                <RotateCcw className="w-5 h-5" />
+                <span className="text-base font-extrabold text-slate-900">Citizen Correction Instructions</span>
+              </div>
+              <button onClick={() => setViewInstructionsModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-950 space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Status:</span>
+                <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-bold text-[10px]">
+                  DISPATCHED TO CITIZEN
+                </span>
+              </div>
+              <div><strong>Application ID:</strong> {application.id} ({application.applicantName})</div>
+              <div><strong>Delivery Channel:</strong> SMS & Citizen Portal Inbox</div>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-semibold text-slate-700">Instructions Sent to Citizen</label>
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 leading-relaxed font-mono">
+                {latestReturnReason}
+              </div>
+            </div>
+
+            <div className="text-[11px] text-slate-500 italic">
+              The application is locked awaiting citizen document/data resubmission. Once the citizen submits the correction, the application will automatically return to your review queue.
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setViewInstructionsModalOpen(false)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>
