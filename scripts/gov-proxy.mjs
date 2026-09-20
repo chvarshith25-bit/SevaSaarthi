@@ -20,7 +20,11 @@ const server = http.createServer((req, res) => {
   const proxyReq = http.request(options, (proxyRes) => {
     const resHeaders = { ...proxyRes.headers };
     if (resHeaders.location) {
-      resHeaders.location = resHeaders.location.replace(`:${TARGET_PORT}`, `:${PROXY_PORT}`);
+      resHeaders.location = resHeaders.location
+        .replace(`http://localhost:${PROXY_PORT}`, "")
+        .replace(`http://localhost:${TARGET_PORT}`, "")
+        .replace(`https://localhost:${PROXY_PORT}`, "")
+        .replace(`https://localhost:${TARGET_PORT}`, "");
     }
     res.writeHead(proxyRes.statusCode || 200, resHeaders);
     proxyRes.pipe(res, { end: true });

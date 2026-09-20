@@ -279,41 +279,77 @@ export default function GovernmentDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/70">
-            <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
-              <Bot className="w-4 h-4 text-blue-600" />
-              <span>Routed by Model 1</span>
+          <Link
+            href="/government/applications"
+            className="p-4 bg-slate-50 hover:bg-blue-50/70 rounded-xl border border-slate-200/70 hover:border-blue-300 transition-all group block"
+          >
+            <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
+              <div className="flex items-center gap-2">
+                <Bot className="w-4 h-4 text-blue-600" />
+                <span className="font-semibold text-slate-700">Intake Ingested</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
             </div>
             <div className="text-2xl font-black text-slate-900 mt-2">{aiRoutedCount}</div>
-            <div className="text-[11px] text-slate-500 mt-1">Applications classified & routed</div>
-          </div>
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Applications ingested</span>
+              <span className="text-blue-600 font-bold text-[10px]">View all →</span>
+            </div>
+          </Link>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/70">
-            <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
-              <Sparkles className="w-4 h-4 text-indigo-600" />
-              <span>Candidates by Model 2</span>
+          <Link
+            href="/government/applications?tab=needs_action"
+            className="p-4 bg-slate-50 hover:bg-indigo-50/70 rounded-xl border border-slate-200/70 hover:border-indigo-300 transition-all group block"
+          >
+            <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-600" />
+                <span className="font-semibold text-indigo-900">Entity Matched</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
             </div>
             <div className="text-2xl font-black text-indigo-950 mt-2">{aiCandidatePreparedCount}</div>
-            <div className="text-[11px] text-slate-500 mt-1">V4.2 Multilingual matches prepared</div>
-          </div>
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Registries corroborating</span>
+              <span className="text-indigo-600 font-bold text-[10px]">Inspect →</span>
+            </div>
+          </Link>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/70">
-            <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <span>Needs Manual Review</span>
+          <Link
+            href="/government/applications?tab=needs_action"
+            className="p-4 bg-slate-50 hover:bg-blue-50/70 rounded-xl border border-slate-200/70 hover:border-blue-300 transition-all group block"
+          >
+            <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-blue-600" />
+                <span className="font-semibold text-blue-900">Needs Officer Action</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
             </div>
             <div className="text-2xl font-black text-blue-900 mt-2">{manualReviewCasesCount}</div>
-            <div className="text-[11px] text-slate-500 mt-1">Cases requiring officer review</div>
-          </div>
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Ready for decision</span>
+              <span className="text-blue-600 font-bold text-[10px]">Review →</span>
+            </div>
+          </Link>
 
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/70">
-            <div className="flex items-center gap-2 text-slate-500 text-xs font-medium">
-              <AlertTriangle className="w-4 h-4 text-amber-600" />
-              <span>Cases with Conflicts</span>
+          <Link
+            href="/government/exceptions"
+            className="p-4 bg-slate-50 hover:bg-amber-50/70 rounded-xl border border-slate-200/70 hover:border-amber-300 transition-all group block"
+          >
+            <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <span className="font-semibold text-amber-900">Cases with Conflicts</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all" />
             </div>
             <div className="text-2xl font-black text-amber-700 mt-2">{conflictCasesCount}</div>
-            <div className="text-[11px] text-slate-500 mt-1">Demographic/API discrepancies</div>
-          </div>
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+              <span>Demographic/API issues</span>
+              <span className="text-amber-600 font-bold text-[10px]">Resolve →</span>
+            </div>
+          </Link>
         </div>
       </div>
 

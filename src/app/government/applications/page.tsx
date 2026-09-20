@@ -202,7 +202,13 @@ function ApplicationsWorkspaceContent() {
           ].map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
+              onClick={() => {
+                setActiveTab(tab.key as any);
+                if (typeof window !== "undefined") {
+                  const newUrl = tab.key === "all" ? "/government/applications" : `/government/applications?tab=${tab.key}`;
+                  window.history.pushState(null, "", newUrl);
+                }
+              }}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 activeTab === tab.key
                   ? "bg-blue-600 text-white shadow-xs font-bold"

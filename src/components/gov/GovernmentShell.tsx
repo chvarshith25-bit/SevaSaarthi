@@ -45,6 +45,8 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [readNotifications, setReadNotifications] = useState<Record<string, boolean>>({});
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -61,6 +63,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
       if (e.key === "Escape") {
         setSearchOpen(false);
         setProfileMenuOpen(false);
+        setNotificationsOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -330,18 +333,167 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
               <span className="text-slate-500">{currentUser.office || "District Operations"}</span>
             </div>
 
-            {/* Notification Bell */}
+            {/* Notification Bell with Dropdown */}
             <div className="relative">
               <button
-                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors relative cursor-pointer"
+                onClick={() => {
+                  setNotificationsOpen(!notificationsOpen);
+                  setProfileMenuOpen(false);
+                }}
+                className={`p-2 rounded-xl transition-colors relative cursor-pointer ${
+                  notificationsOpen
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                }`}
                 aria-label="Notifications"
-                title="Notifications"
+                title="Officer Notifications"
               >
                 <Bell className="w-4 h-4" />
-                {stats.exceptions > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500" />
+                {stats.exceptions > 0 && !readNotifications["ALL"] && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white" />
                 )}
               </button>
+
+              {notificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 p-0 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 text-slate-800">
+                  {/* Dropdown Header */}
+                  <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-bold text-slate-900">Officer Notifications</span>
+                      <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
+                        {stats.exceptions} Alert{stats.exceptions !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setReadNotifications({ ALL: true });
+                        toast.success("All officer notifications marked as read");
+                      }}
+                      className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                    >
+                      Mark all as read
+                    </button>
+                  </div>
+
+                  {/* Notifications List */}
+                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                    {/* Item 1: Identity Mismatch Alert */}
+                    <Link
+                      href="/government/applications/PAN-2026-0003"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="p-3 hover:bg-blue-50/60 transition-colors flex items-start gap-3 group block"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <AlertTriangle className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-blue-700 truncate">
+                            Identity Discrepancy Detected
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono shrink-0">10m ago</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
+                          <strong>PAN-2026-0003</strong>: Date of Birth differs between citizen form and UIDAI Aadhaar registry.
+                        </p>
+                        <div className="text-[10px] font-bold text-blue-600 mt-1 flex items-center gap-0.5">
+                          <span>Review Conflict & Action</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* Item 2: Citizen Resubmission */}
+                    <Link
+                      href="/government/applications/PAN-2026-0004"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="p-3 hover:bg-blue-50/60 transition-colors flex items-start gap-3 group block"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-blue-700 truncate">
+                            Citizen Correction Resubmitted
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono shrink-0">1h ago</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
+                          <strong>PAN-2026-0004</strong>: Updated utility bill uploaded pursuant to officer correction request.
+                        </p>
+                        <div className="text-[10px] font-bold text-blue-600 mt-1 flex items-center gap-0.5">
+                          <span>Verify Updated Document</span>
+                          <ChevronRight className="w-3 h-3" />
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* Item 3: Application Assigned */}
+                    <Link
+                      href="/government/applications/PAN-2026-0001"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="p-3 hover:bg-blue-50/60 transition-colors flex items-start gap-3 group block"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-blue-700 truncate">
+                            New Intake Assigned
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono shrink-0">2h ago</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
+                          <strong>PAN-2026-0001</strong>: New PAN card application ready for statutory review and approval.
+                        </p>
+                      </div>
+                    </Link>
+
+                    {/* Item 4: Statutory Audit Log Sealed */}
+                    <Link
+                      href="/government/audit"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="p-3 hover:bg-blue-50/60 transition-colors flex items-start gap-3 group block"
+                    >
+                      <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <History className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-blue-700 truncate">
+                            Cryptographic Audit Sealed
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono shrink-0">Today</span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
+                          All recent officer adjudications sealed with SHA-256 tamper-proof ledger entries.
+                        </p>
+                      </div>
+                    </Link>
+                  </div>
+
+                  {/* Dropdown Footer */}
+                  <div className="p-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <Link
+                      href="/government/exceptions"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800"
+                    >
+                      View Exceptions Queue →
+                    </Link>
+                    <Link
+                      href="/government/applications"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="text-[11px] font-semibold text-slate-600 hover:text-slate-900"
+                    >
+                      All Applications
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Officer Profile Menu */}
