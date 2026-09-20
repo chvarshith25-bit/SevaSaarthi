@@ -8,23 +8,60 @@ import {
   GitPullRequest,
   Workflow,
   BarChart3,
-  Clock,
   FolderGit2,
   Settings,
-  Shield,
   ArrowRight,
-  Database,
-  Layers,
-  Sparkles,
+  ShieldAlert,
+  LayoutDashboard,
+  Shield,
 } from "lucide-react";
 import { useGov } from "@/lib/store/gov-store";
 
 export default function GovernmentAdminPage() {
-  const { currentUser, stats } = useGov();
+  const { currentUser } = useGov();
+
+  const isAdminUser =
+    currentUser.role === "SYS_ADMIN" ||
+    currentUser.role === "DEPT_ADMIN" ||
+    (currentUser.role as any) === "ADMIN";
+
+  // RBAC Enforcement: Normal officer cannot access administration modules
+  if (!isAdminUser) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-md w-full text-center space-y-4 shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-6 h-6" />
+          </div>
+          <h1 className="text-lg font-bold text-slate-900">Access Restricted</h1>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            The Administration module is restricted to authorized Supervisors and System Administrators. Standard Department Officers must use the primary task workflow.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/government/dashboard"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Return to Officer Dashboard</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const adminModules = [
     {
-      title: "Interoperability Hub",
+      title: "System Overview",
+      description: "Comprehensive health status of all system components, active microservices, and database connectors.",
+      href: "/government/admin/monitoring",
+      icon: SlidersHorizontal,
+      badge: "Operational",
+      badgeColor: "bg-emerald-100 text-emerald-800",
+    },
+    {
+      title: "Interoperability",
       description: "Manage sovereign connectors, gateway health, mock circuits, and live telemetry for UIDAI, NSDL, and DigiLocker.",
       href: "/government/interoperability",
       icon: Radio,
@@ -32,7 +69,7 @@ export default function GovernmentAdminPage() {
       badgeColor: "bg-emerald-100 text-emerald-800",
     },
     {
-      title: "Canonical Data Mapper",
+      title: "Data Mapping",
       description: "Inspect schema translations, transformation rules, and cross-registry field standardizations.",
       href: "/government/data-mapper",
       icon: GitPullRequest,
@@ -40,7 +77,7 @@ export default function GovernmentAdminPage() {
       badgeColor: "bg-blue-100 text-blue-800",
     },
     {
-      title: "Statutory Workflows",
+      title: "Workflow Configuration",
       description: "View department workflow definitions, state machine rules, and transition constraints.",
       href: "/government/workflows",
       icon: Workflow,
@@ -48,27 +85,27 @@ export default function GovernmentAdminPage() {
       badgeColor: "bg-indigo-100 text-indigo-800",
     },
     {
-      title: "Reports & SLA Monitoring",
+      title: "Reports & SLA",
       description: "Analyze service throughput, officer adjudication latency, backlog distribution, and SLA countdowns.",
       href: "/government/monitoring",
       icon: BarChart3,
-      badge: "Operational Analytics",
+      badge: "Analytics",
       badgeColor: "bg-purple-100 text-purple-800",
     },
     {
-      title: "Department Resources",
+      title: "Department Configuration",
       description: "Configure jurisdictional boundaries, office allocations, officer staff assignments, and capacity quotas.",
       href: "/government/settings?tab=resources",
       icon: FolderGit2,
-      badge: "Jurisdiction Config",
+      badge: "Jurisdiction",
       badgeColor: "bg-slate-100 text-slate-800",
     },
     {
-      title: "Security & System Settings",
+      title: "Security & Settings",
       description: "Manage DPDP statutory consent policy rules, audit retention intervals, and cryptographic key parameters.",
       href: "/government/settings",
       icon: Settings,
-      badge: "System Governance",
+      badge: "Governance",
       badgeColor: "bg-amber-100 text-amber-900",
     },
   ];
@@ -80,19 +117,19 @@ export default function GovernmentAdminPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-800 text-xs font-semibold mb-1.5 border border-indigo-200/60">
             <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Administrator & Supervisor Operations Console</span>
+            <span>SARKAR SEVA • Administration</span>
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            System Administration & Infrastructure
+            Administration
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Configure connectors, canonical data mappings, statutory workflows, and service SLA policies without cluttering standard officer workflows.
+            Configure connectors, canonical data mappings, statutory workflows, and service SLA policies.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold">
-            Role: SUPERVISOR_ADMIN
+            Role: {currentUser.role}
           </span>
         </div>
       </div>
@@ -125,7 +162,7 @@ export default function GovernmentAdminPage() {
               </div>
 
               <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600 group-hover:text-indigo-800">
-                <span>Manage Module</span>
+                <span>Open Module</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </div>
             </Link>

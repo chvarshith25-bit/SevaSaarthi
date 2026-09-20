@@ -5,18 +5,10 @@ import Link from "next/link";
 import {
   History,
   Search,
-  Filter,
-  Shield,
-  Key,
   CheckCircle2,
-  AlertTriangle,
   ChevronDown,
   ChevronRight,
-  ExternalLink,
   Copy,
-  Clock,
-  User,
-  Database,
   Lock,
 } from "lucide-react";
 import { useGov } from "@/lib/store/gov-store";
@@ -51,7 +43,7 @@ export default function GovernmentAuditPage() {
   const copyHash = (hash?: string) => {
     if (hash) {
       navigator.clipboard.writeText(hash);
-      toast.success("Tamper verification SHA-256 copied to clipboard");
+      toast.success("Cryptographic SHA-256 verification digest copied");
     }
   };
 
@@ -65,10 +57,10 @@ export default function GovernmentAuditPage() {
             <span>Product Rule 19: Append-Only Cryptographic Trail</span>
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Audit & Activity Logs
+            Audit & Activity
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Tamper-evident statutory activity ledger recording every citizen interaction, AI recommendation, and officer determination.
+            Statutory ledger recording citizen submissions, AI advisory provenance, and human officer adjudications.
           </p>
         </div>
 
@@ -86,7 +78,7 @@ export default function GovernmentAuditPage() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by Audit ID, Application ID (e.g. SCH-2026-2346), action, or actor..."
+            placeholder="Search by Application ID (e.g. PAN-2026-0001), action, or actor..."
             className="w-full pl-10 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:border-blue-500 font-medium text-slate-800 placeholder:text-slate-400"
           />
         </div>
@@ -151,17 +143,18 @@ export default function GovernmentAuditPage() {
                     </div>
                   </div>
 
-                  {/* Expandable Cryptographic Details */}
+                  {/* Expandable Technical Details & Cryptographic Hash */}
                   {isExpanded && (
                     <div className="mt-3 p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3 text-xs animate-in fade-in duration-100">
+                      <div className="text-[11px] font-bold text-slate-700">Technical Details</div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div className="p-2.5 bg-white rounded-lg border border-slate-200">
                           <span className="text-slate-400 text-[10px] font-medium">Actor ID</span>
                           <div className="font-mono font-bold text-slate-800 mt-0.5">{log.actor.id}</div>
                         </div>
                         <div className="p-2.5 bg-white rounded-lg border border-slate-200">
-                          <span className="text-slate-400 text-[10px] font-medium">Actor Name / IP</span>
-                          <div className="font-medium text-slate-800 mt-0.5 truncate">{log.actor.name} ({(log.actor as any).ip || "127.0.0.1"})</div>
+                          <span className="text-slate-400 text-[10px] font-medium">Actor Name</span>
+                          <div className="font-medium text-slate-800 mt-0.5 truncate">{log.actor.name}</div>
                         </div>
                         <div className="p-2.5 bg-white rounded-lg border border-slate-200">
                           <span className="text-slate-400 text-[10px] font-medium">Verification Result</span>
@@ -173,7 +166,7 @@ export default function GovernmentAuditPage() {
                       <div className="p-3 bg-white rounded-lg border border-slate-200 flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            SHA-256 Tamper Verification Digest
+                            SHA-256 Digest
                           </span>
                           <div className="font-mono text-[11px] text-slate-700 truncate mt-0.5">
                             {(log as any).tamperVerificationHash || (log as any).hash || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"}

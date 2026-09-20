@@ -6,15 +6,8 @@ import {
   AlertTriangle,
   RotateCcw,
   CheckCircle2,
-  ExternalLink,
-  Shield,
   ArrowRight,
-  Clock,
-  User,
-  Filter,
   RefreshCw,
-  AlertCircle,
-  HelpCircle,
   Layers,
 } from "lucide-react";
 import { useGov } from "@/lib/store/gov-store";
@@ -75,6 +68,34 @@ export default function GovernmentExceptionsPage() {
 
   const filteredExceptions = exceptions.filter((exc) => {
     if (filterType === "ALL") return true;
+    if (filterType === "IDENTITY_CONFLICT") {
+      return (
+        (exc as any).type === "VERIFICATION_CONFLICT" ||
+        exc.exceptionType === "VERIFICATION_CONFLICT" ||
+        exc.title.toLowerCase().includes("conflict") ||
+        exc.title.toLowerCase().includes("identity")
+      );
+    }
+    if (filterType === "REGISTRY_API") {
+      return (
+        (exc as any).type === "API_UNAVAILABLE" ||
+        exc.exceptionType === "API_UNAVAILABLE" ||
+        exc.title.toLowerCase().includes("timeout") ||
+        exc.title.toLowerCase().includes("api")
+      );
+    }
+    if (filterType === "DOCUMENT_ISSUES") {
+      return (
+        (exc as any).type === "DOCUMENT_REJECTED" ||
+        exc.title.toLowerCase().includes("document")
+      );
+    }
+    if (filterType === "SLA_RISKS") {
+      return (
+        (exc as any).type === "SLA_BREACH" ||
+        exc.title.toLowerCase().includes("sla")
+      );
+    }
     return (
       (exc as any).type === filterType ||
       exc.exceptionType === filterType ||
@@ -89,13 +110,13 @@ export default function GovernmentExceptionsPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 text-amber-800 text-xs font-semibold mb-1.5 border border-amber-200/60">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-            <span>Operational Exceptions & Resiliency Desk</span>
+            <span>Operational Exceptions & Conflict Resolution</span>
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            Exceptions & Conflict Resolution
+            Exceptions
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Actionable issues requiring human adjudication: downstream API timeouts, identity discrepancies, and demographic conflicts.
+            Cases requiring officer attention.
           </p>
         </div>
 
@@ -113,11 +134,11 @@ export default function GovernmentExceptionsPage() {
       {/* 2. Category Filter Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {[
-          { key: "ALL", label: "All Exceptions" },
-          { key: "API_UNAVAILABLE", label: "API Failures & Timeouts" },
-          { key: "VERIFICATION_CONFLICT", label: "Identity & Demographic Conflicts" },
-          { key: "DOCUMENT_REJECTED", label: "Document Discrepancies" },
-          { key: "SLA_BREACH", label: "SLA Delay Risks" },
+          { key: "ALL", label: "All" },
+          { key: "IDENTITY_CONFLICT", label: "Identity Conflicts" },
+          { key: "REGISTRY_API", label: "Registry/API Issues" },
+          { key: "DOCUMENT_ISSUES", label: "Document Issues" },
+          { key: "SLA_RISKS", label: "SLA Risks" },
         ].map((item) => (
           <button
             key={item.key}
@@ -138,7 +159,7 @@ export default function GovernmentExceptionsPage() {
         {filteredExceptions.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500">
             <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-            <div className="text-sm font-bold text-slate-800">No active exceptions found</div>
+            <div className="text-sm font-bold text-slate-800">No active exceptions in this category.</div>
             <div className="text-xs text-slate-400 mt-1">All gateway connectors and cross-registry pipelines are operating normally.</div>
           </div>
         ) : (
@@ -184,7 +205,7 @@ export default function GovernmentExceptionsPage() {
                   <span className="text-slate-400 font-medium">Impacted Application / Entity</span>
                   <div className="font-mono font-bold text-blue-600 mt-0.5">
                     {exc.applicationId ? (
-                      <Link href={`/government/applications/${exc.applicationId}`} className="hover:underline">
+                      <Link href={`/government/applications/${exc.applicationId}/review`} className="hover:underline">
                         {exc.applicationId}
                       </Link>
                     ) : (
@@ -204,6 +225,16 @@ export default function GovernmentExceptionsPage() {
 
                 <div className="flex items-center gap-2">
                   {exc.applicationId && (
+                    <Link
+                      href={`/government/applications/${exc.applicationId}/review`}
+                      className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                    >
+                      <span>Open Application</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
+
+                  {exc.applicationId && (
                     <button
                       onClick={() => handleRetryApp(exc.applicationId!)}
                       disabled={retryingAppId === exc.applicationId}
@@ -220,18 +251,8 @@ export default function GovernmentExceptionsPage() {
                       disabled={resolvingId === exc.id}
                       className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
                     >
-                      {resolvingId === exc.id ? "Resolving..." : "Mark Resolved"}
+                      {resolvingId === exc.id ? "Resolving..." : "Resolve"}
                     </button>
-                  )}
-
-                  {exc.applicationId && (
-                    <Link
-                      href={`/government/applications/${exc.applicationId}`}
-                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
-                    >
-                      <span>Open Case</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
                   )}
                 </div>
               </div>

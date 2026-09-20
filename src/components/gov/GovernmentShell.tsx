@@ -77,7 +77,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
     }
   };
 
-  // Phase 9.0.1 Rule: Strictly 5 Primary Navigation Items for Normal Officers
+  // Phase 9.0.2: Strictly 5 Primary Navigation Items for Normal Officers
   const primaryNavItems = [
     {
       label: "Dashboard",
@@ -87,15 +87,15 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
       badgeColor: "",
     },
     {
-      label: "My Applications",
+      label: "Applications",
       href: "/government/applications",
       icon: Layers,
       badge: stats.newApps || null,
       badgeColor: "bg-blue-600 text-white",
     },
     {
-      label: "Review & Decisions",
-      href: "/government/applications?tab=review",
+      label: "Review",
+      href: "/government/applications?tab=assigned",
       icon: ShieldCheck,
       badge: stats.officerReview || null,
       badgeColor: "bg-indigo-600 text-white",
@@ -108,7 +108,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
       badgeColor: "bg-amber-500 text-slate-900 font-bold",
     },
     {
-      label: "Audit & Activity",
+      label: "Audit",
       href: "/government/audit",
       icon: History,
       badge: null,
@@ -127,6 +127,11 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
       )
     : [];
 
+  const isAdminUser =
+    currentUser.role === "SYS_ADMIN" ||
+    currentUser.role === "DEPT_ADMIN" ||
+    (currentUser.role as any) === "ADMIN";
+
   const SidebarContent = (
     <div className="flex flex-col justify-between h-full p-4 select-none bg-[#0F172A] text-slate-200">
       {/* Top Brand Header */}
@@ -138,11 +143,11 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="font-black text-lg tracking-tight text-white leading-tight">
-                SEVA <span className="text-amber-400">SAARTHI</span>
+                SARKAR <span className="text-amber-400">SEVA</span>
               </span>
             </div>
             <div className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase leading-none mt-0.5">
-              Government Operations Console
+              Government Officer Operations Portal
             </div>
           </div>
         </div>
@@ -158,7 +163,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
             const isActive =
               item.href === "/government/dashboard"
                 ? pathname === "/government/dashboard" || pathname === "/government" || pathname === "/gov" || pathname === "/dashboard"
-                : item.href.includes("?tab=review")
+                : item.href.includes("?tab=assigned")
                 ? pathname.includes("/applications") && isTabMatch
                 : item.href === "/government/applications"
                 ? pathname.startsWith("/government/applications") && !isTabMatch
@@ -196,24 +201,26 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
         </nav>
       </div>
 
-      {/* Footer & Supervisor Admin Link */}
+      {/* Footer & Role-Gated Administration Link */}
       <div className="space-y-3 pt-4 border-t border-slate-800">
-        {/* Admin/Supervisor Tools Gateway */}
-        <Link
-          href="/government/admin"
-          onClick={() => setMobileMenuOpen(false)}
-          className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
-            pathname.startsWith("/government/admin")
-              ? "bg-indigo-950/80 border border-indigo-500/30 text-indigo-200"
-              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Admin & Interop Hub</span>
-          </div>
-          <ChevronRight className="w-3 h-3 text-slate-500" />
-        </Link>
+        {/* Only Visible for ADMIN / SUPERVISOR roles (Product Rule: Normal officer must never see admin tools) */}
+        {isAdminUser && (
+          <Link
+            href="/government/admin"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-medium transition-all ${
+              pathname.startsWith("/government/admin")
+                ? "bg-indigo-950/80 border border-indigo-500/30 text-indigo-200"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Administration</span>
+            </div>
+            <ChevronRight className="w-3 h-3 text-slate-500" />
+          </Link>
+        )}
 
         {/* Officer Card */}
         <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex items-center justify-between">
@@ -226,7 +233,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                 {currentUser.name}
               </div>
               <div className="text-[10px] text-slate-400 truncate">
-                {currentUser.role}
+                {currentUser.department || "Income Tax Department"}
               </div>
             </div>
           </div>
@@ -353,14 +360,16 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                     <LayoutDashboard className="w-4 h-4 text-slate-400" />
                     <span>Officer Dashboard</span>
                   </Link>
-                  <Link
-                    href="/government/admin"
-                    onClick={() => setProfileMenuOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
-                  >
-                    <SlidersHorizontal className="w-4 h-4 text-slate-400" />
-                    <span>Admin Operations Console</span>
-                  </Link>
+                  {isAdminUser && (
+                    <Link
+                      href="/government/admin"
+                      onClick={() => setProfileMenuOpen(false)}
+                      className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg"
+                    >
+                      <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+                      <span>Administration</span>
+                    </Link>
+                  )}
                   <div className="border-t border-slate-100 pt-1">
                     <button
                       onClick={handleSignOut}

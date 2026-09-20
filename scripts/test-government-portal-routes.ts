@@ -12,6 +12,7 @@ const routesToTest: RouteTest[] = [
   { path: '/government/dashboard', name: 'Canonical Dashboard', checkContent: 'Dashboard' },
   { path: '/government/applications', name: 'Canonical My Applications Queue', checkContent: 'Applications' },
   { path: '/government/applications/PAN-2026-0001', name: 'Canonical Application Workspace', checkContent: 'PAN-2026-0001' },
+  { path: '/government/applications/PAN-2026-0001/review', name: 'Canonical Case Review', checkContent: 'PAN-2026-0001' },
   { path: '/government/exceptions', name: 'Canonical Exceptions & Conflicts', checkContent: 'Exceptions' },
   { path: '/government/audit', name: 'Canonical Audit Trail', checkContent: 'Audit' },
   { path: '/government/admin', name: 'Canonical Admin Hub', checkContent: 'Administration' },

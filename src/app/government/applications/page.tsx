@@ -151,13 +151,13 @@ function ApplicationsWorkspaceContent() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold mb-1.5 border border-blue-200/50">
             <Layers className="w-3.5 h-3.5" />
-            <span>Unified Application Queue</span>
+            <span>Public Service Applications</span>
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            My Applications Workspace
+            Applications
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Review, verify, and statutory adjudicate public service applications across all departments.
+            Review and process assigned public-service applications.
           </p>
         </div>
 
@@ -293,14 +293,14 @@ function ApplicationsWorkspaceContent() {
                   >
                     {/* Application ID */}
                     <td className="py-3 px-4 font-mono font-bold text-blue-600 group-hover:text-blue-700">
-                      <Link href={`/government/applications/${app.id}`}>
+                      <Link href={`/government/applications/${app.id}/review`}>
                         {app.id}
                       </Link>
                     </td>
 
                     {/* Citizen Name */}
                     <td className="py-3 px-4 font-semibold text-slate-800">
-                      <Link href={`/government/applications/${app.id}`}>
+                      <Link href={`/government/applications/${app.id}/review`}>
                         {app.applicantName}
                       </Link>
                       <div className="text-[10px] text-slate-400 font-normal">{app.applicantPhone}</div>
@@ -366,10 +366,10 @@ function ApplicationsWorkspaceContent() {
                     {/* Action Button */}
                     <td className="py-3 px-4 text-right">
                       <Link
-                        href={`/government/applications/${app.id}`}
+                        href={`/government/applications/${app.id}/review`}
                         className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-lg text-xs font-bold transition-all shadow-2xs"
                       >
-                        <span>Open</span>
+                        <span>Review</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                     </td>
