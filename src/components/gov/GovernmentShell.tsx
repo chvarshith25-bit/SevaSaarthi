@@ -50,6 +50,24 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [currentTab, setCurrentTab] = useState<string>("all");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab") || "all";
+      setCurrentTab(tab);
+    }
+
+    const handleTabChange = (e: any) => {
+      if (e.detail) {
+        setCurrentTab(e.detail);
+      }
+    };
+    window.addEventListener("gov-tab-change", handleTabChange);
+    return () => window.removeEventListener("gov-tab-change", handleTabChange);
+  }, [pathname]);
+
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcut for search: Ctrl + K or Cmd + K
@@ -135,6 +153,13 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
     currentUser.role === "DEPT_ADMIN" ||
     (currentUser.role as any) === "ADMIN";
 
+  const isReviewActive =
+    pathname.startsWith("/government/applications") &&
+    (currentTab === "needs_action" || currentTab === "review" || currentTab === "officer_review");
+
+  const isApplicationsActive =
+    pathname.startsWith("/government/applications") && !isReviewActive;
+
   const SidebarContent = (
     <div className="flex flex-col justify-between h-full p-4 select-none bg-[#0F172A] text-slate-200">
       {/* Top Brand Header */}
@@ -159,24 +184,40 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
         <nav className="space-y-1.5" aria-label="Government Primary Navigation">
           {primaryNavItems.map((item) => {
             const Icon = item.icon;
-            const isTabMatch = item.href.includes("?tab=") 
-              ? (typeof window !== "undefined" && window.location.search.includes(item.href.split("?")[1]))
-              : false;
             
             const isActive =
-              item.href === "/government/dashboard"
+              item.label === "Dashboard"
                 ? pathname === "/government/dashboard" || pathname === "/government" || pathname === "/gov" || pathname === "/dashboard"
-                : item.href.includes("?tab=assigned")
-                ? pathname.includes("/applications") && isTabMatch
-                : item.href === "/government/applications"
-                ? pathname.startsWith("/government/applications") && !isTabMatch
-                : pathname === item.href || pathname.startsWith(item.href);
+                : item.label === "Review"
+                ? isReviewActive
+                : item.label === "Applications"
+                ? isApplicationsActive
+                : item.label === "Exceptions"
+                ? pathname.startsWith("/government/exceptions")
+                : item.label === "Audit"
+                ? pathname.startsWith("/government/audit")
+                : pathname === item.href;
 
             return (
               <Link
                 key={item.label}
                 href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  if (item.label === "Review") {
+                    setCurrentTab("needs_action");
+                    if (typeof window !== "undefined") {
+                      window.dispatchEvent(new CustomEvent("gov-tab-change", { detail: "needs_action" }));
+                      window.history.pushState(null, "", "/government/applications?tab=needs_action");
+                    }
+                  } else if (item.label === "Applications") {
+                    setCurrentTab("all");
+                    if (typeof window !== "undefined") {
+                      window.dispatchEvent(new CustomEvent("gov-tab-change", { detail: "all" }));
+                      window.history.pushState(null, "", "/government/applications");
+                    }
+                  }
+                }}
                 className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
                   isActive
                     ? "bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30"

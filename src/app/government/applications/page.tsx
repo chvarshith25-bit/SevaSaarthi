@@ -53,7 +53,7 @@ function ApplicationsWorkspaceContent() {
   const [serviceFilter, setServiceFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState<"NEWEST" | "OLDEST" | "PRIORITY" | "SLA">("PRIORITY");
 
-  // Synchronize tab state with URL query parameter (Requirement 3, 5, 6)
+  // Synchronize tab state with URL query parameter & custom event
   useEffect(() => {
     const tabParam = searchParams.get("tab");
     if (tabParam === "review" || tabParam === "officer_review" || tabParam === "needs_action") {
@@ -68,9 +68,17 @@ function ApplicationsWorkspaceContent() {
       setActiveTab("completed");
     } else if (tabParam === "exceptions") {
       setActiveTab("exceptions");
-    } else {
+    } else if (tabParam === "all") {
       setActiveTab("all");
     }
+
+    const handleCustomTab = (e: any) => {
+      if (e.detail) {
+        setActiveTab(e.detail);
+      }
+    };
+    window.addEventListener("gov-tab-change", handleCustomTab);
+    return () => window.removeEventListener("gov-tab-change", handleCustomTab);
   }, [searchParams]);
 
   // Extract unique services for dropdown filter
@@ -207,6 +215,7 @@ function ApplicationsWorkspaceContent() {
                 if (typeof window !== "undefined") {
                   const newUrl = tab.key === "all" ? "/government/applications" : `/government/applications?tab=${tab.key}`;
                   window.history.pushState(null, "", newUrl);
+                  window.dispatchEvent(new CustomEvent("gov-tab-change", { detail: tab.key }));
                 }
               }}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
