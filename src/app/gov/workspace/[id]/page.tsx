@@ -55,6 +55,7 @@ export default function ApplicationWorkspacePage() {
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [viewInstructionsModalOpen, setViewInstructionsModalOpen] = useState(false);
+  const [conflictModalOpen, setConflictModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [manualReviewModalOpen, setManualReviewModalOpen] = useState(false);
 
@@ -336,6 +337,10 @@ export default function ApplicationWorkspacePage() {
   }, [latestReturnLog, application]);
 
   const isReturned = application?.status === "RETURNED_FOR_CORRECTION";
+
+  const conflictItem = useMemo(() => {
+    return application?.verifications?.find((v: any) => v.status === "CONFLICT") || null;
+  }, [application]);
 
   // Issues Requiring Attention (Requirement 17)
   const issuesList = useMemo(() => {
@@ -841,7 +846,7 @@ export default function ApplicationWorkspacePage() {
           {/* ============================================================ */}
           {/* SECTION 4: AI-ASSISTED IDENTITY MATCH (Requirements 7-11)    */}
           {/* ============================================================ */}
-          <div className="bg-white rounded-2xl border-2 border-indigo-200/90 p-6 shadow-xs space-y-5">
+          <div id="ai-identity-match" className="bg-white rounded-2xl border-2 border-indigo-200/90 p-6 shadow-xs space-y-5 scroll-mt-24">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-2xs">
@@ -1362,9 +1367,7 @@ export default function ApplicationWorkspacePage() {
                           } else if (issue.actionLabel === "View Instructions") {
                             setViewInstructionsModalOpen(true);
                           } else if (issue.actionLabel === "Review Conflict") {
-                            const conflictElem = document.getElementById("ai-identity-match");
-                            if (conflictElem) conflictElem.scrollIntoView({ behavior: "smooth" });
-                            else toast.info("Review demographic attributes under AI-Assisted Identity Match");
+                            setConflictModalOpen(true);
                           } else {
                             toast.info(`Investigating ${issue.type}`);
                           }
@@ -1861,6 +1864,118 @@ export default function ApplicationWorkspacePage() {
                 className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* IDENTITY & DEMOGRAPHIC CONFLICT REVIEW MODAL                 */}
+      {/* ============================================================ */}
+      {conflictModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2 text-rose-700 font-bold">
+                <AlertTriangle className="w-5 h-5 text-rose-600" />
+                <span className="text-base font-extrabold text-slate-900">Demographic Conflict Review</span>
+              </div>
+              <button onClick={() => setConflictModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Banner */}
+            <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200 text-xs text-rose-950 space-y-1.5">
+              <div className="flex justify-between items-center">
+                <span className="font-extrabold text-rose-900 text-sm">⚠ IDENTITY MISMATCH DETECTED</span>
+                <span className="px-2 py-0.5 bg-rose-200 text-rose-900 rounded font-bold text-[10px]">
+                  MANUAL OFFICER ACTION REQUIRED
+                </span>
+              </div>
+              <p className="text-xs text-rose-800 leading-relaxed">
+                The citizen&apos;s submitted identifying details differ from records in authorized government identity registries. AI systems cannot legally resolve this discrepancy automatically.
+              </p>
+            </div>
+
+            {/* Comparison Details Grid */}
+            <div className="space-y-2 text-xs">
+              <div className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+                Cross-System Data Comparison
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-0.5">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Citizen Application Declaration</span>
+                  <div className="font-bold text-slate-900 text-xs">
+                    {conflictItem?.applicationValue ? `DOB: ${conflictItem.applicationValue}` : `DOB: ${application?.data?.dateOfBirth || "1999-05-14"}`}
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">Source: Citizen Application Form</div>
+                </div>
+
+                <div className="p-3 bg-rose-50/70 rounded-xl border border-rose-200 space-y-0.5">
+                  <span className="text-[10px] uppercase font-bold text-rose-600">Authorized Government Registry</span>
+                  <div className="font-bold text-rose-900 text-xs">
+                    {conflictItem?.registryValue ? `DOB: ${conflictItem.registryValue}` : "DOB: 2000-05-14"}
+                  </div>
+                  <div className="text-[10px] text-rose-700 font-mono">Source: UIDAI Aadhaar Registry</div>
+                </div>
+
+                {conflictItem?.documentValue && (
+                  <div className="sm:col-span-2 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-0.5">
+                    <span className="text-[10px] uppercase font-bold text-slate-400">Submitted Proof Document</span>
+                    <div className="font-bold text-slate-800 text-xs">
+                      DOB: {conflictItem.documentValue}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-mono">Source: DigiLocker Class 10 Secondary Memo</div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
+                <strong>Statutory Impact:</strong> Under departmental guidelines, demographic identity mismatch prevents automated certificate generation. The officer must either request the citizen to update their Aadhaar record / upload gazetted proof, or reject the case on verification grounds.
+              </div>
+            </div>
+
+            {/* Action Footer */}
+            <div className="flex flex-wrap items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setConflictModalOpen(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  setConflictModalOpen(false);
+                  setReturnCategory("Document mismatch");
+                  setReturnField("Date of Birth / Aadhaar Proof");
+                  setReturnCorrection(
+                    "Date of birth in application differs from UIDAI Aadhaar database. Please upload an updated Aadhaar e-KYC or official gazetted DOB correction proof."
+                  );
+                  setReturnModalOpen(true);
+                }}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Request Correction</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setConflictModalOpen(false);
+                  setRejectionCategory("Verification failed");
+                  setRejectionReason(
+                    "Incurable date of birth discrepancy between submitted application and UIDAI Aadhaar central registry records."
+                  );
+                  setRejectModalOpen(true);
+                }}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>Reject Application</span>
               </button>
             </div>
           </div>
