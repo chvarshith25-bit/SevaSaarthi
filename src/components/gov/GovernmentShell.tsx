@@ -292,10 +292,25 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
               <Menu className="w-5 h-5" />
             </button>
 
+            {/* Mobile Search Button */}
+            <button
+              onClick={() => {
+                setSearchOpen(true);
+                setTimeout(() => searchInputRef.current?.focus(), 50);
+              }}
+              className="sm:hidden p-2 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-slate-100"
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
             {/* Global Search Button / Trigger */}
             <button
-              onClick={() => setSearchOpen(true)}
-              className="hidden sm:flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/70 border border-slate-200 text-slate-500 hover:text-slate-800 text-xs font-medium transition-all w-72 lg:w-96"
+              onClick={() => {
+                setSearchOpen(true);
+                setTimeout(() => searchInputRef.current?.focus(), 50);
+              }}
+              className="hidden sm:flex items-center gap-3 px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/70 border border-slate-200 text-slate-500 hover:text-slate-800 text-xs font-medium transition-all w-72 lg:w-96 cursor-pointer"
             >
               <Search className="w-4 h-4 text-slate-400" />
               <span className="flex-1 text-left">Search applications, citizens, services...</span>
@@ -318,7 +333,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
             {/* Notification Bell */}
             <div className="relative">
               <button
-                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors relative"
+                className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors relative cursor-pointer"
                 aria-label="Notifications"
                 title="Notifications"
               >
@@ -333,7 +348,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
             <div className="relative">
               <button
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                className="flex items-center gap-2.5 p-1.5 pl-2.5 rounded-xl hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-all text-left"
+                className="flex items-center gap-2.5 p-1.5 pl-2.5 rounded-xl hover:bg-slate-100 border border-transparent hover:border-slate-200 transition-all text-left cursor-pointer"
                 aria-label="Officer Profile Menu"
               >
                 <div className="w-7 h-7 rounded-lg bg-blue-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
@@ -373,7 +388,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                   <div className="border-t border-slate-100 pt-1">
                     <button
                       onClick={handleSignOut}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg text-left"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg text-left cursor-pointer"
                     >
                       <LogOut className="w-4 h-4 text-rose-500" />
                       <span>Sign Out</span>
@@ -387,65 +402,163 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
 
         {/* Global Search Dialog Modal */}
         {searchOpen && (
-          <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-slate-950/60 backdrop-blur-xs">
-            <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-              <div className="p-4 border-b border-slate-100 flex items-center gap-3">
-                <Search className="w-5 h-5 text-slate-400 shrink-0" />
+          <div
+            className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-20 px-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in"
+            onClick={() => setSearchOpen(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-2xl w-full overflow-hidden animate-in zoom-in-95 duration-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (searchResults.length > 0) {
+                    setSearchOpen(false);
+                    router.push(`/government/applications/${searchResults[0].id}`);
+                  }
+                }}
+                className="p-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50"
+              >
+                <Search className="w-5 h-5 text-blue-600 shrink-0" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Type an Application ID (e.g. PAN-2026-0001), citizen name, or phone..."
-                  className="w-full text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-hidden bg-transparent"
+                  placeholder="Search by Application ID (e.g. PAN-2026-0001), citizen name, service..."
+                  className="w-full text-sm font-medium text-slate-900 placeholder:text-slate-400 outline-hidden bg-transparent"
+                  autoFocus
                 />
                 <button
+                  type="button"
                   onClick={() => setSearchOpen(false)}
-                  className="px-2 py-1 text-xs font-bold text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-100"
+                  className="px-2 py-1 text-xs font-bold text-slate-400 hover:text-slate-700 rounded-md hover:bg-slate-200 cursor-pointer"
                 >
                   ESC
                 </button>
-              </div>
+              </form>
 
               <div className="p-3 max-h-96 overflow-y-auto">
                 {searchQuery.trim() === "" ? (
-                  <div className="p-6 text-center text-xs text-slate-400">
-                    Search across registered applications, verified citizens, and active workflows.
+                  <div className="space-y-3 p-2">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
+                      Quick Officer Navigation
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Link
+                        href="/government/applications"
+                        onClick={() => setSearchOpen(false)}
+                        className="p-3 bg-slate-50 hover:bg-blue-50 border border-slate-200/80 hover:border-blue-200 rounded-xl flex items-center gap-3 transition-colors group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                          <Layers className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-slate-800 group-hover:text-blue-700">
+                            All Applications
+                          </div>
+                          <div className="text-[10px] text-slate-500">View complete intake ledger</div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/government/applications?tab=needs_action"
+                        onClick={() => setSearchOpen(false)}
+                        className="p-3 bg-slate-50 hover:bg-indigo-50 border border-slate-200/80 hover:border-indigo-200 rounded-xl flex items-center gap-3 transition-colors group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-slate-800 group-hover:text-indigo-700">
+                            Review Work Desk
+                          </div>
+                          <div className="text-[10px] text-slate-500">Cases ready for officer decision</div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/government/exceptions"
+                        onClick={() => setSearchOpen(false)}
+                        className="p-3 bg-slate-50 hover:bg-amber-50 border border-slate-200/80 hover:border-amber-200 rounded-xl flex items-center gap-3 transition-colors group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                          <AlertTriangle className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-slate-800 group-hover:text-amber-800">
+                            Exceptions & Conflicts
+                          </div>
+                          <div className="text-[10px] text-slate-500">Demographic & document issues</div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/government/audit"
+                        onClick={() => setSearchOpen(false)}
+                        className="p-3 bg-slate-50 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-200 rounded-xl flex items-center gap-3 transition-colors group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
+                          <History className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-bold text-slate-800 group-hover:text-emerald-800">
+                            Statutory Audit Ledger
+                          </div>
+                          <div className="text-[10px] text-slate-500">Cryptographic event history</div>
+                        </div>
+                      </Link>
+                    </div>
                   </div>
                 ) : searchResults.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-slate-500">
-                    No matching applications found for &quot;{searchQuery}&quot;.
+                  <div className="p-8 text-center text-xs text-slate-500">
+                    <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <div className="font-bold text-slate-700">No matching applications found</div>
+                    <div className="text-slate-400 mt-0.5">Try searching with a valid Application ID or citizen name.</div>
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-0.5">
+                      Matching Cases ({searchResults.length}) — Press Enter to open first
+                    </div>
                     {searchResults.map((app) => (
                       <Link
                         key={app.id}
-                        href={`/government/applications/${app.id}/review`}
+                        href={`/government/applications/${app.id}`}
                         onClick={() => setSearchOpen(false)}
-                        className="flex items-center justify-between p-3 rounded-xl hover:bg-blue-50/70 border border-transparent hover:border-blue-200 transition-all group"
+                        className="flex items-center justify-between p-3 rounded-xl hover:bg-blue-50/80 border border-slate-100 hover:border-blue-200 transition-all group"
                       >
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-xs text-blue-600 group-hover:text-blue-700">
+                            <span className="font-mono font-extrabold text-xs text-blue-600 group-hover:text-blue-800">
                               {app.id}
                             </span>
-                            <span className="text-xs font-semibold text-slate-800">
+                            <span className="text-xs font-bold text-slate-900">
                               {app.applicantName}
                             </span>
                           </div>
                           <div className="text-[11px] text-slate-500 mt-0.5">
-                            {app.serviceName} • {app.stage}
+                            {app.serviceName} • {app.department || "Income Tax Dept"}
                           </div>
                         </div>
-                        <div className="text-right shrink-0">
-                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                            app.status === "APPROVED" ? "bg-emerald-100 text-emerald-800" :
-                            app.status === "ACTION_REQUIRED" ? "bg-blue-100 text-blue-800" :
-                            "bg-slate-100 text-slate-700"
-                          }`}>
+                        <div className="text-right shrink-0 flex items-center gap-2">
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                              app.status === "COMPLETED" || (app.status as any) === "APPROVED"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                : app.status === "PROCESSING" || (app.status as any) === "ACTION_REQUIRED"
+                                ? "bg-blue-50 text-blue-800 border-blue-200"
+                                : app.status === "RETURNED_FOR_CORRECTION" || (app.status as any) === "RETURNED"
+                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                : app.status === "REJECTED"
+                                ? "bg-rose-50 text-rose-800 border-rose-200"
+                                : "bg-slate-50 text-slate-700 border-slate-200"
+                            }`}
+                          >
                             {app.status}
                           </span>
+                          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 transition-colors" />
                         </div>
                       </Link>
                     ))}
