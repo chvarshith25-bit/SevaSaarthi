@@ -10,6 +10,12 @@ import {
 } from "@/types/government";
 import { toast } from "sonner";
 
+import {
+  getInitialPanApplications,
+  getInitialExceptions,
+  getInitialAuditLogs,
+} from "@/lib/mock-data/pan-initial-data";
+
 export const GOV_ROLES: Record<GovernmentRole, GovernmentUser> = {
   OFFICER: {
     id: "OFF-PAN-7042",
@@ -66,10 +72,10 @@ const GovContext = createContext<GovContextType | null>(null);
 
 export function GovProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<GovernmentUser>(GOV_ROLES.OFFICER);
-  const [applications, setApplications] = useState<PanApplicationRecord[]>([]);
-  const [exceptions, setExceptions] = useState<ExceptionRecord[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [applications, setApplications] = useState<PanApplicationRecord[]>(() => getInitialPanApplications());
+  const [exceptions, setExceptions] = useState<ExceptionRecord[]>(() => getInitialExceptions());
+  const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>(() => getInitialAuditLogs());
+  const [isLoading, setIsLoading] = useState(false);
 
   const refreshAll = useCallback(async () => {
     try {
@@ -87,10 +93,16 @@ export function GovProvider({ children }: { children: React.ReactNode }) {
         audRes.json(),
       ]);
 
-      if (userData.success) setCurrentUser(userData.employee);
-      if (appData.success) setApplications(appData.applications || []);
-      if (excData.success) setExceptions(excData.exceptions || []);
-      if (audData.success) setAuditLogs(audData.auditLogs || []);
+      if (userData?.success && userData.employee) setCurrentUser(userData.employee);
+      if (appData?.success && Array.isArray(appData.applications) && appData.applications.length > 0) {
+        setApplications(appData.applications);
+      }
+      if (excData?.success && Array.isArray(excData.exceptions) && excData.exceptions.length > 0) {
+        setExceptions(excData.exceptions);
+      }
+      if (audData?.success && Array.isArray(audData.auditLogs) && audData.auditLogs.length > 0) {
+        setAuditLogs(audData.auditLogs);
+      }
     } catch (err) {
       console.error("[GovProvider refreshAll error]", err);
     } finally {

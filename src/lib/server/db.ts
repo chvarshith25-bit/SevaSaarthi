@@ -749,6 +749,9 @@ export function getPanApplications(filters?: {
   userId?: string;
   departmentId?: string;
 }): PanApplicationRecord[] & Promise<PanApplicationRecord[]> {
+  if (!panApplicationsMemory || panApplicationsMemory.length === 0) {
+    panApplicationsMemory = getInitialPanApplications();
+  }
   let list = [...panApplicationsMemory];
   if (filters?.userId) {
     list = list.filter(
