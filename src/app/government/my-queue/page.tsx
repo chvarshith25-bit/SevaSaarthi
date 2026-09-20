@@ -1,7 +1,7 @@
 "use client";
 
-import ApplicationQueuePage from "@/app/gov/queue/page";
+import GovernmentApplicationsPage from "@/app/government/applications/page";
 
 export default function Page() {
-  return <ApplicationQueuePage />;
+  return <GovernmentApplicationsPage />;
 }

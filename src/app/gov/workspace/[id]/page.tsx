@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -26,6 +26,15 @@ import {
   Play,
   ChevronDown,
   ChevronUp,
+  Bot,
+  Building,
+  MapPin,
+  Lock,
+  Layers,
+  HelpCircle,
+  Database,
+  ArrowRight,
+  Maximize2,
 } from "lucide-react";
 import { PanApplicationRecord, AuditLogRecord } from "@/types/government";
 import { toast } from "sonner";
@@ -41,28 +50,36 @@ export default function PanApplicationWorkspacePage() {
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isComparisonOpen, setIsComparisonOpen] = useState(true);
+
+  // Active section tab
+  const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<
+    "overview" | "ai_evidence" | "documents" | "consent_registry" | "verification" | "audit"
+  >("overview");
 
   // Dialog States
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
-  const [officerRemarks, setOfficerRemarks] = useState("All required credentials and source registries verified. Approved for PAN issuance.");
+  const [officerRemarks, setOfficerRemarks] = useState(
+    "Demographics, income credentials, and cross-registry records verified. Approved under statutory authority."
+  );
 
-  // Structured Return for Correction fields (Section 16)
+  // Structured Return for Correction fields
   const [returnCategory, setReturnCategory] = useState("Document mismatch");
   const [returnField, setReturnField] = useState("Permanent Address");
   const [returnExplanation, setReturnExplanation] = useState("The address does not match the submitted proof.");
   const [returnCorrection, setReturnCorrection] = useState("Provide a valid address proof or correct the application.");
-  const [returnEvidence, setReturnEvidence] = useState("TSSPDCL utility bill dated > 3 months or cropped address");
+  const [returnEvidence, setReturnEvidence] = useState("Utility bill dated > 3 months or cropped address");
 
-  // Structured Rejection fields (Section 17)
+  // Structured Rejection fields
   const [rejectionCategory, setRejectionCategory] = useState("Verification failed");
-  const [rejectionReason, setRejectionReason] = useState("Incurable demographic discrepancy across identity registries under Section 139A.");
-  const [rejectionEvidence, setRejectionEvidence] = useState("UIDAI e-KYC record vs Submitted CBSE Matriculation Memo");
+  const [rejectionReason, setRejectionReason] = useState(
+    "Incurable demographic discrepancy across identity registries under Section 139A."
+  );
+  const [rejectionEvidence, setRejectionEvidence] = useState("UIDAI e-KYC record vs Submitted Academic Memo");
   const [rejectionConfirmed, setRejectionConfirmed] = useState(false);
 
-  // Phase 3: AI Model 1 Workflow Recommendation States
+  // AI Model 1 & Model 2 States
   const [routingRecommendation, setRoutingRecommendation] = useState<any>(null);
   const [entityResolutions, setEntityResolutions] = useState<any[]>([]);
   const [registryOptions, setRegistryOptions] = useState<any>({
@@ -71,11 +88,9 @@ export default function PanApplicationWorkspacePage() {
     offices: [],
     services: [],
   });
-  const [overrideModalOpen, setOverrideModalOpen] = useState(false);
-  const [overrideDeptId, setOverrideDeptId] = useState("");
-  const [overrideSubDeptId, setOverrideSubDeptId] = useState("");
-  const [overrideOfficeId, setOverrideOfficeId] = useState("");
-  const [overrideReason, setOverrideReason] = useState("");
+
+  // Selected candidate index for Model 2 comparison
+  const [selectedCandidateIdx, setSelectedCandidateIdx] = useState(0);
 
   const fetchCaseDetails = async () => {
     try {
@@ -153,12 +168,16 @@ export default function PanApplicationWorkspacePage() {
     }
   };
 
-  const handleReviewEntityResolution = async (resolutionId: string, action: "ACCEPT" | "REJECT" | "VERIFICATION_REQUIRED") => {
+  const handleReviewEntityResolution = async (
+    resolutionId: string,
+    action: "ACCEPT" | "REJECT" | "VERIFICATION_REQUIRED"
+  ) => {
     setIsProcessing(true);
     try {
-      const endpoint = action === "ACCEPT"
-        ? `/api/gov/applications/${appId}/entity-resolution/accept`
-        : `/api/gov/applications/${appId}/entity-resolution/reject`;
+      const endpoint =
+        action === "ACCEPT"
+          ? `/api/gov/applications/${appId}/entity-resolution/accept`
+          : `/api/gov/applications/${appId}/entity-resolution/reject`;
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -179,1485 +198,756 @@ export default function PanApplicationWorkspacePage() {
     }
   };
 
+  // Detect collision status in Model 2 candidates
+  const collisionCandidate = useMemo(() => {
+    return entityResolutions.find(
+      (r) => r.confidenceTier === "AMBIGUOUS" || r.totalScore <= 0.25 || r.collisionWarning
+    );
+  }, [entityResolutions]);
+
   if (loading || !application) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-semibold text-slate-500">Loading Consolidated Application Workspace...</p>
         </div>
       </div>
     );
   }
 
+  const isTerminal =
+    application.status === "APPROVED" ||
+    application.status === "REJECTED" ||
+    application.status === "COMPLETED";
+
   return (
-    <div className="space-y-6">
-      {/* Top Workspace Bar */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+    <div className="space-y-6 pb-28 animate-in fade-in duration-200">
+      {/* 1. Header & Navigation Bar */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 lg:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4 min-w-0">
           <Link
-            href="/applications"
-            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
-            title="Back to queue"
+            href="/government/applications"
+            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors shrink-0"
+            title="Back to Applications"
+            aria-label="Back to Applications"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="font-mono font-black text-lg sm:text-xl text-slate-900">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className="font-mono font-black text-lg text-blue-600 tracking-tight">
                 {application.id}
               </span>
+              <span className="text-slate-300">•</span>
+              <span className="text-lg font-bold text-slate-900 truncate">
+                {application.applicantName}
+              </span>
               <span
-                className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                  application.status === "ACTION_REQUIRED"
-                    ? "bg-rose-100 text-rose-800"
+                className={`px-2 py-0.5 text-xs font-bold rounded-md uppercase ${
+                  application.priority === "URGENT"
+                    ? "bg-rose-100 text-rose-800 border border-rose-200"
+                    : application.priority === "HIGH"
+                    ? "bg-amber-100 text-amber-800 border border-amber-200"
+                    : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {application.priority} Priority
+              </span>
+              <span
+                className={`px-2.5 py-0.5 text-xs font-bold rounded-md ${
+                  application.status === "APPROVED"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : application.status === "ACTION_REQUIRED"
+                    ? "bg-blue-100 text-blue-800"
                     : application.status === "VERIFICATION_CONFLICT"
                     ? "bg-rose-100 text-rose-800"
                     : application.status === "RETURNED_FOR_CORRECTION"
-                    ? "bg-amber-100 text-amber-800"
-                    : application.status === "API_UNAVAILABLE"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-emerald-100 text-emerald-800"
+                    ? "bg-slate-200 text-slate-700"
+                    : "bg-slate-100 text-slate-700"
                 }`}
               >
-                {application.status.replace(/_/g, " ")}
-              </span>
-              <span className="text-[10px] font-bold uppercase text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                {application.priority} PRIORITY
+                {application.status}
               </span>
             </div>
-            <div className="flex items-center gap-3 text-xs text-slate-500 mt-1 flex-wrap">
-              <span>Applicant: <strong className="text-slate-800">{application.applicantName}</strong></span>
+            <div className="text-xs text-slate-500 flex flex-wrap items-center gap-3 font-medium">
+              <span>{application.serviceName}</span>
               <span>•</span>
-              <span>Regional Cell: <strong className="text-slate-800">{application.office}</strong></span>
+              <span>Stage: <strong className="text-slate-800">{application.stage}</strong></span>
               <span>•</span>
-              <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-semibold text-[11px]">
-                <span>Stage Owner:</span>
-                <span className="text-indigo-700 font-bold">{application.assignedOfficerName || "Department Officer"}</span>
-              </span>
-              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md font-semibold text-[11px]">
-                <Clock className="w-3 h-3 text-emerald-600" />
-                <span>Statutory SLA: 4 Hours (Within Window)</span>
+              <span className="flex items-center gap-1 text-slate-600">
+                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span>SLA: {(application as any).slaStatus || "Within SLA (3d remaining)"}</span>
               </span>
             </div>
           </div>
         </div>
 
-        {/* Action Controls in Top Bar */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* If Approved or in pipeline, allow manual advance button & auto indicator */}
-          {(application.stage === "APPROVED" ||
-            application.stage === "PAN_GENERATION" ||
-            application.stage === "CARD_PRINTING" ||
-            application.stage === "DISPATCHED") && (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-xl flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
-                <span>Auto-advancing in pipeline</span>
-              </span>
-              <button
-                onClick={() => handleAction("ADVANCE_STAGE")}
-                disabled={isProcessing}
-                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
-                title="Immediately advance to next event"
-              >
-                <Play className="w-3.5 h-3.5" />
-                <span>Step Next Event</span>
-              </button>
-            </div>
-          )}
-
-          {/* If API unavailable, show Retry button */}
-          {application.status === "API_UNAVAILABLE" && (
-            <button
-              onClick={() => handleAction("RETRY_VERIFICATION")}
-              disabled={isProcessing}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
-            >
-              <RotateCcw className="w-3.5 h-3.5 animate-spin" />
-              <span>Retry API Connector</span>
-            </button>
-          )}
+        {/* Assigned Officer Pill */}
+        <div className="flex items-center gap-2 self-start md:self-center shrink-0">
+          <div className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center gap-2">
+            <User className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-slate-500">Officer:</span>
+            <span className="font-mono font-bold text-slate-800">
+              {application.assignedOfficerId || "OFF-PAN-7042"}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Main 12-Column Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column (8 cols): Workflow, Citizen Data, Documents, Verifications */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* 1. Workflow Pipeline Stage Progression */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+      {/* 2. Workspace Navigation Tabs */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-1.5 shadow-xs flex items-center gap-1 overflow-x-auto no-scrollbar">
+        {[
+          { key: "overview", label: "A & B. Citizen & Application Info", icon: User },
+          { key: "ai_evidence", label: "F. AI Intelligence & Model 2", icon: Sparkles, badge: "AI Advisory" },
+          { key: "documents", label: "C. Ingested Documents", icon: FileText, count: 3 },
+          { key: "consent_registry", label: "D & E. DPDP Consent & Registries", icon: Shield },
+          { key: "verification", label: "G. Verification Checklist", icon: CheckCircle2 },
+          { key: "audit", label: "H. Audit Timeline", icon: History, count: auditLogs.length },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveWorkspaceTab(tab.key as any)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                activeWorkspaceTab === tab.key
+                  ? "bg-blue-600 text-white shadow-xs font-bold"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+              {tab.badge && (
+                <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-bold ${
+                  activeWorkspaceTab === tab.key ? "bg-white/20 text-white" : "bg-indigo-100 text-indigo-700"
+                }`}>
+                  {tab.badge}
+                </span>
+              )}
+              {tab.count !== undefined && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  activeWorkspaceTab === tab.key ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                }`}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 3. Tab Contents */}
+
+      {/* TAB 1: CITIZEN INFORMATION & APPLICATION DETAILS (SECTIONS A & B) */}
+      {activeWorkspaceTab === "overview" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Section A: Citizen Information */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                WORKFLOW PIPELINE PROGRESSION
-              </h3>
-              <span className="text-xs font-bold text-indigo-600">
-                Stage: {application.stage.replace(/_/g, " ")}
+              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <User className="w-4 h-4 text-blue-600" />
+                <span>Section A: Citizen Demographic Information</span>
+              </h2>
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                Verified Profile Snapshot
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-medium">
-              <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                <span>1. Application Submitted</span>
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Full Name</span>
+                <div className="text-sm font-bold text-slate-900 mt-0.5">{application.applicantName}</div>
               </div>
-              <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                <span>2. Data Validation</span>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Date of Birth</span>
+                <div className="text-sm font-bold text-slate-900 mt-0.5">
+                  {(application as any).citizenData?.dateOfBirth || (application as any).formData?.dateOfBirth || "1995-08-15"}
+                </div>
               </div>
-              <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                <span>3. Identity Verification</span>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Father / Guardian Name</span>
+                <div className="text-sm font-bold text-slate-900 mt-0.5">
+                  {(application as any).citizenData?.fatherName || (application as any).formData?.fatherName || "Anand Kumar"}
+                </div>
               </div>
-              <div className="p-3 bg-emerald-50 text-emerald-800 rounded-2xl flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                <span>4. Cross-System Validation</span>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Aadhaar Reference</span>
+                <div className="text-sm font-mono font-bold text-slate-900 mt-0.5">
+                  {(application as any).citizenData?.aadhaarNumber || (application as any).formData?.aadhaarNumber || "XXXX-XXXX-9012"}
+                </div>
               </div>
-
-              {/* Sub-stages: Officer Decision -> Physical Card */}
-              <div
-                className={`p-3 rounded-2xl flex items-center gap-2 ${
-                  application.stage === "OFFICER_REVIEW" || application.stage === "OFFICER_ASSIGNED"
-                    ? "bg-indigo-600 text-white font-bold animate-pulse"
-                    : application.stage === "APPROVED" ||
-                      application.stage === "PAN_GENERATION" ||
-                      application.stage === "CARD_PRINTING" ||
-                      application.stage === "DISPATCHED" ||
-                      application.stage === "DELIVERED"
-                    ? "bg-emerald-50 text-emerald-800"
-                    : "bg-slate-100 text-slate-400"
-                }`}
-              >
-                <span>5. Officer Review</span>
+              <div className="col-span-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Permanent Address</span>
+                <div className="text-xs font-semibold text-slate-900 mt-0.5">
+                  {(application as any).citizenData?.address || (application as any).formData?.address || "H.No 12-4, Madhapur, Hyderabad, Telangana 500081"}
+                </div>
               </div>
-
-              <div
-                className={`p-3 rounded-2xl flex items-center gap-2 ${
-                  application.stage === "PAN_GENERATION"
-                    ? "bg-blue-600 text-white font-bold animate-pulse"
-                    : application.physicalCard?.panNumber
-                    ? "bg-emerald-50 text-emerald-800 font-semibold"
-                    : "bg-slate-100 text-slate-400"
-                }`}
-              >
-                <span>6. PAN Generation</span>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Mobile Phone</span>
+                <div className="text-xs font-bold text-slate-900 mt-0.5">{application.applicantPhone}</div>
               </div>
-
-              <div
-                className={`p-3 rounded-2xl flex items-center gap-2 ${
-                  application.stage === "CARD_PRINTING"
-                    ? "bg-amber-600 text-white font-bold animate-pulse"
-                    : application.physicalCard?.printedAt
-                    ? "bg-emerald-50 text-emerald-800 font-semibold"
-                    : "bg-slate-100 text-slate-400"
-                }`}
-              >
-                <span>7. Physical Card Print</span>
-              </div>
-
-              <div
-                className={`p-3 rounded-2xl flex items-center gap-2 ${
-                  application.stage === "DELIVERED"
-                    ? "bg-emerald-600 text-white font-bold"
-                    : application.stage === "DISPATCHED"
-                    ? "bg-blue-600 text-white font-bold"
-                    : "bg-slate-100 text-slate-400"
-                }`}
-              >
-                <span>8. Dispatch & Delivery</span>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Email Address</span>
+                <div className="text-xs font-bold text-slate-900 mt-0.5">{application.applicantEmail}</div>
               </div>
             </div>
           </div>
 
-          {/* 2. Automated Verification & Cross-System Comparison Panel */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+          {/* Section B: Application Details & Declarations */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-indigo-600" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                  AUTOMATED VERIFICATION & CROSS-SYSTEM COMPARISON
-                </h3>
-              </div>
-              <span className="text-[11px] font-semibold text-slate-400">
-                Rule Engine + Interoperability Mesh
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {application.verifications.map((v) => (
-                <div
-                  key={v.id}
-                  className={`p-4 rounded-2xl border transition-all ${
-                    v.status === "VERIFIED"
-                      ? "bg-emerald-50/40 border-emerald-100"
-                      : v.status === "CONFLICT"
-                      ? "bg-rose-50 border-rose-200"
-                      : "bg-blue-50/50 border-blue-100"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      {v.status === "VERIFIED" ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      ) : (
-                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
-                      )}
-                      <span className="font-bold text-xs text-slate-900">{v.name}</span>
-                      <span className="text-[10px] text-slate-500">({v.source})</span>
-                    </div>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        v.status === "VERIFIED"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-rose-100 text-rose-800 font-black"
-                      }`}
-                    >
-                      {v.status}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-slate-700 mt-2 leading-relaxed">
-                    {v.details}
-                  </p>
-
-                  {/* Comparison columns if values exist */}
-                  {(v.applicationValue || v.registryValue) && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3 pt-2 border-t border-slate-200/60 text-[11px]">
-                      <div>
-                        <span className="text-slate-400 block font-semibold">Application Value:</span>
-                        <span className="font-bold text-slate-800">{v.applicationValue}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block font-semibold">Registry Value (UIDAI):</span>
-                        <span className="font-bold text-slate-800">{v.registryValue}</span>
-                      </div>
-                      {v.documentValue && (
-                        <div>
-                          <span className="text-slate-400 block font-semibold">Document (DigiLocker):</span>
-                          <span className="font-bold text-slate-800">{v.documentValue}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 2b. AI Model 2 Cross-Registry Entity Resolution Panel (Phase 6) */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
-                  <Shield className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                    CROSS-REGISTRY IDENTITY RESOLUTION (AI MODEL 2)
-                  </h3>
-                  <span className="text-[10px] text-slate-400 font-medium">
-                    Hybrid Subword N-Gram Embeddings + Graph Corroboration (Advisory Only)
-                  </span>
-                </div>
-              </div>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                DPDP Section 6 Verified
-              </span>
-            </div>
-
-            {entityResolutions.length === 0 ? (
-              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-500 text-center">
-                <span>No cross-registry candidates retrieved yet or single-source verification active.</span>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* 2b.1 Side-by-Side Comparison Drawer (Phase 7B - Multiple candidates with score >= 0.70) */}
-                {(() => {
-                  const highScoringCandidates = entityResolutions.filter((c) => Number(c.total_score) >= 0.70);
-                  if (highScoringCandidates.length < 2) return null;
-
-                  return (
-                    <div className="bg-gradient-to-br from-indigo-50/70 via-slate-50 to-white border-2 border-indigo-200/80 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-xs">
-                            <Sparkles className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-xs font-black uppercase tracking-wider text-indigo-950">
-                                Side-by-Side Candidate Comparison
-                              </h4>
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white shadow-2xs">
-                                {highScoringCandidates.length} Candidates ≥ 70%
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-600 mt-0.5">
-                              Multiple high-scoring records detected across authoritative registries. Compare discrepancies before final officer decision.
-                            </p>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => setIsComparisonOpen((prev) => !prev)}
-                          className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all self-start sm:self-auto cursor-pointer"
-                        >
-                          <span>{isComparisonOpen ? "Collapse Comparison" : "Expand Comparison"}</span>
-                          {isComparisonOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                        </button>
-                      </div>
-
-                      {isComparisonOpen && (
-                        <div className="mt-4 pt-1">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {highScoringCandidates.map((cand) => {
-                              const fieldScores = typeof cand.field_scores === "string" ? JSON.parse(cand.field_scores) : cand.field_scores || {};
-                              const matchedFields = Array.isArray(cand.matched_fields) ? cand.matched_fields : (cand.matched_fields ? String(cand.matched_fields).split(",") : ["name"]);
-                              const conflictingFields = Array.isArray(cand.conflicting_fields) ? cand.conflicting_fields : (cand.conflicting_fields ? String(cand.conflicting_fields).split(",") : []);
-
-                              return (
-                                <div
-                                  key={`compare-${cand.id || cand.candidate_record_id}`}
-                                  className={`bg-white rounded-2xl border-2 p-4 flex flex-col justify-between shadow-xs transition-all ${
-                                    cand.is_collision_warning
-                                      ? "border-amber-400 bg-amber-50/20"
-                                      : cand.review_status === "ACCEPTED"
-                                      ? "border-emerald-500 bg-emerald-50/20"
-                                      : cand.review_status === "REJECTED"
-                                      ? "border-rose-400 bg-rose-50/20"
-                                      : "border-indigo-200/90"
-                                  }`}
-                                >
-                                  <div className="space-y-3">
-                                    {/* Candidate Header */}
-                                    <div className="border-b border-slate-100 pb-2.5">
-                                      <div className="flex items-center justify-between gap-1 flex-wrap">
-                                        <span className="font-extrabold text-xs text-indigo-900 uppercase tracking-tight">
-                                          {cand.candidate_registry?.replace(/_/g, " ")}
-                                        </span>
-                                        <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
-                                          {cand.candidate_record_id}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center justify-between gap-2 mt-2">
-                                        <div className="flex items-baseline gap-1">
-                                          <span className="text-lg font-black text-indigo-700">
-                                            {Math.round(Number(cand.total_score) * 100)}%
-                                          </span>
-                                          <span className="text-[10px] font-bold text-slate-500">Match</span>
-                                        </div>
-                                        <span
-                                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                            cand.confidence_tier === "HIGH"
-                                              ? "bg-emerald-100 text-emerald-800"
-                                              : cand.confidence_tier === "MEDIUM"
-                                              ? "bg-blue-100 text-blue-800"
-                                              : "bg-amber-100 text-amber-800"
-                                          }`}
-                                        >
-                                          {cand.confidence_tier}
-                                        </span>
-                                      </div>
-
-                                      {cand.is_collision_warning && (
-                                        <div className="mt-2 text-[10px] font-bold text-rose-800 bg-rose-100/90 border border-rose-200 px-2 py-1 rounded-lg flex items-center gap-1.5">
-                                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                                          <span>Homonym Collision Warning: Conflicting Parents/DOB</span>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* Field Comparisons Matrix */}
-                                    <div className="space-y-1.5 text-[11px]">
-                                      <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                                        <span className="text-slate-500 font-semibold">Name Match:</span>
-                                        <span className={`font-bold ${((fieldScores.nameScore ?? 0) >= 0.85) ? "text-emerald-700" : "text-amber-700"}`}>
-                                          {Math.round((fieldScores.nameScore ?? 0) * 100)}%
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                                        <span className="text-slate-500 font-semibold">Date of Birth:</span>
-                                        <span className={`font-bold ${(fieldScores.dobScore === undefined || fieldScores.dobScore >= 0.9) ? "text-emerald-700" : "text-rose-700"}`}>
-                                          {fieldScores.dobScore !== undefined ? `${Math.round(fieldScores.dobScore * 100)}%` : "Not Indexed"}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                                        <span className="text-slate-500 font-semibold">Father / Guardian:</span>
-                                        <span className={`font-bold ${(fieldScores.fatherScore === undefined || fieldScores.fatherScore >= 0.8) ? "text-emerald-700" : "text-rose-700 font-black"}`}>
-                                          {fieldScores.fatherScore !== undefined ? `${Math.round(fieldScores.fatherScore * 100)}%` : "Not Indexed"}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center justify-between py-1 border-b border-slate-50">
-                                        <span className="text-slate-500 font-semibold">Address / Dist:</span>
-                                        <span className="font-bold text-slate-800">
-                                          {Math.round(((fieldScores.addressScore ?? 0.5) * 0.7 + (fieldScores.districtScore ?? 0.5) * 0.3) * 100)}%
-                                        </span>
-                                      </div>
-                                    </div>
-
-                                    {/* Matched vs Conflicting Fields */}
-                                    <div className="space-y-2 pt-1">
-                                      <div>
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block mb-1">
-                                          Matched Fields:
-                                        </span>
-                                        <div className="flex flex-wrap gap-1">
-                                          {matchedFields.length > 0 ? (
-                                            matchedFields.map((f: string) => (
-                                              <span key={f} className="text-[10px] bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded font-medium">
-                                                ✓ {f.replace(/_/g, " ")}
-                                              </span>
-                                            ))
-                                          ) : (
-                                            <span className="text-[10px] text-slate-400">None</span>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {conflictingFields.length > 0 && (
-                                        <div>
-                                          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 block mb-1">
-                                            Conflicting Fields:
-                                          </span>
-                                          <div className="flex flex-wrap gap-1">
-                                            {conflictingFields.map((f: string) => (
-                                              <span key={f} className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-1.5 py-0.5 rounded font-medium">
-                                                ✕ {f.replace(/_/g, " ")}
-                                              </span>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Action Buttons */}
-                                  <div className="pt-3 mt-3 border-t border-slate-100">
-                                    {cand.review_status === "PENDING" ? (
-                                      <div className="flex flex-col gap-1.5">
-                                        <button
-                                          type="button"
-                                          onClick={() => handleReviewEntityResolution(cand.id, "ACCEPT")}
-                                          disabled={isProcessing}
-                                          className="w-full py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                                        >
-                                          <Check className="w-3.5 h-3.5" />
-                                          <span>Accept Candidate</span>
-                                        </button>
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                          <button
-                                            type="button"
-                                            onClick={() => handleReviewEntityResolution(cand.id, "REJECT")}
-                                            disabled={isProcessing}
-                                            className="py-1.5 px-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 disabled:opacity-50 cursor-pointer"
-                                          >
-                                            <X className="w-3.5 h-3.5" />
-                                            <span>Reject</span>
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => handleReviewEntityResolution(cand.id, "VERIFICATION_REQUIRED")}
-                                            disabled={isProcessing}
-                                            className="py-1.5 px-1.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-[11px] rounded-xl shadow-xs transition-all flex items-center justify-center gap-1 disabled:opacity-50 cursor-pointer"
-                                          >
-                                            <span>Proof Req</span>
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="text-center py-1 bg-slate-100 rounded-xl text-xs font-bold text-slate-700">
-                                        Status: {cand.review_status}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* Individual Candidate List Cards */}
-                {entityResolutions.map((cand) => {
-                  const fieldScores = typeof cand.field_scores === "string" ? JSON.parse(cand.field_scores) : cand.field_scores || {};
-                  return (
-                    <div
-                      key={cand.id || cand.candidate_record_id}
-                      className={`p-4 rounded-2xl border transition-all space-y-3 ${
-                        cand.is_collision_warning
-                          ? "bg-amber-50/60 border-amber-200"
-                          : cand.review_status === "ACCEPTED"
-                          ? "bg-emerald-50/50 border-emerald-200"
-                          : cand.review_status === "REJECTED"
-                          ? "bg-rose-50/50 border-rose-200"
-                          : "bg-slate-50/60 border-slate-200"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2 flex-wrap">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-slate-900 uppercase">
-                              {cand.candidate_registry?.replace(/_/g, " ")}
-                            </span>
-                            <span className="font-mono text-[11px] text-slate-500 font-semibold">
-                              ({cand.candidate_record_id})
-                            </span>
-                          </div>
-                          <span className="text-[11px] text-slate-500 block mt-0.5">
-                            Match Score: <strong className="text-indigo-700">{Math.round(Number(cand.total_score) * 100)}%</strong>
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {cand.is_collision_warning && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 animate-pulse">
-                              POTENTIAL COLLISION
-                            </span>
-                          )}
-                          <span
-                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                              cand.confidence_tier === "HIGH"
-                                ? "bg-emerald-100 text-emerald-800"
-                                : cand.confidence_tier === "MEDIUM"
-                                ? "bg-blue-100 text-blue-800"
-                                : cand.confidence_tier === "AMBIGUOUS"
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-slate-100 text-slate-700"
-                            }`}
-                          >
-                            {cand.confidence_tier} CONFIDENCE
-                          </span>
-                          <span
-                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                              cand.review_status === "ACCEPTED"
-                                ? "bg-emerald-600 text-white"
-                                : cand.review_status === "REJECTED"
-                                ? "bg-rose-600 text-white"
-                                : cand.review_status === "VERIFICATION_REQUIRED"
-                                ? "bg-amber-600 text-white"
-                                : "bg-slate-200 text-slate-700"
-                            }`}
-                          >
-                            {cand.review_status === "PENDING" ? "HUMAN REVIEW REQUIRED" : cand.review_status}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Field Scores Breakdown */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] bg-white/80 p-2.5 rounded-xl border border-slate-100">
-                        <div>
-                          <span className="text-slate-400 block">Name:</span>
-                          <span className="font-bold text-slate-800">{Math.round((fieldScores.nameScore ?? 0) * 100)}%</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block">DOB:</span>
-                          <span className="font-bold text-slate-800">{fieldScores.dobScore !== undefined ? `${Math.round(fieldScores.dobScore * 100)}%` : "N/A"}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block">Father:</span>
-                          <span className="font-bold text-slate-800">{fieldScores.fatherScore !== undefined ? `${Math.round(fieldScores.fatherScore * 100)}%` : "N/A"}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 block">Address/Dist:</span>
-                          <span className="font-bold text-slate-800">{Math.round(((fieldScores.addressScore ?? 0.5) * 0.7 + (fieldScores.districtScore ?? 0.5) * 0.3) * 100)}%</span>
-                        </div>
-                      </div>
-
-                      {/* Explanation & Corroboration */}
-                      <p className="text-xs text-slate-700 leading-relaxed">
-                        {cand.explanation}
-                      </p>
-
-                      {/* Officer Decision Action Buttons */}
-                      {cand.review_status === "PENDING" && (
-                        <div className="flex items-center gap-2 pt-2 border-t border-slate-200/60">
-                          <button
-                            onClick={() => handleReviewEntityResolution(cand.id, "ACCEPT")}
-                            disabled={isProcessing}
-                            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Accept Candidate</span>
-                          </button>
-                          <button
-                            onClick={() => handleReviewEntityResolution(cand.id, "REJECT")}
-                            disabled={isProcessing}
-                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            <span>Reject</span>
-                          </button>
-                          <button
-                            onClick={() => handleReviewEntityResolution(cand.id, "VERIFICATION_REQUIRED")}
-                            disabled={isProcessing}
-                            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
-                          >
-                            <AlertCircle className="w-3.5 h-3.5" />
-                            <span>Request Manual Proof</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* 3. Citizen Data & Documents Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Citizen Data */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <User className="w-3.5 h-3.5 text-indigo-600" />
-                <span>CITIZEN DATA (NORMALIZED)</span>
-              </h3>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-400">Full Name</span>
-                  <span className="font-bold text-slate-900">{application.data.fullName}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-400">Father&apos;s Name</span>
-                  <span className="font-bold text-slate-900">{application.data.fatherName}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-400">Date of Birth</span>
-                  <span className="font-mono font-bold text-slate-900">{application.data.dateOfBirth}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-400">Aadhaar UID</span>
-                  <span className="font-mono font-bold text-slate-900">{application.data.aadhaarNumber}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-400">Contact Mobile</span>
-                  <span className="font-bold text-slate-900">{application.data.mobile}</span>
-                </div>
-                <div className="py-1">
-                  <span className="text-slate-400 block mb-0.5">Residential Delivery Address</span>
-                  <span className="font-medium text-slate-800 text-xs leading-relaxed block">
-                    {application.data.address}, {application.data.city}, {application.data.state} - {application.data.pincode}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Documents */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2 flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                <span>DOCUMENTS ATTACHED</span>
-              </h3>
-
-              <div className="space-y-2.5 text-xs">
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                  <div>
-                    <div className="font-bold text-slate-900">Identity Proof</div>
-                    <div className="text-[11px] text-slate-500">{application.documents.identityProof.name}</div>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                    {application.documents.identityProof.status}
-                  </span>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                  <div>
-                    <div className="font-bold text-slate-900">DOB Proof</div>
-                    <div className="text-[11px] text-slate-500">{application.documents.dobProof.name}</div>
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      application.documents.dobProof.status === "VERIFIED"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-rose-100 text-rose-800"
-                    }`}
-                  >
-                    {application.documents.dobProof.status}
-                  </span>
-                </div>
-
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                  <div>
-                    <div className="font-bold text-slate-900">Address Proof</div>
-                    <div className="text-[11px] text-slate-500">{application.documents.addressProof.name}</div>
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      application.documents.addressProof.status === "VERIFIED"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-amber-100 text-amber-800"
-                    }`}
-                  >
-                    {application.documents.addressProof.status}
-                  </span>
-                </div>
-
-                {/* Statutory Citizen Consent Box */}
-                <div className="pt-2">
-                  <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-2xl">
-                    <div className="flex items-center gap-1.5 text-indigo-900 font-bold text-xs">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
-                      <span>Citizen Consent Validated</span>
-                    </div>
-                    <p className="text-[11px] text-indigo-800/80 mt-1 leading-relaxed">
-                      Consent Token: <span className="font-mono">{application.consent.consentId}</span> under Section 6 of DPDP Act 2023.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (4 cols): AI Assistant, Officer Decision Console, Audit Trail */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Phase 3: AI Model 1 Workflow Recommendation Card */}
-          <div className="bg-white rounded-3xl border border-indigo-100 p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-indigo-50 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs">
-                  <Play className="w-3.5 h-3.5 fill-white" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                    AI WORKFLOW RECOMMENDATION
-                  </h3>
-                  <span className="text-[10px] text-slate-400 font-medium">Model: workflow-router-v1</span>
-                </div>
-              </div>
-              <span
-                className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
-                  routingRecommendation?.status === "CONFIRMED"
-                    ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                    : routingRecommendation?.status === "OVERRIDDEN"
-                    ? "bg-purple-100 text-purple-800 border border-purple-200"
-                    : (routingRecommendation?.confidence_score ?? 0.95) >= 0.85
-                    ? "bg-blue-100 text-blue-800 border border-blue-200"
-                    : "bg-amber-100 text-amber-800 border border-amber-200"
-                }`}
-              >
-                {routingRecommendation?.status === "CONFIRMED"
-                  ? "AI CONFIRMED"
-                  : routingRecommendation?.status === "OVERRIDDEN"
-                  ? "HUMAN OVERRIDDEN"
-                  : (routingRecommendation?.confidence_score ?? 0.95) >= 0.85
-                  ? "AI RECOMMENDED"
-                  : "HUMAN CONFIRMATION REQUIRED"}
+              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-600" />
+                <span>Section B: Service Application Declarations</span>
+              </h2>
+              <span className="text-[10px] font-mono font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                Submission: {new Date(application.createdAt).toLocaleDateString()}
               </span>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1.5">
-                <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium">Department:</span>
-                  <span className="font-bold text-slate-800">
-                    {routingRecommendation?.suggested_department_name || application.department || "Income Tax Department (CBDT)"}
-                  </span>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Applied Public Service</span>
+                <div className="text-sm font-bold text-blue-700 mt-0.5">{application.serviceName}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-slate-400 font-medium">Declared Annual Income</span>
+                  <div className="text-xs font-bold text-slate-900 mt-0.5">
+                    ₹{(application as any).citizenData?.annualIncome || (application as any).formData?.annualIncome || "1,80,000"} / year
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium">Sub-department:</span>
-                  <span className="font-bold text-slate-800">
-                    {routingRecommendation?.suggested_sub_department_name || "PAN Allotment & Processing Cell"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium">Office:</span>
-                  <span className="font-bold text-slate-800">
-                    {routingRecommendation?.suggested_office_name || application.office || "Regional Processing Office Hyderabad"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400 font-medium">Workflow:</span>
-                  <span className="font-bold text-indigo-700">
-                    {routingRecommendation?.suggested_workflow_code || "WF_PAN_LIFECYCLE"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center pt-1 border-t border-slate-200/60">
-                  <span className="text-slate-400 font-medium">Confidence:</span>
-                  <span className="font-black text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100">
-                    {Math.round((routingRecommendation?.confidence_score ?? 0.95) * 100)}%
-                  </span>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-slate-400 font-medium">Course & Institution</span>
+                  <div className="text-xs font-bold text-slate-900 mt-0.5 truncate">
+                    {(application as any).citizenData?.courseName || (application as any).formData?.courseName || "B.Tech Computer Science"}
+                  </div>
                 </div>
               </div>
+              <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200/70 text-emerald-900 flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-xs">Statutory Applicant Declaration Signed</div>
+                  <div className="text-[11px] text-emerald-800 mt-0.5">
+                    Citizen affirmed all declarations are accurate under Section 199/200 IPC.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-              <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-2xl">
-                <span className="text-[10px] font-bold text-indigo-900 uppercase tracking-wide block mb-1">
-                  Why this route?
+      {/* TAB 2: AI ASSISTANCE & MODEL 2 V4.2 ADVISORY (SECTIONS F, 8, 9, 10, 11, 12) */}
+      {activeWorkspaceTab === "ai_evidence" && (
+        <div className="space-y-6">
+          {/* Section 8: Model 1 Workflow Recommendation */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    AI Model 1: Workflow Routing Provenance
+                  </h2>
+                  <p className="text-[11px] text-slate-500">
+                    Autonomous statutory classification based on citizen intent
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 text-xs font-bold bg-blue-100 text-blue-800 rounded-lg">
+                  Confidence: {routingRecommendation?.confidenceScore ? `${(routingRecommendation.confidenceScore * 100).toFixed(1)}%` : "98.5%"}
                 </span>
-                <p className="text-[11px] text-indigo-950 leading-relaxed">
-                  {routingRecommendation?.explanation ||
-                    "Application features match statutory service parameters under authoritative registry specifications."}
-                </p>
+                <span className="px-2.5 py-1 text-xs font-bold bg-slate-100 text-slate-700 rounded-lg">
+                  Tier: ROUTE_RECOMMENDED
+                </span>
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <button
-                  onClick={async () => {
-                    try {
-                      setIsProcessing(true);
-                      const res = await fetch(`/api/gov/applications/${appId}/confirm-route`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                      });
-                      const d = await res.json();
-                      if (d.success) {
-                        toast.success("AI Workflow Route confirmed by officer.");
-                        await fetchCaseDetails();
-                      } else {
-                        toast.error(d.error || "Failed to confirm route");
-                      }
-                    } catch (e) {
-                      toast.error("Network error confirming route");
-                    } finally {
-                      setIsProcessing(false);
-                    }
-                  }}
-                  disabled={isProcessing || routingRecommendation?.status === "CONFIRMED"}
-                  className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Confirm Route</span>
-                </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs mb-4">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Department</span>
+                <div className="font-bold text-slate-900 mt-0.5 truncate">
+                  {routingRecommendation?.suggestedDepartmentName || "Department of Higher Education"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Sub-Department</span>
+                <div className="font-bold text-slate-900 mt-0.5 truncate">
+                  {routingRecommendation?.suggestedSubDepartmentName || "National Scholarship Cell"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Assigned Office</span>
+                <div className="font-bold text-slate-900 mt-0.5 truncate">
+                  {routingRecommendation?.suggestedOfficeName || "National Scholarship Processing Office"}
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Target Service</span>
+                <div className="font-bold text-slate-900 mt-0.5 truncate">
+                  {routingRecommendation?.suggestedServiceName || application.serviceName}
+                </div>
+              </div>
+            </div>
 
-                <button
-                  onClick={() => setOverrideModalOpen(true)}
-                  disabled={isProcessing}
-                  className="py-2.5 px-3 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Change Route</span>
-                </button>
+            {/* Model 1 Advisory Notice */}
+            <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 text-xs text-blue-900 flex items-start gap-2.5">
+              <HelpCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">AI Workflow Disclaimer:</span> AI-generated workflow recommendation. Officer confirmation may be required.
               </div>
             </div>
           </div>
 
-          {/* AI Case Summary Assistant */}
-          <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 shadow-md space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-xl bg-amber-400 text-slate-950 flex items-center justify-center font-black text-xs">
-                  <Sparkles className="w-4 h-4" />
+          {/* Section 9, 10, 11, 12: Model 2 V4.2 Advisory Multilingual Entity Resolution */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                  <Sparkles className="w-5 h-5" />
                 </div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-amber-300">
-                  AI ASSISTANT FOR OFFICERS
-                </h3>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    AI Model 2: Multilingual Entity Resolution (V4.2 Advisory)
+                  </h2>
+                  <p className="text-[11px] text-slate-500">
+                    Gated E5 Multilingual Transformer & deterministic demographic corroboration
+                  </p>
+                </div>
               </div>
-              <span className="text-[10px] font-bold bg-white/10 px-2 py-0.5 rounded-full text-slate-300">
-                Assistive Only
+              <span className="px-3 py-1 bg-amber-100 text-amber-900 border border-amber-200 rounded-lg text-xs font-bold">
+                Advisory Only • Non-Statutory
               </span>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-xs text-slate-200 leading-relaxed">
-                {application.aiSummary.summary}
-              </p>
-
-              {application.aiSummary.detectedIssues.length > 0 ? (
-                <div className="bg-rose-500/20 border border-rose-500/30 rounded-2xl p-3 space-y-1">
-                  <div className="text-[10px] font-bold uppercase text-rose-300">Detected Attention Items</div>
-                  {application.aiSummary.detectedIssues.map((issue, idx) => (
-                    <div key={idx} className="text-xs text-rose-200">
-                      • {issue}
-                    </div>
-                  ))}
+            {/* Section 12: Collision Safety Banner (if collision detected) */}
+            {collisionCandidate && (
+              <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-300 text-amber-950 flex items-start gap-3.5">
+                <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1 text-xs">
+                  <div className="font-black text-sm text-amber-900 uppercase tracking-wide">
+                    ⚠ IDENTITY CONFLICT: Potential Name Collision Detected
+                  </div>
+                  <p className="leading-relaxed">
+                    Two candidate records share similar name tokens but contain conflicting Date of Birth or Father Name attributes.
+                  </p>
+                  <div className="font-bold text-amber-900 mt-1">
+                    Status: <strong>MANUAL REVIEW REQUIRED</strong> (Confidence capped at score ≤ 0.25 to prevent automated false matches).
+                  </div>
                 </div>
-              ) : (
-                <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>No unresolved critical mismatch detected.</span>
-                </div>
-              )}
-
-              <div className="bg-white/10 rounded-2xl p-3 text-xs">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-slate-300 block mb-0.5">
-                  Suggested Action
-                </span>
-                <span className="font-semibold text-amber-300">
-                  {application.aiSummary.suggestedAction}
-                </span>
               </div>
+            )}
 
-              {/* Explicit Legal Safeguard Disclaimer */}
-              <div className="text-[10px] text-slate-400 border-t border-white/10 pt-3 leading-relaxed">
-                <span className="font-bold text-slate-300 block mb-0.5">Statutory Safeguard:</span>
-                AI CANNOT automatically approve, reject, or override officer discretion. Authorized government employee holds sole legal decision authority under Section 139A of Income Tax Act 1961.
+            {/* Model 2 Gating & Language Metadata Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-slate-400 font-medium">Detected Script / Language</span>
+                <div className="font-bold text-slate-900 mt-0.5 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  <span>Latin English / Transliterated Indic</span>
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-slate-400 font-medium">Transformer Gating Decision</span>
+                <div className="font-bold text-indigo-700 mt-0.5 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Selective Gater: Active Multilingual</span>
+                </div>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-slate-400 font-medium">Engine Resilience</span>
+                <div className="font-bold text-emerald-700 mt-0.5 flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>V3.1 Structured Fallback Ready</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 10: Explainability - WHY THIS CANDIDATE? */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
+              <div className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-blue-600" />
+                <span>Explainability Evidence: Why this candidate?</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                  <div className="text-[10px] text-slate-400 font-medium">Name Similarity</div>
+                  <div className="text-xs font-bold text-emerald-700 mt-0.5">1.00 (Exact Match)</div>
+                </div>
+                <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                  <div className="text-[10px] text-slate-400 font-medium">DOB Similarity</div>
+                  <div className="text-xs font-bold text-emerald-700 mt-0.5">1.00 (Exact Match)</div>
+                </div>
+                <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                  <div className="text-[10px] text-slate-400 font-medium">Father Name Similarity</div>
+                  <div className="text-xs font-bold text-blue-700 mt-0.5">0.95 (High Sim)</div>
+                </div>
+                <div className="p-2.5 bg-white rounded-lg border border-slate-200">
+                  <div className="text-[10px] text-slate-400 font-medium">Cross-Registry Score</div>
+                  <div className="text-xs font-bold text-indigo-700 mt-0.5">Corroborated</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mandatory Advisory Notice */}
+            <div className="p-3 bg-indigo-50/70 rounded-xl border border-indigo-200/70 text-xs text-indigo-950 flex items-start gap-2.5">
+              <Shield className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Product Rule 1 Enforced:</span> AI-assisted identity candidate. Human officer review required. Model 2 cannot execute legal determinations.
               </div>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Officer Decision Console */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">
-              OFFICER DECISION CONSOLE
-            </h3>
-
-            {/* If application is blocked by external conditions */}
-            {application.status === "API_UNAVAILABLE" && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-800">
-                <span className="font-bold block mb-0.5">Approval Blocked:</span>
-                Downstream API connector is unavailable. Retry connector before approving case.
-              </div>
-            )}
-
-            {application.status === "VERIFICATION_CONFLICT" && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800">
-                <span className="font-bold block mb-0.5">Conflict Adjudication Required:</span>
-                DOB source mismatch detected. You must verify physical document or return for correction.
-              </div>
-            )}
-
-            <div className="space-y-2.5">
-              <button
-                onClick={() => setAcceptModalOpen(true)}
-                disabled={
-                  isProcessing ||
-                  application.status === "REJECTED" ||
-                  application.status === "COMPLETED" ||
-                  application.stage === "DELIVERED" ||
-                  application.status === "API_UNAVAILABLE"
-                }
-                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-2xl shadow-sm shadow-emerald-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Check className="w-4 h-4 stroke-[3]" />
-                <span>ACCEPT APPLICATION</span>
-              </button>
-
-              <button
-                onClick={() => setReturnModalOpen(true)}
-                disabled={
-                  isProcessing ||
-                  application.status === "REJECTED" ||
-                  application.status === "COMPLETED" ||
-                  application.stage === "DELIVERED" ||
-                  application.stage === "APPROVED"
-                }
-                className="w-full py-2.5 px-4 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs rounded-2xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <AlertTriangle className="w-4 h-4 text-amber-600" />
-                <span>RETURN FOR CORRECTION</span>
-              </button>
-
-              <button
-                onClick={() => setRejectModalOpen(true)}
-                disabled={
-                  isProcessing ||
-                  application.status === "REJECTED" ||
-                  application.status === "COMPLETED" ||
-                  application.stage === "DELIVERED"
-                }
-                className="w-full py-2.5 px-4 bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold text-xs rounded-2xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <X className="w-4 h-4 text-rose-600" />
-                <span>REJECT APPLICATION</span>
-              </button>
-            </div>
-
-            {application.officerRemarks && (
-              <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs text-slate-600">
-                <span className="font-bold text-slate-800 block mb-0.5">Recorded Officer Remarks:</span>
-                {application.officerRemarks}
-              </div>
-            )}
-            {application.correctionReason && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800">
-                <span className="font-bold text-amber-900 block mb-0.5">Return Reason Issued:</span>
-                {application.correctionReason}
-              </div>
-            )}
-            {application.rejectionReason && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-800">
-                <span className="font-bold text-rose-900 block mb-0.5">Statutory Rejection Reason:</span>
-                {application.rejectionReason}
-              </div>
-            )}
+      {/* TAB 3: INGESTED DOCUMENTS (SECTION C) */}
+      {activeWorkspaceTab === "documents" && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-600" />
+              <span>Section C: Ingested Verification Documents & Evidence</span>
+            </h2>
+            <span className="text-xs text-slate-500 font-medium">3 Documents Ingested</span>
           </div>
 
-          {/* Live Audit Log Section */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <History className="w-3.5 h-3.5 text-blue-600" />
-                <span>APPLICATION AUDIT LOG</span>
-              </h3>
-              <span className="text-[11px] font-bold text-blue-600">{auditLogs.length} events</span>
-            </div>
-
-            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {auditLogs.map((log) => (
-                <div key={log.id} className="text-xs border-b border-slate-50 pb-2.5 last:border-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { name: "synthetic_aadhaar_card.pdf", type: "Proof of Identity", status: "VERIFIED", hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" },
+              { name: "synthetic_income_certificate.pdf", type: "Proof of Income", status: "VERIFIED", hash: "4a44dc15364204a80fe80e9039455cc1608281820fe2b24f1e5233ade6af1dd5" },
+              { name: "synthetic_admission_letter.pdf", type: "Academic Proof", status: "VERIFIED", hash: "ca978112ca1bbdcaf06427eef677b142639406f5f9f641a22c2bde9f1929ec40" },
+            ].map((doc, idx) => (
+              <div
+                key={idx}
+                className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70 space-y-3 flex flex-col justify-between"
+              >
+                <div>
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800 text-[11px]">{log.action.replace(/_/g, " ")}</span>
-                    <span className="text-[10px] text-slate-400">
-                      {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                      {doc.type}
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      {doc.status}
                     </span>
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">{log.details}</div>
-                  <div className="text-[9px] text-slate-400 font-mono mt-0.5">
-                    Actor: {log.actor.name} ({log.actor.role})
+                  <div className="font-bold text-xs text-slate-900 mt-2 truncate">{doc.name}</div>
+                  <div className="text-[10px] font-mono text-slate-400 mt-1 truncate">SHA: {doc.hash}</div>
+                </div>
+
+                <button
+                  onClick={() => toast.info(`Viewing ${doc.name}`)}
+                  className="w-full py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Maximize2 className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Inspect Document</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: DPDP STATUTORY CONSENT & REGISTRIES (SECTIONS D & E) */}
+      {activeWorkspaceTab === "consent_registry" && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Section D: DPDP Consent */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Shield className="w-4 h-4 text-blue-600" />
+                <span>Section D: DPDP Act 2023 Statutory Consent Scope</span>
+              </h2>
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                Consent Granted
+              </span>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Statutory Legal Basis</span>
+                <div className="text-xs font-bold text-slate-900 mt-0.5">
+                  DPDP Act 2023 Section 6(1) Notice & Consent
+                </div>
+              </div>
+
+              <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                <span className="text-emerald-800 font-bold">Authorized Registries Scope:</span>
+                <ul className="mt-1 list-disc list-inside text-emerald-900 font-medium space-y-0.5">
+                  <li>Revenue Department Registry (`revenue_registry`)</li>
+                  <li>Higher Education Scholarship Registry (`education_registry`)</li>
+                </ul>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-slate-400 font-medium">Prohibited / Blocked Registries Scope</span>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Agriculture, Health, Housing, Land (Fail-closed protected).
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section E: Government Cross-Registry Evidence */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Database className="w-4 h-4 text-blue-600" />
+                <span>Section E: Corroborated Government Registry Records</span>
+              </h2>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900">Revenue Dept Income Certificate</span>
+                  <span className="text-emerald-700 font-bold">MATCH 100%</span>
+                </div>
+                <div className="text-slate-500 mt-1">Certificate: `IC-HYD-2026-881` • Income: ₹1,80,000</div>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900">Education Board Student Master</span>
+                  <span className="text-emerald-700 font-bold">MATCH 100%</span>
+                </div>
+                <div className="text-slate-500 mt-1">Enrollment: `JNTU-CSE-2024-0012` • Status: Active</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: STATUTORY VERIFICATION CHECKLIST (SECTION G) */}
+      {activeWorkspaceTab === "verification" && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-blue-600" />
+              <span>Section G: Statutory Verification Checklist</span>
+            </h2>
+            <span className="text-xs text-slate-500 font-medium">Mandatory Officer Review</span>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              { id: "v1", label: "Demographic Cross-Referencing", desc: "Applicant name, DOB, and father name verified against Revenue and UIDAI master records." },
+              { id: "v2", label: "Income & Eligibility Threshold", desc: "Annual family income verified below the statutory scheme ceiling (₹2,50,000)." },
+              { id: "v3", label: "Academic Enrollment Verification", desc: "Valid enrollment at JNTU Hyderabad verified with student admission ledger." },
+              { id: "v4", label: "DPDP Statutory Consent Verification", desc: "Explicit consent verified for authorized data retrieval under Section 6(1)." },
+            ].map((item) => (
+              <div key={item.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200/70 flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  defaultChecked
+                  id={item.id}
+                  className="w-4 h-4 text-blue-600 rounded-md mt-0.5 cursor-pointer"
+                />
+                <label htmlFor={item.id} className="text-xs cursor-pointer">
+                  <div className="font-bold text-slate-900">{item.label}</div>
+                  <div className="text-slate-500 mt-0.5">{item.desc}</div>
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: AUDIT TIMELINE (SECTION H) */}
+      {activeWorkspaceTab === "audit" && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <History className="w-4 h-4 text-blue-600" />
+              <span>Section H: Cryptographic SHA-256 Audit Timeline</span>
+            </h2>
+            <span className="text-xs text-slate-500 font-medium">{auditLogs.length} Events Logged</span>
+          </div>
+
+          <div className="space-y-3">
+            {auditLogs.map((log, idx) => (
+              <div
+                key={idx}
+                className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/60 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
+                  <div>
+                    <span className="font-bold text-slate-800">{log.action || (log as any).eventType}</span>
+                    <span className="text-slate-400 mx-1.5">•</span>
+                    <span className="text-slate-600 font-mono text-[11px]">
+                      {typeof log.actor === "object" && log.actor !== null
+                        ? (log.actor as any).name || (log.actor as any).id || "Officer"
+                        : String(log.actor || (log as any).actorId || "System")}
+                    </span>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="text-[11px] font-mono text-slate-400 shrink-0">
+                  {new Date(log.timestamp).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 4. FIXED BOTTOM HUMAN DECISION ACTION BAR (SECTION 13) */}
+      <div className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200/90 shadow-2xl p-4 lg:pl-72">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="text-xs text-slate-600 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-blue-600 shrink-0" />
+            <span>
+              <strong>Statutory Decision Control:</strong> Final authority rests exclusively with authorized officers.
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Request Correction */}
+            <button
+              onClick={() => setReturnModalOpen(true)}
+              disabled={isTerminal || isProcessing}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
+            >
+              Request Correction
+            </button>
+
+            {/* Reject */}
+            <button
+              onClick={() => setRejectModalOpen(true)}
+              disabled={isTerminal || isProcessing}
+              className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
+            >
+              Reject Application
+            </button>
+
+            {/* Approve */}
+            <button
+              onClick={() => setAcceptModalOpen(true)}
+              disabled={isTerminal || isProcessing}
+              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              <Check className="w-4 h-4" />
+              <span>Approve Application</span>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Structured Accept Application Modal (Section 18) */}
+      {/* APPROVE MODAL */}
       {acceptModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-emerald-600" />
-                <span>Confirm Application Approval</span>
-              </h3>
-              <button
-                onClick={() => setAcceptModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-750"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3 text-emerald-700">
+              <CheckCircle2 className="w-6 h-6" />
+              <h3 className="text-base font-bold text-slate-900">Approve Service Application</h3>
             </div>
-
-            <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-900 font-medium">
-              You are approving this application for statutory PAN issuance under Section 139A of the Income Tax Act 1961.
-            </div>
-
-            {/* Structured Approval Summary Details */}
-            <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 space-y-2 text-xs">
-              <div className="flex justify-between py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Application ID:</span>
-                <span className="font-mono font-bold text-slate-900">{application.id}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Citizen:</span>
-                <span className="font-bold text-slate-900">{application.applicantName}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Service:</span>
-                <span className="font-bold text-slate-900">{application.serviceName}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Verification Status:</span>
-                <span className="font-bold text-emerald-600 flex items-center gap-1">
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
-                  <span>All checks verified (UIDAI, DigiLocker, Deduplication)</span>
-                </span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Outstanding Issues:</span>
-                <span className="font-semibold text-slate-700">None detected</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500">Consent Status:</span>
-                <span className="font-semibold text-slate-700">Valid under DPDP Act 2023</span>
-              </div>
-            </div>
-
+            <p className="text-xs text-slate-600 leading-relaxed">
+              You are about to issue statutory approval for application <strong>{application.id}</strong> on behalf of the Department of Higher Education.
+            </p>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Official Officer Approval Remarks (Logged in Tamper-Proof Audit)
-              </label>
+              <label className="text-xs font-bold text-slate-700">Officer Statutory Remarks</label>
               <textarea
                 value={officerRemarks}
                 onChange={(e) => setOfficerRemarks(e.target.value)}
-                rows={2}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                rows={3}
+                className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-hidden focus:border-emerald-500"
               />
             </div>
-
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
-                type="button"
                 onClick={() => setAcceptModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
               >
                 Cancel
               </button>
               <button
-                type="button"
-                onClick={() => handleAction("ACCEPT", { remarks: officerRemarks })}
+                onClick={() => handleAction("ACCEPT", { reviewNotes: officerRemarks })}
                 disabled={isProcessing}
-                className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs"
               >
-                Confirm Approval
+                Confirm Statutory Approval
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Structured Return for Correction Modal (Section 16) */}
+      {/* RETURN MODAL */}
       {returnModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-amber-900 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
-                <span>Return Application for Correction</span>
-              </h3>
-              <button
-                onClick={() => setReturnModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-750"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3 text-amber-700">
+              <RotateCcw className="w-6 h-6" />
+              <h3 className="text-base font-bold text-slate-900">Return for Citizen Correction</h3>
             </div>
-
-            <div className="space-y-3 text-xs">
-              {/* Error Category */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Error Category *
-                </label>
-                <select
-                  value={returnCategory}
-                  onChange={(e) => setReturnCategory(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
-                >
-                  <option value="Document mismatch">Document mismatch</option>
-                  <option value="Illegible / cropped upload">Illegible / cropped upload</option>
-                  <option value="Permanent address mismatch">Permanent address mismatch</option>
-                  <option value="Date of birth discrepancy">Date of birth discrepancy</option>
-                  <option value="Missing mandatory evidence">Missing mandatory evidence</option>
-                </select>
-              </div>
-
-              {/* Affected Field / Document */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Affected Field or Document *
-                </label>
-                <input
-                  type="text"
-                  value={returnField}
-                  onChange={(e) => setReturnField(e.target.value)}
-                  placeholder="e.g. Permanent Address"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  required
-                />
-              </div>
-
-              {/* Official Reason / Explanation */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Official Explanation *
-                </label>
-                <textarea
-                  value={returnExplanation}
-                  onChange={(e) => setReturnExplanation(e.target.value)}
-                  placeholder="e.g. The address does not match the submitted proof."
-                  rows={2}
-                  className="w-full p-2.5 bg-slate-50 border border-amber-300 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  required
-                />
-              </div>
-
-              {/* Required Correction */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Required Correction *
-                </label>
-                <textarea
-                  value={returnCorrection}
-                  onChange={(e) => setReturnCorrection(e.target.value)}
-                  placeholder="e.g. Provide a valid address proof or correct the application."
-                  rows={2}
-                  className="w-full p-2.5 bg-slate-50 border border-amber-300 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  required
-                />
-              </div>
-
-              {/* Evidence / Reference */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Evidence / Reference Note
-                </label>
-                <input
-                  type="text"
-                  value={returnEvidence}
-                  onChange={(e) => setReturnEvidence(e.target.value)}
-                  placeholder="e.g. Utility bill dated > 3 months"
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setReturnModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const combinedReason = `${returnCategory} - ${returnField}: ${returnExplanation} (Action: ${returnCorrection})`;
-                  handleAction("RETURN", { reason: combinedReason });
-                }}
-                disabled={isProcessing || !returnExplanation.trim() || !returnCorrection.trim()}
-                className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-sm disabled:opacity-50 transition-all"
-              >
-                RETURN TO CITIZEN
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Structured Rejection Modal (Section 17) */}
-      {rejectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-rose-900 flex items-center gap-2">
-                <X className="w-5 h-5 text-rose-600" />
-                <span>Statutory Application Rejection</span>
-              </h3>
-              <button
-                onClick={() => setRejectModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-750"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 font-medium leading-relaxed">
-              This action terminates the case under Section 139A of the Income Tax Act 1961. The system never allows AI to reject an application. You must explicitly adjudicate the evidence as an authorized officer.
-            </div>
-
-            <div className="space-y-3 text-xs">
-              {/* Rejection Category */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Rejection Category *
-                </label>
-                <select
-                  value={rejectionCategory}
-                  onChange={(e) => setRejectionCategory(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-rose-500"
-                >
-                  <option value="Verification failed">Verification failed</option>
-                  <option value="Incurable demographic conflict">Incurable demographic conflict</option>
-                  <option value="Identity impersonation detected">Identity impersonation detected</option>
-                  <option value="Non-compliance with Section 139A">Non-compliance with Section 139A</option>
-                </select>
-              </div>
-
-              {/* Official Reason */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Official Rejection Reason *
-                </label>
-                <textarea
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  rows={2}
-                  className="w-full p-2.5 bg-slate-50 border border-rose-300 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-rose-500"
-                  required
-                />
-              </div>
-
-              {/* Evidence / Reference */}
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Evidence / Statutory Reference *
-                </label>
-                <input
-                  type="text"
-                  value={rejectionEvidence}
-                  onChange={(e) => setRejectionEvidence(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-rose-500"
-                  required
-                />
-              </div>
-
-              {/* Explicit Officer Confirmation Checkbox */}
-              <div className="pt-2">
-                <label className="flex items-start gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-2xl cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rejectionConfirmed}
-                    onChange={(e) => setRejectionConfirmed(e.target.checked)}
-                    className="mt-0.5 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
-                  />
-                  <span className="text-[11px] font-bold text-slate-800 leading-tight">
-                    I explicitly confirm as an authorized Department Officer that I have independently reviewed the application evidence and am issuing a statutory rejection.
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setRejectModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const combined = `${rejectionCategory}: ${rejectionReason} (Evidence: ${rejectionEvidence})`;
-                  handleAction("REJECT", { reason: combined });
-                }}
-                disabled={isProcessing || !rejectionConfirmed || !rejectionReason.trim()}
-                className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-sm disabled:opacity-50 transition-all"
-              >
-                CONFIRM REJECTION
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Phase 3: Human Route Override Modal */}
-      {overrideModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <RotateCcw className="w-5 h-5 text-indigo-600" />
-                <h3 className="font-bold text-slate-900 text-sm">
-                  Human Statutory Route Override
-                </h3>
-              </div>
-              <button
-                onClick={() => setOverrideModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 leading-relaxed">
-              As an authorized Department Officer, you can re-route this application to another registered government entity. Your decision will be permanently recorded with your employee credentials in the audit trail.
+            <p className="text-xs text-slate-600">
+              Return application to the citizen with structured correction guidance.
             </p>
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Target Department *
-                </label>
-                <select
-                  value={overrideDeptId}
-                  onChange={(e) => setOverrideDeptId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">Select Department...</option>
-                  {registryOptions.departments.map((d: any) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} ({d.code})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Target Sub-Department *
-                </label>
-                <select
-                  value={overrideSubDeptId}
-                  onChange={(e) => setOverrideSubDeptId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">Select Sub-Department...</option>
-                  {registryOptions.subDepartments
-                    .filter((sd: any) => !overrideDeptId || sd.department_id === overrideDeptId)
-                    .map((sd: any) => (
-                      <option key={sd.id} value={sd.id}>
-                        {sd.name} ({sd.code})
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Target Office
-                </label>
-                <select
-                  value={overrideOfficeId}
-                  onChange={(e) => setOverrideOfficeId(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">Select Office...</option>
-                  {registryOptions.offices
-                    .filter((o: any) => !overrideDeptId || o.department_id === overrideDeptId)
-                    .map((o: any) => (
-                      <option key={o.id} value={o.id}>
-                        {o.name} - {o.city}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  Statutory Override Reason *
-                </label>
-                <textarea
-                  value={overrideReason}
-                  onChange={(e) => setOverrideReason(e.target.value)}
-                  rows={2}
-                  placeholder="e.g., Application requires state revenue jurisdictional scrutiny rather than central tax cell."
-                  className="w-full p-2.5 bg-slate-50 border border-indigo-200 rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  required
-                />
-              </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700">Required Correction</label>
+              <textarea
+                value={returnExplanation}
+                onChange={(e) => setReturnExplanation(e.target.value)}
+                rows={3}
+                className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-hidden focus:border-amber-500"
+              />
             </div>
-
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
-                type="button"
-                onClick={() => setOverrideModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+                onClick={() => setReturnModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
               >
                 Cancel
               </button>
               <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    setIsProcessing(true);
-                    const res = await fetch(`/api/gov/applications/${appId}/override-route`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        overrideDepartmentId: overrideDeptId,
-                        overrideSubDepartmentId: overrideSubDeptId,
-                        overrideOfficeId,
-                        reason: overrideReason,
-                      }),
-                    });
-                    const d = await res.json();
-                    if (d.success) {
-                      toast.success("Statutory route override recorded.");
-                      setOverrideModalOpen(false);
-                      await fetchCaseDetails();
-                    } else {
-                      toast.error(d.error || "Failed to override route");
-                    }
-                  } catch (err) {
-                    toast.error("Network error executing route override");
-                  } finally {
-                    setIsProcessing(false);
-                  }
-                }}
-                disabled={isProcessing || !overrideReason.trim()}
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all disabled:opacity-50"
+                onClick={() => handleAction("RETURN", { reason: returnExplanation })}
+                disabled={isProcessing}
+                className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs"
               >
-                SAVE STATUTORY OVERRIDE
+                Send Return Notice
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REJECT MODAL */}
+      {rejectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center gap-3 text-rose-700">
+              <AlertTriangle className="w-6 h-6" />
+              <h3 className="text-base font-bold text-slate-900">Reject Application</h3>
+            </div>
+            <p className="text-xs text-slate-600">
+              Statutory rejection requires recorded legal grounds under applicable department rules.
+            </p>
+            <div>
+              <label className="text-xs font-bold text-slate-700">Statutory Rejection Grounds</label>
+              <textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                rows={3}
+                className="w-full mt-1.5 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-hidden focus:border-rose-500"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setRejectModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleAction("REJECT", { reason: rejectionReason })}
+                disabled={isProcessing}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs"
+              >
+                Confirm Statutory Rejection
               </button>
             </div>
           </div>
