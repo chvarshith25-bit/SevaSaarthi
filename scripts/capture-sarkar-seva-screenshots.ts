@@ -46,14 +46,14 @@ async function captureScreenshots() {
     await page.goto('http://localhost:3001/government/applications', { waitUntil: 'networkidle', timeout: 15000 });
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '02_applications.png'), fullPage: false });
 
-    // 3. Application Review (Overview & Top)
-    console.log('Capturing Application Review Overview...');
-    await page.goto('http://localhost:3001/government/applications/PAN-2026-0001/review', { waitUntil: 'networkidle', timeout: 15000 });
+    // 3. Application Review Overview (PAN-2026-0003)
+    console.log('Capturing Application Review Overview for PAN-2026-0003...');
+    await page.goto('http://localhost:3001/government/applications/PAN-2026-0003/review', { waitUntil: 'networkidle', timeout: 15000 });
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '03_application_review_overview.png'), fullPage: false });
 
     // 4. AI Assistance
-    console.log('Capturing AI Assistance...');
-    const aiSection = await page.$('text=2. AI Assistance & Decision Support');
+    console.log('Capturing AI Assistance for PAN-2026-0003...');
+    const aiSection = await page.$('text=AI Assistance');
     if (aiSection) {
       await aiSection.scrollIntoViewIfNeeded();
       await page.waitForTimeout(400);
@@ -61,8 +61,8 @@ async function captureScreenshots() {
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '04_ai_assistance.png'), fullPage: false });
 
     // 5. Documents
-    console.log('Capturing Documents & Evidence...');
-    const docSection = await page.$('text=3. Documents & Evidence');
+    console.log('Capturing Documents...');
+    const docSection = await page.$('text=Documents');
     if (docSection) {
       await docSection.scrollIntoViewIfNeeded();
       await page.waitForTimeout(400);
@@ -70,8 +70,8 @@ async function captureScreenshots() {
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '05_documents.png'), fullPage: false });
 
     // 6. Consent & Evidence
-    console.log('Capturing Consent & Government Records...');
-    const consentSection = await page.$('text=4. Consent & Government Records');
+    console.log('Capturing Government Records & Consent...');
+    const consentSection = await page.$('text=Government Records');
     if (consentSection) {
       await consentSection.scrollIntoViewIfNeeded();
       await page.waitForTimeout(400);
@@ -80,7 +80,7 @@ async function captureScreenshots() {
 
     // 7. Verification Checklist
     console.log('Capturing Verification Checklist...');
-    const verifySection = await page.$('text=5. Verification Checklist');
+    const verifySection = await page.$('text=Verification');
     if (verifySection) {
       await verifySection.scrollIntoViewIfNeeded();
       await page.waitForTimeout(400);
@@ -134,7 +134,7 @@ async function captureScreenshots() {
     // 12. Mobile Review View
     console.log('Capturing Mobile Review View...');
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('http://localhost:3001/government/applications/PAN-2026-0001/review', { waitUntil: 'networkidle', timeout: 15000 });
+    await page.goto('http://localhost:3001/government/applications/PAN-2026-0003/review', { waitUntil: 'networkidle', timeout: 15000 });
     await page.screenshot({ path: path.join(SCREENSHOT_DIR, '12_mobile_review.png'), fullPage: false });
 
     console.log('All 12 screenshots captured successfully into docs/demo/sarkar-seva/!');

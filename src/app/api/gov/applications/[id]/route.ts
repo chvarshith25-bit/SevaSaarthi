@@ -79,14 +79,97 @@ export async function GET(
       console.warn("[GET /api/gov/applications/[id]] Error fetching recommendations:", err);
     }
 
+    // Dynamic Model 1 fallback if no persisted recommendation in DB
+    if (!routingRecommendation && app) {
+      try {
+        const { WorkflowRouter } = await import("@/lib/server/ai/workflow-router");
+        const m1Result = await WorkflowRouter.routeApplication({
+          applicationId: app.id,
+          serviceId: app.serviceId,
+          serviceName: app.serviceName,
+          applicationTitle: app.serviceName,
+          applicationDescription: `${app.serviceName || ""} for ${app.data?.fullName || app.applicantName || ""}`,
+        });
+        if (m1Result) {
+          routingRecommendation = {
+            application_id: app.id,
+            suggested_service_id: m1Result.suggestedServiceId,
+            suggested_service_name: m1Result.suggestedServiceName || app.serviceName,
+            suggested_department_id: m1Result.suggestedDepartmentId,
+            suggested_department_name: m1Result.suggestedDepartmentName || app.department,
+            suggested_sub_department_id: m1Result.suggestedSubDepartmentId,
+            suggested_sub_department_name: m1Result.suggestedSubDepartmentName,
+            suggested_office_id: m1Result.suggestedOfficeId,
+            suggested_office_name: m1Result.suggestedOfficeName || app.office,
+            suggested_workflow_id: m1Result.suggestedWorkflowId,
+            suggested_workflow_code: m1Result.suggestedWorkflowCode,
+            confidence_score: m1Result.confidenceScore,
+            routing_mode: m1Result.routingMode,
+            explanation: m1Result.recommendationExplanation,
+            status: m1Result.confidenceScore >= 0.85 ? "RECOMMENDED" : "MANUAL_REVIEW",
+          };
+        }
+      } catch (m1Err) {
+        console.warn("[GET /api/gov/applications/[id]] Error computing dynamic M1 recommendation:", m1Err);
+      }
+    }
+
     const { getApplicationEntityResolutions } = await import("@/lib/server/db");
-    const entityResolutions = await getApplicationEntityResolutions(id);
+    let entityResolutions = await getApplicationEntityResolutions(id);
+
+    // Dynamic Model 2 fallback if no persisted entity resolutions in DB and consent is granted
+    if ((!entityResolutions || entityResolutions.length === 0) && app && (app.consent?.granted || (app as any).consentGranted)) {
+      try {
+        const { EntityResolutionEngineV4 } = await import("@/lib/server/ai/entity-resolution/v4-transformer/v4-engine");
+        const engine = new EntityResolutionEngineV4();
+        const m2Result = await engine.resolve({
+          name: app.data?.fullName || app.applicantName,
+          dateOfBirth: app.data?.dateOfBirth || (app.data as any)?.dob,
+          fatherName: app.data?.fatherName,
+          address: app.data?.address,
+          pincode: app.data?.pincode,
+          consentVerified: true,
+          allowedRegistries: ["revenue_registry", "pan_tax_registry", "education_registry", "land_registry", "housing_registry"],
+        });
+        if (m2Result && m2Result.candidates && m2Result.candidates.length > 0) {
+          entityResolutions = m2Result.candidates.map((c: any) => ({
+            candidate_record_id: c.candidateId,
+            candidate_registry: c.registry,
+            total_score: c.totalScore,
+            match_score: c.matchScore,
+            confidence_tier: c.confidenceTier,
+            language_detected: c.language || "ENGLISH",
+            transformer_status: c.transformerStatus || "ACTIVE",
+            fallback_status: c.fallbackStatus || "STANDBY",
+            collision_warning: c.collisionWarning || false,
+            matched_fields: c.matchedFields || [],
+            conflicting_fields: c.conflictingFields || [],
+            explanation: c.corroboration || c.explanation || "Cross-registry match score computed from demographic attributes.",
+          }));
+        }
+      } catch (m2Err) {
+        console.warn("[GET /api/gov/applications/[id]] Error computing dynamic M2 candidates:", m2Err);
+      }
+    }
+
+    // Consistency Guard for Model 1
+    const isServiceMismatch = Boolean(
+      routingRecommendation &&
+      routingRecommendation.suggested_service_id &&
+      app.serviceId &&
+      routingRecommendation.suggested_service_id !== app.serviceId &&
+      !app.serviceName?.toLowerCase().includes(routingRecommendation.suggested_service_name?.toLowerCase() || "___") &&
+      !routingRecommendation.suggested_service_name?.toLowerCase().includes(app.serviceName?.toLowerCase() || "___")
+    );
+
+    const routingConsistency = isServiceMismatch ? "INVALID" : (routingRecommendation ? "VALID" : "NOT_AVAILABLE");
 
     return NextResponse.json({
       success: true,
       application: app,
       auditLogs: logs,
       routingRecommendation,
+      routingConsistency,
       entityResolutions,
       registry: {
         departments,
