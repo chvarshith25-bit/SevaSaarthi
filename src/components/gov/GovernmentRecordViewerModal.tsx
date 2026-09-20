@@ -34,6 +34,8 @@ export function GovernmentRecordViewerModal({
   isOpen,
   onClose,
 }: GovernmentRecordViewerModalProps) {
+  const [showTechDetails, setShowTechDetails] = React.useState(false);
+
   if (!isOpen || !record) return null;
 
   return (
@@ -113,21 +115,36 @@ export function GovernmentRecordViewerModal({
             </div>
           </div>
 
-          {/* Registry Provenance Information */}
-          <div className="p-3 bg-slate-900 text-slate-300 rounded-xl font-mono text-[11px] space-y-1 border border-slate-800">
-            <div className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Provenance & Endpoint Metadata</div>
-            <div>
-              <span className="text-slate-400">Registry Source: </span>
-              <span>{record.registryName}</span>
-            </div>
-            <div>
-              <span className="text-slate-400">Endpoint: </span>
-              <span className="text-blue-400">{record.sourceEndpoint || "https://gateway.gov.in/registry/v2.1"}</span>
-            </div>
-            <div>
-              <span className="text-slate-400">Verification Status: </span>
-              <span className="text-emerald-400 font-bold">{record.status || "VALID / ACTIVE"}</span>
-            </div>
+          {/* Technical Details Accordion (Requirement 16) */}
+          <div className="pt-1">
+            <button
+              onClick={() => setShowTechDetails(!showTechDetails)}
+              className="text-[11px] font-bold text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 transition-colors cursor-pointer"
+            >
+              <span>{showTechDetails ? "Hide Technical Details" : "View Technical Details"}</span>
+            </button>
+
+            {showTechDetails && (
+              <div className="mt-2.5 p-3.5 bg-slate-900 text-slate-300 rounded-xl font-mono text-[11px] space-y-1.5 border border-slate-800 animate-in fade-in duration-150">
+                <div className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Provenance & Endpoint Metadata</div>
+                <div>
+                  <span className="text-slate-400">Registry Source: </span>
+                  <span className="text-indigo-300">{record.registryName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">Endpoint: </span>
+                  <span className="text-blue-400">{record.sourceEndpoint || "https://gateway.gov.in/registry/v2.1"}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">Verification Status: </span>
+                  <span className="text-emerald-400 font-bold">{record.status || "VALID / ACTIVE"}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400">Consent Token: </span>
+                  <span className="text-slate-300">{record.consentToken || "CNS-2026-9901-SAI"}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -135,7 +152,7 @@ export function GovernmentRecordViewerModal({
         <div className="p-4 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 shrink-0">
           <div className="flex items-center gap-1.5 text-slate-600 font-medium">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>Authorized evidence snapshot verified by officer.</span>
+            <span>Authorized evidence snapshot verified under DPDP Act 2023.</span>
           </div>
 
           <button

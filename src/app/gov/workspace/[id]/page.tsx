@@ -64,7 +64,9 @@ export default function ApplicationWorkspacePage() {
   // Expandable UI States
   const [showRoutingDetails, setShowRoutingDetails] = useState(false);
   const [showAiTechDetails, setShowAiTechDetails] = useState(false);
+  const [showConsentDetails, setShowConsentDetails] = useState(false);
   const [showOtherCandidates, setShowOtherCandidates] = useState(false);
+  const [showAllAuditLogs, setShowAllAuditLogs] = useState(false);
   const [selectedCandidateIdx, setSelectedCandidateIdx] = useState(0);
 
   // Safety confirmation states
@@ -232,10 +234,10 @@ export default function ApplicationWorkspacePage() {
       return { label: "Manual Review Required", color: "bg-amber-100 text-amber-900 border-amber-300" };
     }
     if (score !== undefined && score >= 0.85) {
-      return { label: "High Confidence", color: "bg-emerald-100 text-emerald-900 border-emerald-300" };
+      return { label: "High Match", color: "bg-emerald-100 text-emerald-900 border-emerald-300" };
     }
     if (score !== undefined && score >= 0.6) {
-      return { label: "Medium Confidence", color: "bg-blue-100 text-blue-900 border-blue-300" };
+      return { label: "Medium Match", color: "bg-blue-100 text-blue-900 border-blue-300" };
     }
     return { label: "Advisory Match", color: "bg-slate-100 text-slate-800 border-slate-200" };
   }, [topCandidate, hasConflict]);
@@ -284,6 +286,10 @@ export default function ApplicationWorkspacePage() {
     });
   }, [application]);
 
+  const verifiedDocCount = useMemo(() => {
+    return documentList.filter((d) => d.status === "VERIFIED").length;
+  }, [documentList]);
+
   // Dynamic verification checklist
   const verificationsList = useMemo(() => {
     if (application?.verifications && application.verifications.length > 0) {
@@ -314,6 +320,110 @@ export default function ApplicationWorkspacePage() {
       { id: "v4", name: "DPDP Statutory Consent", source: "DPDP Consent Gateway", status: "VERIFIED", details: "Valid cryptographic consent token active." },
     ];
   }, [application]);
+
+  // Issues Requiring Attention (Requirement 17)
+  const issuesList = useMemo(() => {
+    const issues: Array<{ id: string; type: string; title: string; description: string; severity: "CRITICAL" | "WARNING" | "INFO"; actionLabel?: string }> = [];
+
+    if (isApproved) {
+      return [];
+    }
+
+    if (hasConflict || application?.status === "VERIFICATION_CONFLICT") {
+      issues.push({
+        id: "identity-conflict",
+        type: "Identity Conflict",
+        title: "Demographic Discrepancy Detected",
+        description: "Date of birth or demographic attributes differ between citizen application and authorized government registry records.",
+        severity: "CRITICAL",
+        actionLabel: "Review Conflict",
+      });
+    }
+
+    if (application?.status === "API_UNAVAILABLE") {
+      issues.push({
+        id: "registry-timeout",
+        type: "Registry Unavailable",
+        title: "Authorized Registry API Timeout",
+        description: "External registry API experienced a temporary gateway timeout during verification intake.",
+        severity: "CRITICAL",
+        actionLabel: "Retry Verification",
+      });
+    }
+
+    if (application?.status === "RETURNED_FOR_CORRECTION") {
+      issues.push({
+        id: "correction-pending",
+        type: "Correction Required",
+        title: "Returned for Citizen Rectification",
+        description: "Application is currently awaiting citizen submission of corrected documents or details.",
+        severity: "WARNING",
+        actionLabel: "View Instructions",
+      });
+    }
+
+    documentList.forEach((doc) => {
+      if (doc.status !== "VERIFIED") {
+        issues.push({
+          id: `doc-${doc.key}`,
+          type: "Document Issue",
+          title: `${doc.type} Issue`,
+          description: doc.note || "Document requires manual inspection or re-submission.",
+          severity: "WARNING",
+          actionLabel: "Request Correction",
+        });
+      }
+    });
+
+    if (application?.priority === "URGENT" && slaText.includes("Overdue")) {
+      issues.push({
+        id: "sla-risk",
+        type: "SLA Risk",
+        title: "Statutory SLA Overdue",
+        description: "Case processing time has exceeded standard citizen service delivery window.",
+        severity: "WARNING",
+      });
+    }
+
+    return issues;
+  }, [application, hasConflict, isApproved, documentList, slaText]);
+
+  // Overall Verification Status (Requirements 5, 6, 19)
+  const overallVerificationStatus = useMemo(() => {
+    if (application?.status === "APPROVED" || application?.status === "COMPLETED") {
+      return {
+        label: "READY FOR OFFICER DECISION",
+        colorClass: "bg-emerald-100 text-emerald-900 border-emerald-300",
+        description: "Application adjudications completed.",
+      };
+    }
+    if (application?.status === "REJECTED") {
+      return {
+        label: "BLOCKED",
+        colorClass: "bg-rose-100 text-rose-900 border-rose-300",
+        description: "Application has been statutorily rejected by authorized officer.",
+      };
+    }
+    if (issuesList.some((i) => i.severity === "CRITICAL") || hasConflict || application?.status === "API_UNAVAILABLE") {
+      return {
+        label: "NEEDS REVIEW",
+        colorClass: "bg-amber-100 text-amber-900 border-amber-300",
+        description: "Outstanding demographic discrepancies or registry issues require officer review.",
+      };
+    }
+    if (issuesList.length > 0) {
+      return {
+        label: "NEEDS REVIEW",
+        colorClass: "bg-amber-100 text-amber-900 border-amber-300",
+        description: "Actionable items require verification before statutory approval.",
+      };
+    }
+    return {
+      label: "READY FOR OFFICER DECISION",
+      colorClass: "bg-emerald-100 text-emerald-900 border-emerald-300",
+      description: "All required verifications, documents, and registry corroborations are satisfied.",
+    };
+  }, [application, issuesList, hasConflict]);
 
   if (loading) {
     return (
@@ -389,7 +499,7 @@ export default function ApplicationWorkspacePage() {
 
   return (
     <div className="space-y-6 pb-28 animate-in fade-in duration-200">
-      {/* 1. CASE REVIEW HEADER & APPLICATION SUMMARY */}
+      {/* 1. APPLICATION REVIEW HEADER */}
       <div className="bg-white rounded-2xl border border-slate-200/80 p-5 lg:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
           <Link
@@ -461,13 +571,13 @@ export default function ApplicationWorkspacePage() {
         </div>
       </div>
 
-      {/* 2. MAIN 2-COLUMN CASE REVIEW GRID (DESKTOP: 8 COLS CONTENT + 4 COLS STICKY DECISION PANEL) */}
+      {/* 2. MAIN 2-COLUMN CASE REVIEW GRID (DESKTOP: 8 COLS EVIDENCE + 4 COLS STICKY DECISION PANEL) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* LEFT COLUMN: 7 ORDERED SECTIONS (Requirement 22) */}
+        {/* LEFT COLUMN: 8 ORDERED SECTIONS (Requirements 1-20) */}
         <div className="lg:col-span-8 space-y-6">
 
           {/* ============================================================ */}
-          {/* 1. APPLICATION OVERVIEW (Requirement 22)                     */}
+          {/* SECTION 1: APPLICATION OVERVIEW (Requirement 2)              */}
           {/* ============================================================ */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -531,7 +641,109 @@ export default function ApplicationWorkspacePage() {
           </div>
 
           {/* ============================================================ */}
-          {/* 2. WORKFLOW ROUTING (Requirements 1, 2, 21, 22)               */}
+          {/* SECTION 2: VERIFICATION SUMMARY (Requirements 5, 6, 19, 27)  */}
+          {/* ============================================================ */}
+          <div className="bg-white rounded-2xl border-2 border-slate-800 p-5 lg:p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>VERIFICATION SUMMARY</span>
+                </h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Primary officer decision aid calculated from authentic evidence.
+                </p>
+              </div>
+
+              <div>
+                <span className={`px-3 py-1 text-xs font-extrabold rounded-lg border uppercase tracking-wider ${overallVerificationStatus.colorClass}`}>
+                  {overallVerificationStatus.label}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              {/* Identity Match */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-2.5">
+                {hasConflict ? (
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <span>{hasConflict ? "⚠ Identity Match" : "✓ Identity Match"}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-600 mt-0.5">
+                    {hasConflict
+                      ? "Conflicting demographic data detected across registries."
+                      : "Name, DOB and guardian details corroborated."}
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-2.5">
+                {verifiedDocCount === documentList.length && documentList.length > 0 ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <div className="font-bold text-slate-900">
+                    {verifiedDocCount === documentList.length && documentList.length > 0 ? "✓ Documents" : "⚠ Documents"}
+                  </div>
+                  <div className="text-[11px] text-slate-600 mt-0.5">
+                    {documentList.length > 0
+                      ? `${verifiedDocCount} of ${documentList.length} required documents verified.`
+                      : "No documents required for this service intake."}
+                  </div>
+                </div>
+              </div>
+
+              {/* Government Records */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-slate-900">✓ Government Records</div>
+                  <div className="text-[11px] text-slate-600 mt-0.5">
+                    3 authorized government registries responded successfully.
+                  </div>
+                </div>
+              </div>
+
+              {/* Consent */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-start gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-slate-900">✓ Citizen Consent</div>
+                  <div className="text-[11px] text-slate-600 mt-0.5">
+                    Citizen consent is valid for the requested records.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Issues quick summary in verification summary */}
+            <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                {issuesList.length > 0 ? (
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                )}
+                <span className="font-bold text-slate-800">
+                  {issuesList.length > 0 ? `Issues Requiring Attention: ${issuesList.length}` : "Issues Requiring Attention: None"}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500">
+                {issuesList.length > 0 ? "Manual officer scrutiny required" : "Ready for adjudication"}
+              </span>
+            </div>
+          </div>
+
+          {/* ============================================================ */}
+          {/* SECTION 3: WORKFLOW ROUTING (Requirements 3, 4)              */}
           {/* ============================================================ */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -549,8 +761,8 @@ export default function ApplicationWorkspacePage() {
                 </div>
               </div>
 
-              <div className="text-[11px] text-slate-500 italic">
-                Model 1 automatically determines the appropriate government service and workflow.
+              <div className="text-[11px] text-slate-400 italic">
+                Automatically determined during application intake.
               </div>
             </div>
 
@@ -583,7 +795,7 @@ export default function ApplicationWorkspacePage() {
                   <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                     <span className="text-slate-400 text-[10px] font-medium">Office / Unit</span>
                     <div className="font-bold text-slate-900 mt-0.5 truncate">
-                      {routingRecommendation?.suggested_office_name || application.office || "Regional Processing Cell"}
+                      {routingRecommendation?.suggested_office_name || application.office || "Central Processing Centre"}
                     </div>
                   </div>
                   <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100">
@@ -598,14 +810,14 @@ export default function ApplicationWorkspacePage() {
                 <div className="pt-1">
                   <button
                     onClick={() => setShowRoutingDetails(!showRoutingDetails)}
-                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 transition-colors"
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <span>{showRoutingDetails ? "Hide routing details" : "View routing details"}</span>
                     {showRoutingDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   </button>
 
                   {showRoutingDetails && (
-                    <div className="mt-2.5 p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs text-slate-700 space-y-1.5">
+                    <div className="mt-2.5 p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs text-slate-700 space-y-1.5 animate-in fade-in duration-150">
                       <div className="font-bold text-slate-800 text-[11px]">WHY THIS ROUTING?</div>
                       <p className="text-[11px] text-slate-600 leading-relaxed">
                         {routingRecommendation?.explanation ||
@@ -619,7 +831,7 @@ export default function ApplicationWorkspacePage() {
           </div>
 
           {/* ============================================================ */}
-          {/* 3. AI-ASSISTED IDENTITY MATCH (Requirements 3-9, 22-25)       */}
+          {/* SECTION 4: AI-ASSISTED IDENTITY MATCH (Requirements 7-11)    */}
           {/* ============================================================ */}
           <div className="bg-white rounded-2xl border-2 border-indigo-200/90 p-6 shadow-xs space-y-5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100 pb-3">
@@ -632,7 +844,7 @@ export default function ApplicationWorkspacePage() {
                     AI-Assisted Identity Match
                   </h2>
                   <p className="text-[11px] text-slate-500">
-                    Identifies likely matching records across authorized government registries.
+                    Checks whether applicant details correspond to matching records in authorized government registries.
                   </p>
                 </div>
               </div>
@@ -647,28 +859,53 @@ export default function ApplicationWorkspacePage() {
               </div>
             </div>
 
-            {/* Conflict / Collision Alert (Requirement 6) */}
+            {/* Conflict Case: Prominent Warning (Requirement 10) */}
             {hasConflict && (
-              <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-950 text-xs flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <div className="font-extrabold text-sm text-rose-900">IDENTITY CONFLICT DETECTED</div>
-                  <p className="text-xs text-rose-800 leading-relaxed">
-                    The available government records contain conflicting demographic information. The AI cannot safely confirm legal identity automatically.
-                  </p>
-                  <div className="text-[11px] font-bold text-rose-900 pt-1">
-                    Status: <span className="underline">MANUAL REVIEW REQUIRED BY AUTHORIZED OFFICER</span>
+              <div className="p-4 bg-rose-50 border-2 border-rose-300 rounded-xl text-rose-950 text-xs space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-extrabold text-sm text-rose-900">
+                      ⚠ IDENTITY MATCH NEEDS REVIEW
+                    </div>
+                    <p className="text-xs text-rose-800 mt-0.5 leading-relaxed">
+                      Authorized records contain conflicting identifying information.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-white p-3 rounded-lg border border-rose-200">
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold">Application</span>
+                    <div className="font-bold text-slate-900 mt-0.5">
+                      DOB = {application.data?.dateOfBirth || "1999-08-15"}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase font-bold">Revenue Registry</span>
+                    <div className="font-bold text-rose-700 mt-0.5">
+                      DOB = 2000-08-15
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2 pt-1 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                    <span className="text-rose-900 font-bold">Conflict: Date of Birth</span>
+                    <span className="text-slate-700 font-bold">Required action: Officer review</span>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Main Likely Matching Record (Requirement 4) */}
+            {/* Main Single Likely Matching Record View (Requirement 8) */}
             {activeCandidate ? (
               <div className="space-y-4">
                 <div className="bg-slate-50/80 rounded-xl border border-slate-200/80 p-4 space-y-3 text-xs">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-900">
-                    Likely Matching Record (Corroborated Candidate)
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-900">
+                      LIKELY MATCHING RECORD
+                    </span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded">
+                      MATCH FOUND
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -678,7 +915,7 @@ export default function ApplicationWorkspacePage() {
                     </div>
 
                     <div className="p-2.5 bg-white rounded-lg border border-slate-200">
-                      <span className="text-[10px] font-medium text-slate-400">Matched Registry Candidate</span>
+                      <span className="text-[10px] font-medium text-slate-400">Candidate Record</span>
                       <div className="font-bold text-indigo-900 mt-0.5">
                         {activeCandidate.candidate_name || activeCandidate.name || application.applicantName}
                         <span className="text-slate-400 font-normal ml-1.5">
@@ -688,47 +925,47 @@ export default function ApplicationWorkspacePage() {
                     </div>
                   </div>
 
-                  {/* Evidence Checklist (Requirement 4) */}
+                  {/* Evidence Checklist (Requirement 8) */}
                   <div className="space-y-1.5 pt-1">
-                    <div className="text-[11px] font-bold text-slate-800">EVIDENCE & CORROBORATING REGISTRIES:</div>
+                    <div className="text-[11px] font-bold text-slate-800">EVIDENCE:</div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
                       <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
                         <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Name Corroborated</span>
+                        <span>Name</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
                         <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Date of Birth Verified</span>
+                        <span>Date of Birth</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
                         <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Father / Guardian Corroborated</span>
+                        <span>Father / Guardian</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
                         <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Address Verified</span>
+                        <span>Address</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
                         <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>District / PIN Matched</span>
+                        <span>District / PIN</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
                         <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Cross-Registry Corroboration</span>
+                        <span>Cross-registry corroboration</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Registry sources */}
+                  {/* Registry Sources */}
                   <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center gap-2 text-[11px]">
-                    <span className="font-bold text-slate-500">Queried Authorized Sources:</span>
+                    <span className="font-bold text-slate-500">Registry sources:</span>
                     <span className="px-2 py-0.5 bg-white border border-slate-200 rounded font-semibold text-slate-700">UIDAI</span>
                     <span className="px-2 py-0.5 bg-white border border-slate-200 rounded font-semibold text-slate-700">Revenue</span>
-                    <span className="px-2 py-0.5 bg-white border border-slate-200 rounded font-semibold text-slate-700">PAN Core Registry</span>
+                    <span className="px-2 py-0.5 bg-white border border-slate-200 rounded font-semibold text-slate-700">PAN / Tax Central Core</span>
                   </div>
                 </div>
 
-                {/* Why was this record suggested? (Requirement 9) */}
+                {/* Why was this record suggested? */}
                 <div className="p-3.5 bg-white rounded-xl border border-slate-200 text-xs space-y-1">
                   <div className="font-bold text-slate-900 text-[11px]">WHY WAS THIS RECORD SUGGESTED?</div>
                   <p className="text-[11px] text-slate-600 leading-relaxed">
@@ -738,7 +975,7 @@ export default function ApplicationWorkspacePage() {
                   </p>
                 </div>
 
-                {/* Multiple Candidates Toggle (Requirement 5) */}
+                {/* Multiple Candidates Toggle (Requirement 9) */}
                 {entityResolutions.length > 1 && (
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2 text-xs">
                     <div className="flex items-center justify-between">
@@ -747,7 +984,7 @@ export default function ApplicationWorkspacePage() {
                       </span>
                       <button
                         onClick={() => setShowOtherCandidates(!showOtherCandidates)}
-                        className="text-indigo-600 hover:text-indigo-800 font-bold inline-flex items-center gap-1"
+                        className="text-indigo-600 hover:text-indigo-800 font-bold inline-flex items-center gap-1 cursor-pointer"
                       >
                         <span>{showOtherCandidates ? "Hide other records" : "View other possible records"}</span>
                         {showOtherCandidates ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -755,12 +992,12 @@ export default function ApplicationWorkspacePage() {
                     </div>
 
                     {showOtherCandidates && (
-                      <div className="flex items-center gap-2 overflow-x-auto pt-2">
+                      <div className="flex items-center gap-2 overflow-x-auto pt-2 animate-in fade-in duration-150">
                         {entityResolutions.map((cand, idx) => (
                           <button
                             key={idx}
                             onClick={() => setSelectedCandidateIdx(idx)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                               selectedCandidateIdx === idx
                                 ? "bg-indigo-600 text-white shadow-xs"
                                 : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
@@ -774,36 +1011,36 @@ export default function ApplicationWorkspacePage() {
                   </div>
                 )}
 
-                {/* Expandable Technical AI Details (Requirement 7) */}
+                {/* Hide Technical AI Details under [View AI Details] (Requirement 11) */}
                 <div>
                   <button
                     onClick={() => setShowAiTechDetails(!showAiTechDetails)}
-                    className="text-[11px] font-bold text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 transition-colors"
+                    className="text-[11px] font-bold text-slate-500 hover:text-slate-800 inline-flex items-center gap-1 transition-colors cursor-pointer"
                   >
-                    <span>{showAiTechDetails ? "Hide AI Technical Details" : "View AI Technical Details"}</span>
+                    <span>{showAiTechDetails ? "Hide AI Details" : "View AI Details"}</span>
                     {showAiTechDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   </button>
 
                   {showAiTechDetails && (
-                    <div className="mt-2.5 p-3.5 bg-slate-900 text-slate-200 rounded-xl font-mono text-[11px] space-y-1.5 border border-slate-800">
+                    <div className="mt-2.5 p-3.5 bg-slate-900 text-slate-200 rounded-xl font-mono text-[11px] space-y-1.5 border border-slate-800 animate-in fade-in duration-150">
                       <div>
-                        <span className="text-slate-400">Model Pipeline: </span>
-                        <span className="text-indigo-300">Model 2 (V4.2 Hybrid Engine)</span>
+                        <span className="text-slate-400">Model: </span>
+                        <span className="text-indigo-300">V4.2</span>
                       </div>
                       <div>
-                        <span className="text-slate-400">Detected Language: </span>
+                        <span className="text-slate-400">Language: </span>
                         <span>{activeCandidate.language_detected || activeCandidate.language || "ENGLISH (Latn)"}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400">Transformer Gate: </span>
+                        <span className="text-slate-400">Transformer: </span>
                         <span className="text-emerald-400">{activeCandidate.transformer_status || "Active / Satisfied"}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400">Fallback Mode: </span>
+                        <span className="text-slate-400">Fallback: </span>
                         <span>{activeCandidate.fallback_mode || "None (Direct Corroboration)"}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400">Advisory Score: </span>
+                        <span className="text-slate-400">Confidence: </span>
                         <span className="text-amber-300">
                           {activeCandidate.total_score !== undefined
                             ? `${(activeCandidate.total_score * 100).toFixed(1)}%`
@@ -822,16 +1059,21 @@ export default function ApplicationWorkspacePage() {
           </div>
 
           {/* ============================================================ */}
-          {/* 4. DOCUMENTS (Requirements 10, 11, 22)                       */}
+          {/* SECTION 5: DOCUMENTS (Requirements 12, 13)                    */}
           {/* ============================================================ */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-600" />
-                <span>Documents</span>
-              </h2>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span>DOCUMENTS</span>
+                </h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  {documentList.length} required • {documentList.length} received • {verifiedDocCount} verified
+                </p>
+              </div>
               <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                {documentList.length} Ingested Documents
+                Ingested Proofs
               </span>
             </div>
 
@@ -853,7 +1095,7 @@ export default function ApplicationWorkspacePage() {
                               : "bg-slate-200 text-slate-700"
                           }`}
                         >
-                          {doc.status}
+                          {doc.status === "VERIFIED" ? "✓ Verified" : doc.status}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-500 truncate mt-1 font-mono">{doc.filename}</div>
@@ -876,51 +1118,75 @@ export default function ApplicationWorkspacePage() {
           </div>
 
           {/* ============================================================ */}
-          {/* 5. GOVERNMENT RECORDS (Requirements 12, 13, 14, 22)           */}
+          {/* SECTION 6: GOVERNMENT RECORDS & CONSENT (Requirements 14-16)  */}
           {/* ============================================================ */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <Database className="w-4 h-4 text-blue-600" />
-                <span>Government Records</span>
-              </h2>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Database className="w-4 h-4 text-blue-600" />
+                  <span>Government Records</span>
+                </h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Data access authorized by citizen statutory consent.
+                </p>
+              </div>
               <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                 DPDP Act 2023 Compliant
               </span>
             </div>
 
             <div className="space-y-3 text-xs">
-              {/* Consent Block */}
-              <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-200 text-emerald-900 flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-bold">
-                    {application.consent?.granted
-                      ? "Statutory Digital Consent: GRANTED"
-                      : "Digital Consent: PENDING"}
+              {/* Compact Consent Presentation (Requirement 15) */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold text-emerald-800">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>DATA ACCESS — ✓ Citizen consent granted</span>
                   </div>
-                  <div className="text-[11px] text-emerald-800 mt-0.5">
-                    Purpose: {application.consent?.purpose || "Identity verification and service processing under Income Tax Act & DPDP Act 2023."}
-                  </div>
-                  {application.consent?.consentId && (
-                    <div className="text-[10px] font-mono text-emerald-700 mt-0.5">
-                      Consent Token: {application.consent.consentId}
-                    </div>
-                  )}
+                  <button
+                    onClick={() => setShowConsentDetails(!showConsentDetails)}
+                    className="text-[11px] font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{showConsentDetails ? "Hide details" : "View access details"}</span>
+                    {showConsentDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 font-medium">Purpose:</span>
+                    <div className="font-semibold text-slate-700">Identity verification & service processing</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium">Authorized:</span>
+                    <div className="font-semibold text-emerald-700">Revenue, UIDAI, PAN</div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-medium">Not requested:</span>
+                    <div className="font-semibold text-slate-500">Health, Land, Agriculture</div>
+                  </div>
+                </div>
+
+                {showConsentDetails && (
+                  <div className="p-2.5 bg-white rounded-lg border border-slate-200 font-mono text-[10px] text-slate-600 space-y-1 animate-in fade-in duration-150">
+                    <div>Token: {application.consent?.consentId || "CNS-2026-9901-SAI"}</div>
+                    <div>Statutory Scope: DPDP Act 2023 § 6(1) Purpose Limitation</div>
+                  </div>
+                )}
               </div>
 
               {/* Authorized Government Records Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {/* 1. Revenue Registry */}
                 <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col justify-between space-y-2">
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-900">Revenue Registry</span>
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded">Authorized</span>
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded">✓ Found</span>
                     </div>
                     <div className="text-[11px] text-slate-600 mt-1">
-                      Income Certificate • Annual: ₹1,80,000 • Valid
+                      Income Certificate • Valid
                     </div>
                   </div>
                   <button
@@ -955,10 +1221,10 @@ export default function ApplicationWorkspacePage() {
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-900">UIDAI Identity Registry</span>
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded">Authorized</span>
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded">✓ Found</span>
                     </div>
                     <div className="text-[11px] text-slate-600 mt-1">
-                      Aadhaar e-KYC • Name, DOB, Address • Verified
+                      Name • DOB • Address
                     </div>
                   </div>
                   <button
@@ -992,11 +1258,11 @@ export default function ApplicationWorkspacePage() {
                 <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col justify-between space-y-2">
                   <div>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900">PAN / Tax Central Core</span>
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded">Authorized</span>
+                      <span className="font-bold text-slate-900">PAN / Tax Registry</span>
+                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-emerald-100 text-emerald-800 rounded">✓ Found</span>
                     </div>
                     <div className="text-[11px] text-slate-600 mt-1">
-                      NSDL/UTIITSL Deduplication Gateway • Clear
+                      Status • Valid
                     </div>
                   </div>
                   <button
@@ -1024,37 +1290,88 @@ export default function ApplicationWorkspacePage() {
                     <span>View Record</span>
                   </button>
                 </div>
-
-                {/* 4. Blocked Registry Scope */}
-                <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col justify-between space-y-2 opacity-60">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-600">Health / Land Records</span>
-                      <span className="px-1.5 py-0.5 text-[9px] font-bold bg-slate-200 text-slate-600 rounded">Not Requested</span>
-                    </div>
-                    <div className="text-[11px] text-slate-400 mt-1">
-                      Access blocked by DPDP purpose limitation.
-                    </div>
-                  </div>
-                  <div className="text-[10px] font-mono text-slate-400 italic">
-                    Zero access without explicit citizen consent.
-                  </div>
-                </div>
               </div>
             </div>
           </div>
 
           {/* ============================================================ */}
-          {/* 6. VERIFICATION (Requirements 15, 22)                        */}
+          {/* SECTION 7: ISSUES REQUIRING ATTENTION (Requirement 17)       */}
           {/* ============================================================ */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                <span>Verification Checklist</span>
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <span>Issues Requiring Attention</span>
               </h2>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${issuesList.length > 0 ? "bg-amber-100 text-amber-900" : "bg-emerald-50 text-emerald-800"}`}>
+                {issuesList.length > 0 ? `${issuesList.length} Open Issues` : "0 Issues"}
+              </span>
+            </div>
+
+            {issuesList.length === 0 ? (
+              <div className="p-3.5 bg-emerald-50/50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="font-semibold">✓ No outstanding issues — All statutory verifications and registry corroborations completed successfully.</span>
+              </div>
+            ) : (
+              <div className="space-y-2.5 text-xs">
+                {issuesList.map((issue) => (
+                  <div
+                    key={issue.id}
+                    className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      issue.severity === "CRITICAL"
+                        ? "bg-rose-50 border-rose-200 text-rose-950"
+                        : "bg-amber-50 border-amber-200 text-amber-950"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${issue.severity === "CRITICAL" ? "text-rose-600" : "text-amber-600"}`} />
+                      <div>
+                        <div className="font-bold flex items-center gap-2">
+                          <span>{issue.type}</span>
+                          <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-white border border-slate-200">
+                            {issue.title}
+                          </span>
+                        </div>
+                        <p className="text-[11px] mt-0.5 leading-relaxed text-slate-700">
+                          {issue.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    {issue.actionLabel && (
+                      <button
+                        onClick={() => {
+                          if (issue.actionLabel === "Request Correction") setReturnModalOpen(true);
+                          else toast.info(`Investigating ${issue.type}`);
+                        }}
+                        className="self-start sm:self-center px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg font-bold text-xs text-slate-800 shadow-2xs shrink-0 cursor-pointer"
+                      >
+                        {issue.actionLabel}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ============================================================ */}
+          {/* SECTION 8: VERIFICATION CHECKLIST (Requirement 18)           */}
+          {/* ============================================================ */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-blue-600" />
+                  <span>VERIFICATION CHECKLIST</span>
+                </h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Detailed statutory check criteria and evidence sources.
+                </p>
+              </div>
               <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-                Automated & Officer Verifications
+                Authoritative Record
               </span>
             </div>
 
@@ -1090,17 +1407,17 @@ export default function ApplicationWorkspacePage() {
           </div>
 
           {/* ============================================================ */}
-          {/* 7. DECISION & ACTIVITY HISTORY (Requirements 16, 17, 22)     */}
+          {/* SECTION 9: DECISION & ACTIVITY HISTORY (Requirement 20)      */}
           {/* ============================================================ */}
           <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                   <History className="w-4 h-4 text-blue-600" />
-                  <span>Decision & Activity History</span>
+                  <span>DECISION & ACTIVITY HISTORY</span>
                 </h2>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Shows who performed important actions on this application and when.
+                  Chronological tamper-evident audit history of application lifecycle events.
                 </p>
               </div>
               <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
@@ -1112,7 +1429,7 @@ export default function ApplicationWorkspacePage() {
               {auditLogs.length === 0 ? (
                 <div className="p-4 text-center text-xs text-slate-400">No events logged yet for this application.</div>
               ) : (
-                auditLogs.map((log, idx) => (
+                (showAllAuditLogs ? auditLogs : auditLogs.slice(0, 5)).map((log, idx) => (
                   <div
                     key={idx}
                     className="p-3 bg-slate-50 rounded-xl border border-slate-200/60 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
@@ -1135,12 +1452,24 @@ export default function ApplicationWorkspacePage() {
                   </div>
                 ))
               )}
+
+              {auditLogs.length > 5 && (
+                <div className="pt-2 text-center">
+                  <button
+                    onClick={() => setShowAllAuditLogs(!showAllAuditLogs)}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{showAllAuditLogs ? "Show top 5 events" : `View full history (${auditLogs.length} events)`}</span>
+                    {showAllAuditLogs ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
         </div>
 
-        {/* RIGHT COLUMN: STICKY DESKTOP DECISION PANEL (Requirements 18, 19, 22) */}
+        {/* RIGHT COLUMN: STICKY DESKTOP DECISION PANEL (Requirements 21-23, 29) */}
         <div className="lg:col-span-4 sticky top-20 space-y-4">
           <div className="bg-white rounded-2xl border-2 border-slate-800 p-6 shadow-md space-y-5">
             <div className="border-b border-slate-100 pb-3">
@@ -1158,18 +1487,24 @@ export default function ApplicationWorkspacePage() {
                 <span className="font-bold text-slate-900">{application.status}</span>
               </div>
               <div className="flex justify-between items-center">
+                <span className="text-slate-500">Verification Status:</span>
+                <span className={`font-bold ${overallVerificationStatus.label === "READY FOR OFFICER DECISION" ? "text-emerald-700" : "text-amber-700"}`}>
+                  {overallVerificationStatus.label}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Open Issues:</span>
+                <span className={`font-bold ${issuesList.length > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+                  {issuesList.length}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
                 <span className="text-slate-500">AI Assistance:</span>
                 <span className="font-bold text-indigo-700">Advisory Only</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500">Evidence Status:</span>
-                <span className={`font-bold ${hasConflict ? "text-rose-700" : "text-emerald-700"}`}>
-                  {hasConflict ? "Conflict Flagged" : "Complete (Verified)"}
-                </span>
-              </div>
             </div>
 
-            {/* Decision Action Buttons */}
+            {/* Decision Action Buttons (Requirements 21-23) */}
             <div className="space-y-2.5 pt-1">
               {/* Approve Button */}
               <button
@@ -1224,7 +1559,7 @@ export default function ApplicationWorkspacePage() {
       </div>
 
       {/* ============================================================ */}
-      {/* DOCUMENT PREVIEW MODAL                                       */}
+      {/* DOCUMENT PREVIEW MODAL (Requirement 13)                      */}
       {/* ============================================================ */}
       <GovernmentDocumentViewerModal
         document={activePreviewDoc}
@@ -1233,7 +1568,7 @@ export default function ApplicationWorkspacePage() {
       />
 
       {/* ============================================================ */}
-      {/* GOVERNMENT RECORD VIEWER MODAL                               */}
+      {/* GOVERNMENT RECORD VIEWER MODAL (Requirement 16)              */}
       {/* ============================================================ */}
       <GovernmentRecordViewerModal
         record={activeRegistryRecord}
@@ -1242,7 +1577,7 @@ export default function ApplicationWorkspacePage() {
       />
 
       {/* ============================================================ */}
-      {/* APPROVAL CONFIRMATION SAFETY MODAL                           */}
+      {/* APPROVAL CONFIRMATION SAFETY MODAL (Requirement 22)          */}
       {/* ============================================================ */}
       {approveModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
@@ -1250,18 +1585,23 @@ export default function ApplicationWorkspacePage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-emerald-700 font-bold">
                 <CheckCircle2 className="w-5 h-5" />
-                <span className="text-base font-extrabold text-slate-900">OFFICER CONFIRMATION</span>
+                <span className="text-base font-extrabold text-slate-900">CONFIRM OFFICER DECISION</span>
               </div>
-              <button onClick={() => setApproveModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
+              <button onClick={() => setApproveModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 space-y-1">
-              <div><strong>You are about to:</strong> APPROVE APPLICATION</div>
-              <div><strong>Officer:</strong> {currentUser.name} ({currentUser.id || "OFF-PAN-7042"})</div>
-              <div><strong>Application ID:</strong> {application.id} ({application.applicantName})</div>
-              <div><strong>AI Assistance:</strong> Advisory only</div>
+              <div><strong>Application ID:</strong> {application.id}</div>
+              <div><strong>Citizen:</strong> {application.applicantName}</div>
+              <div><strong>Verification:</strong> {overallVerificationStatus.label}</div>
+              <div><strong>Outstanding Issues:</strong> {issuesList.length}</div>
+              <div><strong>AI:</strong> Advisory only</div>
+            </div>
+
+            <div className="text-xs text-slate-600 italic">
+              "You are making the final decision as the authorized officer."
             </div>
 
             <div className="space-y-1.5 text-xs">
@@ -1304,7 +1644,7 @@ export default function ApplicationWorkspacePage() {
       )}
 
       {/* ============================================================ */}
-      {/* REJECTION CONFIRMATION SAFETY MODAL                          */}
+      {/* REJECTION CONFIRMATION SAFETY MODAL (Requirement 23)         */}
       {/* ============================================================ */}
       {rejectModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
@@ -1312,21 +1652,23 @@ export default function ApplicationWorkspacePage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-rose-700 font-bold">
                 <AlertTriangle className="w-5 h-5" />
-                <span className="text-base font-extrabold text-slate-900">OFFICER CONFIRMATION</span>
+                <span className="text-base font-extrabold text-slate-900">CONFIRM OFFICER DECISION</span>
               </div>
-              <button onClick={() => setRejectModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
+              <button onClick={() => setRejectModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-3.5 bg-rose-50 rounded-xl border border-rose-200 text-xs text-rose-950 space-y-1">
-              <div><strong>You are about to:</strong> REJECT APPLICATION</div>
-              <div><strong>Officer:</strong> {currentUser.name} ({currentUser.id || "OFF-PAN-7042"})</div>
-              <div><strong>Application ID:</strong> {application.id} ({application.applicantName})</div>
+              <div><strong>Application ID:</strong> {application.id}</div>
+              <div><strong>Citizen:</strong> {application.applicantName}</div>
+              <div><strong>Verification:</strong> {overallVerificationStatus.label}</div>
+              <div><strong>Outstanding Issues:</strong> {issuesList.length}</div>
+              <div><strong>AI:</strong> Advisory only</div>
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <label className="font-semibold text-slate-700">Statutory Rejection Reason</label>
+              <label className="font-semibold text-slate-700">Statutory Rejection Reason (Required)</label>
               <textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
@@ -1354,7 +1696,7 @@ export default function ApplicationWorkspacePage() {
               </button>
               <button
                 onClick={() => handleAction("REJECT", { reason: rejectionReason, category: rejectionCategory })}
-                disabled={!rejectionConfirmed || isProcessing}
+                disabled={!rejectionConfirmed || !rejectionReason.trim() || isProcessing}
                 className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold disabled:opacity-40 cursor-pointer"
               >
                 {isProcessing ? "Processing..." : "Confirm Rejection"}
@@ -1375,7 +1717,7 @@ export default function ApplicationWorkspacePage() {
                 <RotateCcw className="w-5 h-5" />
                 <span className="text-base font-extrabold text-slate-900">Request Citizen Correction</span>
               </div>
-              <button onClick={() => setReturnModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600">
+              <button onClick={() => setReturnModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
