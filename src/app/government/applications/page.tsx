@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -52,6 +52,26 @@ function ApplicationsWorkspaceContent() {
   const [priorityFilter, setPriorityFilter] = useState("ALL");
   const [serviceFilter, setServiceFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState<"NEWEST" | "OLDEST" | "PRIORITY" | "SLA">("PRIORITY");
+
+  // Synchronize tab state with URL query parameter (Requirement 3, 5, 6)
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "review" || tabParam === "officer_review" || tabParam === "needs_action") {
+      setActiveTab("needs_action");
+    } else if (tabParam === "assigned" || tabParam === "my_assignments") {
+      setActiveTab("assigned");
+    } else if (tabParam === "returned") {
+      setActiveTab("returned");
+    } else if (tabParam === "verification") {
+      setActiveTab("verification");
+    } else if (tabParam === "completed") {
+      setActiveTab("completed");
+    } else if (tabParam === "exceptions") {
+      setActiveTab("exceptions");
+    } else {
+      setActiveTab("all");
+    }
+  }, [searchParams]);
 
   // Extract unique services for dropdown filter
   const uniqueServices = useMemo(() => {
@@ -264,10 +284,54 @@ function ApplicationsWorkspaceContent() {
       {/* 4. Applications Data Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         {filteredApplications.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
-            <CheckCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <div className="text-sm font-bold text-slate-800">No applications match your active filters</div>
-            <div className="text-xs text-slate-400 mt-1">Try resetting your search query or selecting another tab.</div>
+          <div className="p-12 text-center text-slate-500 space-y-3">
+            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            {applications.length === 0 && !isLoading ? (
+              <div>
+                <div className="text-sm font-bold text-slate-800">No applications available</div>
+                <div className="text-xs text-slate-400 mt-1">No applications are currently loaded in the authorized workspace.</div>
+              </div>
+            ) : searchQuery.trim().length > 0 ? (
+              <div>
+                <div className="text-sm font-bold text-slate-800">No applications match your search</div>
+                <div className="text-xs text-slate-400 mt-1">No records match &quot;{searchQuery}&quot;. Try modifying your search keywords.</div>
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="mt-3 px-3.5 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Clear Search
+                </button>
+              </div>
+            ) : activeTab !== "all" && tabCounts[activeTab] === 0 ? (
+              <div>
+                <div className="text-sm font-bold text-slate-800">No applications match this filter</div>
+                <div className="text-xs text-slate-400 mt-1">There are currently 0 cases in the selected category.</div>
+                <button
+                  onClick={() => setActiveTab("all")}
+                  className="mt-3 px-3.5 py-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-xs font-bold transition-colors shadow-xs cursor-pointer"
+                >
+                  View All Applications ({tabCounts.all})
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div className="text-sm font-bold text-slate-800">No applications match your active filters</div>
+                <div className="text-xs text-slate-400 mt-1">Try resetting dropdown filters or selecting another tab.</div>
+                <button
+                  onClick={() => {
+                    setActiveTab("all");
+                    setPriorityFilter("ALL");
+                    setServiceFilter("ALL");
+                    setSearchQuery("");
+                  }}
+                  className="mt-3 px-3.5 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto">

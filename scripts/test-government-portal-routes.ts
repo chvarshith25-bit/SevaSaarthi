@@ -13,6 +13,7 @@ const canonicalRoutes: RouteTest[] = [
   { path: '/government/applications', name: 'Canonical Applications Queue', checkContent: 'Applications' },
   { path: '/government/exceptions', name: 'Canonical Exceptions & Conflicts', checkContent: 'Exceptions' },
   { path: '/government/audit', name: 'Canonical Audit Trail', checkContent: 'Audit' },
+  { path: '/government/profile', name: 'Canonical Officer Profile', checkContent: 'Officer Profile' },
   { path: '/government/admin', name: 'Canonical Admin Hub', checkContent: 'Administration' },
 
   // Case Review Routes for Real Applications

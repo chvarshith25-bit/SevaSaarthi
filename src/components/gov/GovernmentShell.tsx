@@ -90,12 +90,12 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
       label: "Applications",
       href: "/government/applications",
       icon: Layers,
-      badge: stats.newApps || null,
+      badge: stats.total || null,
       badgeColor: "bg-blue-600 text-white",
     },
     {
       label: "Review",
-      href: "/government/applications?tab=assigned",
+      href: "/government/applications?tab=needs_action",
       icon: ShieldCheck,
       badge: stats.officerReview || null,
       badgeColor: "bg-indigo-600 text-white",
@@ -421,7 +421,7 @@ export function GovernmentShell({ children }: GovernmentShellProps) {
                     {searchResults.map((app) => (
                       <Link
                         key={app.id}
-                        href={`/government/applications/${app.id}`}
+                        href={`/government/applications/${app.id}/review`}
                         onClick={() => setSearchOpen(false)}
                         className="flex items-center justify-between p-3 rounded-xl hover:bg-blue-50/70 border border-transparent hover:border-blue-200 transition-all group"
                       >

@@ -121,14 +121,24 @@ export function GovProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Compute live stats matching exact Image 1 baseline (1250, 83, 40, 17, 8, 1104, 10)
-  const total = 1250;
-  const newApps = 83;
-  const verificationPending = 40;
-  const officerReview = 17;
-  const returned = 8;
-  const approved = 1104;
-  const unresolvedExceptions = 10;
+  // Dynamically compute real operational statistics from the single source of truth (Requirement 4 & 7)
+  const total = applications.length;
+  const newApps = applications.filter(
+    (a) => a.stage === "SUBMITTED" || a.status === "ACTION_REQUIRED"
+  ).length;
+  const verificationPending = applications.filter(
+    (a) => a.stage === "VERIFICATION_IN_PROGRESS" || a.stage === "GOVERNMENT_PROCESSING"
+  ).length;
+  const officerReview = applications.filter(
+    (a) => a.status === "ACTION_REQUIRED" || a.stage === "OFFICER_REVIEW"
+  ).length;
+  const returned = applications.filter((a) => a.status === "RETURNED_FOR_CORRECTION").length;
+  const approved = applications.filter(
+    (a) => a.status === "APPROVED" || a.status === "COMPLETED" || a.stage === "DELIVERED"
+  ).length;
+  const unresolvedExceptions = exceptions.filter(
+    (e) => !(e.resolved ?? (e as any).isResolved)
+  ).length;
 
   return (
     <GovContext.Provider

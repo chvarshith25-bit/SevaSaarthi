@@ -105,7 +105,7 @@ export default function GovernmentDashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Needs Action */}
         <Link
-          href="/government/applications?tab=assigned"
+          href="/government/applications?tab=needs_action"
           className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all group"
         >
           <div className="flex items-center justify-between">
