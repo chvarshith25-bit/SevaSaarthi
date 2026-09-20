@@ -16,7 +16,15 @@ export async function POST(
 
     const { id } = await context.params;
     const body = await request.json();
-    const reason = body.reason || body.correctionReason || body.returnExplanation;
+    const reason =
+      body.reason ||
+      body.correctionReason ||
+      body.returnExplanation ||
+      body.instruction ||
+      body.returnCorrection ||
+      (body.field
+        ? `${body.category || "Correction"}: ${body.field}. ${body.instruction || body.explanation || ""}`.trim()
+        : "");
 
     if (!reason || !reason.trim()) {
       return NextResponse.json(

@@ -1342,8 +1342,18 @@ export default function ApplicationWorkspacePage() {
                     {issue.actionLabel && (
                       <button
                         onClick={() => {
-                          if (issue.actionLabel === "Request Correction") setReturnModalOpen(true);
-                          else toast.info(`Investigating ${issue.type}`);
+                          if (issue.actionLabel === "Request Correction") {
+                            if (issue.type.includes("Document")) {
+                              setReturnCategory("Document mismatch");
+                              setReturnField(issue.title.replace(/ Issue$/i, ""));
+                              setReturnCorrection(
+                                `Please upload a clear, legible digital copy of your ${issue.title.replace(/ Issue$/i, "")}.`
+                              );
+                            }
+                            setReturnModalOpen(true);
+                          } else {
+                            toast.info(`Investigating ${issue.type}`);
+                          }
                         }}
                         className="self-start sm:self-center px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg font-bold text-xs text-slate-800 shadow-2xs shrink-0 cursor-pointer"
                       >
@@ -1766,14 +1776,23 @@ export default function ApplicationWorkspacePage() {
                 Cancel
               </button>
               <button
-                onClick={() =>
+                onClick={() => {
+                  const fullReason =
+                    returnCorrection?.trim() ||
+                    (returnField
+                      ? `${returnCategory}: Correction required for ${returnField}. ${returnExplanation || ""}`.trim()
+                      : `${returnCategory}: Mandatory correction required.`);
+
                   handleAction("RETURN", {
+                    reason: fullReason,
+                    correctionReason: fullReason,
+                    returnExplanation: fullReason,
                     category: returnCategory,
                     field: returnField,
-                    explanation: returnExplanation,
-                    instruction: returnCorrection,
-                  })
-                }
+                    explanation: returnExplanation || fullReason,
+                    instruction: returnCorrection || fullReason,
+                  });
+                }}
                 disabled={isProcessing}
                 className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs disabled:opacity-40 cursor-pointer"
               >

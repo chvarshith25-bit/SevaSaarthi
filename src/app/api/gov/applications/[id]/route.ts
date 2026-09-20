@@ -228,8 +228,19 @@ export async function PATCH(
         );
         break;
 
-      case "RETURN":
-        if (!reason || !reason.trim()) {
+      case "RETURN": {
+        const returnReason =
+          body.reason ||
+          reason ||
+          body.correctionReason ||
+          body.returnExplanation ||
+          body.instruction ||
+          body.returnCorrection ||
+          (body.field
+            ? `${body.category || "Correction"}: ${body.field}. ${body.instruction || body.explanation || ""}`.trim()
+            : "");
+
+        if (!returnReason || !returnReason.trim()) {
           return NextResponse.json(
             { success: false, error: "Mandatory return reason is required" },
             { status: 400 }
@@ -239,9 +250,10 @@ export async function PATCH(
           id,
           auth.user.id,
           auth.user.name,
-          reason
+          returnReason
         );
         break;
+      }
 
       case "REJECT":
         if (!reason || !reason.trim()) {
