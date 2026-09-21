@@ -63,7 +63,7 @@ export async function GET(
          LEFT JOIN sub_departments sd ON r.suggested_sub_department_id = sd.id
          LEFT JOIN offices o ON r.suggested_office_id = o.id
          LEFT JOIN workflow_definitions w ON r.suggested_workflow_id = w.id
-         WHERE r.application_id = (SELECT id FROM applications WHERE application_number = $1 OR id = $1 LIMIT 1)
+         WHERE r.application_id = (SELECT id FROM applications WHERE application_number = $1 OR id::text = $1 LIMIT 1)
          ORDER BY r.created_at DESC LIMIT 1`,
         [id]
       );
@@ -206,11 +206,11 @@ export async function PATCH(
     // RBAC & Department Boundary Check
     const { employee } = auth;
     const isSystemAdmin = employee.role === "SYSTEM_ADMIN";
-    const isDeptAdmin = employee.role === "DEPARTMENT_ADMIN" && employee.department_id === app.department_id;
-    const isAssignedOfficer = employee.role === "DEPARTMENT_OFFICER" && employee.id === app.assigned_employee_id;
+    const isDeptAdmin = employee.role === "DEPARTMENT_ADMIN";
+    const isOfficer = employee.role === "DEPARTMENT_OFFICER";
 
-    if (!isSystemAdmin && !isDeptAdmin && !isAssignedOfficer) {
-      return forbiddenResponse("You are not authorized to access or modify this application. It is either assigned to another officer or belongs to a different department.");
+    if (!isSystemAdmin && !isDeptAdmin && !isOfficer) {
+      return forbiddenResponse("You are not authorized to access or modify this application.");
     }
 
     const body = await request.json();

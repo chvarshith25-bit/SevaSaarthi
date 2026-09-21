@@ -81,6 +81,18 @@ server.on("upgrade", (req, clientSocket, head) => {
   proxyReq.end();
 });
 
+server.on("error", (err) => {
+  console.error("[Gov Proxy Server Error]", err);
+});
+
+process.on("uncaughtException", (err) => {
+  console.warn("[Gov Proxy Uncaught Exception]", err.message);
+});
+
+process.on("unhandledRejection", (err) => {
+  console.warn("[Gov Proxy Unhandled Rejection]", err?.message || err);
+});
+
 server.listen(PROXY_PORT, () => {
   console.log(`========================================================`);
   console.log(`   FORMLY GOVERNMENT PLATFORM PROXY`);

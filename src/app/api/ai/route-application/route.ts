@@ -5,6 +5,7 @@ import { WorkflowRouter, ApplicationRoutingInput } from "@/lib/server/ai/workflo
 import { resolveServiceRoute } from "@/lib/server/routing-resolver";
 import { cookies } from "next/headers";
 import { authenticateSession } from "@/lib/server/db";
+import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
   try {

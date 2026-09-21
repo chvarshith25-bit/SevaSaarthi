@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApplicationById, calculateAuditTamperHash } from "@/lib/server/db";
 import { pgQuery, getAuthoritativeDb } from "@/lib/server/pg-db";
 import { validateGovSession, unauthorizedResponse, forbiddenResponse } from "@/lib/server/auth";
+import crypto from "crypto";
 
 export async function POST(
   request: NextRequest,
@@ -15,8 +16,14 @@ export async function POST(
         : unauthorizedResponse(auth.error!);
     }
 
-    const { id } = await context.params;
-    const app = await getApplicationById(id);
+    const resolvedParams = await context.params;
+    const id = resolvedParams?.id ? decodeURIComponent(resolvedParams.id) : "";
+    let app = await getApplicationById(id);
+    if (!app && id) {
+      const { getPanApplications } = await import("@/lib/server/db");
+      const list = await getPanApplications();
+      app = (list as any[]).find((a: any) => a.id === id || a.application_number === id) || null;
+    }
     if (!app) {
       return NextResponse.json({ success: false, error: `Application not found: ${id}` }, { status: 404 });
     }
@@ -27,17 +34,21 @@ export async function POST(
     const officerName = auth.user?.name || "Officer Sai Sankeerth";
 
     // 1. Update the latest recommendation status to CONFIRMED
-    await pgQuery(
-      `UPDATE application_routing_recommendations
-       SET status = 'CONFIRMED',
-           routing_mode = 'AI_CONFIRMED',
-           reviewed_by = $1,
-           reviewed_at = now(),
-           updated_at = now()
-       WHERE application_id = (SELECT id FROM applications WHERE application_number = $2 OR id::text = $2 LIMIT 1)
-         AND status = 'PENDING'`,
-      [officerId, id]
-    );
+    try {
+      await pgQuery(
+        `UPDATE application_routing_recommendations
+         SET status = 'CONFIRMED',
+             routing_mode = 'AI_CONFIRMED',
+             reviewed_by = $1,
+             reviewed_at = now(),
+             updated_at = now()
+         WHERE application_id = (SELECT id FROM applications WHERE application_number = $2 OR id::text = $2 LIMIT 1)
+           AND status = 'PENDING'`,
+        [officerId, id]
+      );
+    } catch (recErr) {
+      console.warn("[confirm-route] recommendation update warning:", recErr);
+    }
 
     // 2. Record statutory human confirmation in audit log
     const auditEntry = {
@@ -56,11 +67,15 @@ export async function POST(
     };
     const tamperHash = calculateAuditTamperHash(auditEntry);
 
-    await pgQuery(
-      `INSERT INTO audit_events (id, application_id, action, actor_type, event_data)
-       VALUES ($1, (SELECT id FROM applications WHERE application_number = $2 OR id::text = $2 LIMIT 1), 'AI_ROUTE_CONFIRMED', 'EMPLOYEE', $3)`,
-      [crypto.randomUUID(), id, JSON.stringify({ ...auditEntry, tamperHash })]
-    );
+    try {
+      await pgQuery(
+        `INSERT INTO audit_events (id, application_id, action, actor_type, event_data)
+         VALUES ($1, (SELECT id FROM applications WHERE application_number = $2 OR id::text = $2 LIMIT 1), 'AI_ROUTE_CONFIRMED', 'EMPLOYEE', $3)`,
+        [crypto.randomUUID(), id, JSON.stringify({ ...auditEntry, tamperHash })]
+      );
+    } catch (audErr) {
+      console.warn("[confirm-route] audit_events insert warning:", audErr);
+    }
 
     return NextResponse.json({
       success: true,

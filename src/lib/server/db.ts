@@ -699,24 +699,65 @@ export function calculateAuditTamperHash(entry: any): string {
 // In-Memory Synchronous Mirror State
 // ----------------------------------------------------------------------
 
-let panApplicationsMemory: PanApplicationRecord[] = getInitialPanApplications();
-let auditLogsMemory: AuditLogRecord[] = getInitialAuditLogs();
-for (const l of auditLogsMemory) {
-  l.tamperHash = calculateAuditTamperHash(l);
+declare global {
+  // eslint-disable-next-line no-var
+  var __panApplicationsMemory: PanApplicationRecord[] | undefined;
+  // eslint-disable-next-line no-var
+  var __auditLogsMemory: AuditLogRecord[] | undefined;
+  // eslint-disable-next-line no-var
+  var __exceptionsMemory: ExceptionRecord[] | undefined;
+  // eslint-disable-next-line no-var
+  var __connectorRequestsMemory: ConnectorRequestRecord[] | undefined;
+  // eslint-disable-next-line no-var
+  var __panSequence: number | undefined;
+  // eslint-disable-next-line no-var
+  var __schSequence: number | undefined;
 }
-let exceptionsMemory: ExceptionRecord[] = getInitialExceptions();
-let connectorRequestsMemory: ConnectorRequestRecord[] = getInitialConnectorRequests();
-let panSequence = 5;
-let schSequence = 2346;
 
-export function resetPanDemoState(): boolean & Promise<boolean> {
-  panApplicationsMemory = getInitialPanApplications();
-  auditLogsMemory = getInitialAuditLogs();
-  for (const l of auditLogsMemory) {
+if (!globalThis.__panApplicationsMemory) {
+  globalThis.__panApplicationsMemory = getInitialPanApplications();
+}
+if (!globalThis.__auditLogsMemory) {
+  const initialAudit = getInitialAuditLogs();
+  for (const l of initialAudit) {
     l.tamperHash = calculateAuditTamperHash(l);
   }
-  exceptionsMemory = getInitialExceptions();
-  connectorRequestsMemory = getInitialConnectorRequests();
+  globalThis.__auditLogsMemory = initialAudit;
+}
+if (!globalThis.__exceptionsMemory) {
+  globalThis.__exceptionsMemory = getInitialExceptions();
+}
+if (!globalThis.__connectorRequestsMemory) {
+  globalThis.__connectorRequestsMemory = getInitialConnectorRequests();
+}
+if (globalThis.__panSequence === undefined) {
+  globalThis.__panSequence = 5;
+}
+if (globalThis.__schSequence === undefined) {
+  globalThis.__schSequence = 2346;
+}
+
+let panApplicationsMemory = globalThis.__panApplicationsMemory!;
+let auditLogsMemory = globalThis.__auditLogsMemory!;
+let exceptionsMemory = globalThis.__exceptionsMemory!;
+let connectorRequestsMemory = globalThis.__connectorRequestsMemory!;
+let panSequence = globalThis.__panSequence!;
+let schSequence = globalThis.__schSequence!;
+
+export function resetPanDemoState(): boolean & Promise<boolean> {
+  globalThis.__panApplicationsMemory = getInitialPanApplications();
+  globalThis.__auditLogsMemory = getInitialAuditLogs();
+  for (const l of globalThis.__auditLogsMemory) {
+    l.tamperHash = calculateAuditTamperHash(l);
+  }
+  globalThis.__exceptionsMemory = getInitialExceptions();
+  globalThis.__connectorRequestsMemory = getInitialConnectorRequests();
+  globalThis.__panSequence = 5;
+  globalThis.__schSequence = 2346;
+  panApplicationsMemory = globalThis.__panApplicationsMemory;
+  auditLogsMemory = globalThis.__auditLogsMemory;
+  exceptionsMemory = globalThis.__exceptionsMemory;
+  connectorRequestsMemory = globalThis.__connectorRequestsMemory;
   panSequence = 5;
   schSequence = 2346;
 
@@ -751,6 +792,7 @@ export function getPanApplications(filters?: {
 }): PanApplicationRecord[] & Promise<PanApplicationRecord[]> {
   if (!panApplicationsMemory || panApplicationsMemory.length === 0) {
     panApplicationsMemory = getInitialPanApplications();
+    globalThis.__panApplicationsMemory = panApplicationsMemory;
   }
   let list = [...panApplicationsMemory];
   if (filters?.userId) {

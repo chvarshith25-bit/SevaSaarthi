@@ -9,7 +9,7 @@ import {
   Clock,
   Layers,
   Sparkles,
-  Bot,
+  Inbox,
   CheckCircle2,
   Building,
   MapPin,
@@ -285,7 +285,7 @@ export default function GovernmentDashboardPage() {
           >
             <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
               <div className="flex items-center gap-2">
-                <Bot className="w-4 h-4 text-blue-600" />
+                <Inbox className="w-4 h-4 text-blue-600" />
                 <span className="font-semibold text-slate-700">Intake Ingested</span>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
