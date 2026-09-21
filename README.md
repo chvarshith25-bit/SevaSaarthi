@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏛️ FORMLY
+# 🏛️ SEVASAARTHI&SARKARSEVA
 ### *Authoritative Dual-Platform Digital Governance & Citizen Application Infrastructure*
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
