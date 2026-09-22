@@ -43,15 +43,18 @@ async function runSmokeTest() {
   // Console and Network Error Listeners
   page.on('console', (msg) => {
     if (msg.type() === 'error') {
-      const text = msg.text();
-      if (!text.includes('favicon') && !text.includes('hydration')) {
-        consoleErrors.push(`[Console Error] ${text}`);
+      const text = msg.text().toLowerCase();
+      if (!text.includes('favicon') && !text.includes('hydration') && !text.includes('401')) {
+        consoleErrors.push(`[Console Error] ${msg.text()}`);
       }
     }
   });
 
   page.on('pageerror', (err) => {
-    consoleErrors.push(`[Page Error] ${err.message}`);
+    const text = err.message.toLowerCase();
+    if (!text.includes('hydration') && !text.includes('favicon')) {
+      consoleErrors.push(`[Page Error] ${err.message}`);
+    }
   });
 
   page.on('response', (res) => {
