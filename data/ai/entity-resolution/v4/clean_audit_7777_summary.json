@@ -1,154 +1,154 @@
 {
   "benchmark_version": "v4.0.0-seed7777-clean-audit",
-  "timestamp": "2026-09-15T18:00:29.722Z",
+  "timestamp": "2026-09-22T09:47:51.805Z",
   "total_queries": 1000,
   "profiling": {
     "p100": {
       "count": 100,
-      "mean": 0.1594,
-      "p50": 0.0953,
-      "p95": 0.4645,
-      "p99": 2.0758
+      "mean": 25.7968,
+      "p50": 13.6309,
+      "p95": 17.5478,
+      "p99": 1223.3593
     },
     "p500": {
       "count": 500,
-      "mean": 0.0595,
-      "p50": 0.0525,
-      "p95": 0.095,
-      "p99": 0.2317
+      "mean": 14.1111,
+      "p50": 13.7608,
+      "p95": 17.5255,
+      "p99": 20.929
     },
     "p1000": {
       "count": 1000,
-      "mean": 0.0444,
-      "p50": 0.0406,
-      "p95": 0.0603,
-      "p99": 0.1415
+      "mean": 14.062,
+      "p50": 13.9166,
+      "p95": 17.0993,
+      "p99": 19.4232
     },
-    "cached_mean_ms": 0.0118,
-    "uncached_mean_ms": 0.0478
+    "cached_mean_ms": 0.0226,
+    "uncached_mean_ms": 11.741
   },
   "multilingual_pairs": [
     {
       "Pair": "English Exact",
       "Query": "query: name: Ravi Kumar",
       "Passage": "passage: name: Ravi Kumar",
-      "Cosine Similarity": 0.9978
+      "Cosine Similarity": 0.9487
     },
     {
       "Pair": "Hindi to English",
       "Query": "query: name: रवि कुमार",
       "Passage": "passage: name: Ravi Kumar",
-      "Cosine Similarity": 0.89
+      "Cosine Similarity": 0.9535
     },
     {
       "Pair": "Telugu to English",
       "Query": "query: name: రవి కుమార్",
       "Passage": "passage: name: Ravi Kumar",
-      "Cosine Similarity": 0.8774
+      "Cosine Similarity": 0.9466
     },
     {
       "Pair": "Romanized to English",
       "Query": "query: name: Ravi Kumaar",
       "Passage": "passage: name: Ravi Kumar",
-      "Cosine Similarity": 0.8598
+      "Cosine Similarity": 0.9365
     },
     {
       "Pair": "Mixed Lang to English",
       "Query": "query: name: Ravi Kumar Hyderabad",
       "Passage": "passage: name: Ravi Kumar",
-      "Cosine Similarity": 0.9502
+      "Cosine Similarity": 0.9445
     },
     {
       "Pair": "Hindi Unrelated",
       "Query": "query: name: रवि कुमार",
       "Passage": "passage: name: Amit Patel",
-      "Cosine Similarity": 0.6956
+      "Cosine Similarity": 0.9137
     },
     {
       "Pair": "Telugu Unrelated",
       "Query": "query: name: రవి కుమార్",
       "Passage": "passage: name: Sunita Devi",
-      "Cosine Similarity": 0.681
+      "Cosine Similarity": 0.9205
     },
     {
       "Pair": "English Unrelated",
       "Query": "query: name: Ravi Kumar",
       "Passage": "passage: name: Pooja Sharma",
-      "Cosine Similarity": 0.6756
+      "Cosine Similarity": 0.8966
     }
   ],
   "models": {
     "model_a_v1": {
       "modelType": "V1",
       "totalQueries": 1000,
-      "retrievalRecall": 94.28,
-      "top1Accuracy": 69.95,
-      "top3Recall": 75.8,
-      "correctManualReviewRate": 86.9,
-      "unnecessaryManualReviewRate": 66.36,
+      "retrievalRecall": 111.17,
+      "top1Accuracy": 80.19,
+      "top3Recall": 86.3,
+      "correctManualReviewRate": 82.14,
+      "unnecessaryManualReviewRate": 71.41,
       "falseMatchRate": 0,
       "highConfidenceFMR": 4.4355,
-      "homonymCollisionFMR": 13.0952,
-      "unsafeAutomaticMatchRate": 1.1,
-      "multilingualAccuracy": 0,
-      "transliterationAccuracy": 79.52,
-      "p50LatencyMs": 14.0522,
-      "p95LatencyMs": 20.185,
-      "p99LatencyMs": 23.7671
+      "homonymCollisionFMR": 17.8571,
+      "unsafeAutomaticMatchRate": 1.5,
+      "multilingualAccuracy": 43.53,
+      "transliterationAccuracy": 91.57,
+      "p50LatencyMs": 13.3116,
+      "p95LatencyMs": 18.7607,
+      "p99LatencyMs": 22.2162
     },
     "model_b_v3_1": {
       "modelType": "V3.1",
       "totalQueries": 1000,
-      "retrievalRecall": 94.28,
-      "top1Accuracy": 71.68,
-      "top3Recall": 77.39,
-      "correctManualReviewRate": 20.24,
-      "unnecessaryManualReviewRate": 18.22,
+      "retrievalRecall": 111.17,
+      "top1Accuracy": 77.66,
+      "top3Recall": 89.89,
+      "correctManualReviewRate": 88.1,
+      "unnecessaryManualReviewRate": 19.95,
       "falseMatchRate": 0,
       "highConfidenceFMR": 0,
-      "homonymCollisionFMR": 79.7619,
-      "unsafeAutomaticMatchRate": 6.7,
-      "multilingualAccuracy": 0,
-      "transliterationAccuracy": 81.93,
-      "p50LatencyMs": 15.4513,
-      "p95LatencyMs": 23.1944,
-      "p99LatencyMs": 27.9434
+      "homonymCollisionFMR": 11.9048,
+      "unsafeAutomaticMatchRate": 1,
+      "multilingualAccuracy": 16.47,
+      "transliterationAccuracy": 93.98,
+      "p50LatencyMs": 12.6889,
+      "p95LatencyMs": 17.5812,
+      "p99LatencyMs": 20.5369
     },
     "model_c_real_transformer": {
       "modelType": "REAL_TRANSFORMER_ONLY",
       "totalQueries": 1000,
-      "retrievalRecall": 132.18,
-      "top1Accuracy": 35.64,
-      "top3Recall": 58.11,
-      "correctManualReviewRate": 98.81,
-      "unnecessaryManualReviewRate": 83.38,
-      "falseMatchRate": 100,
-      "highConfidenceFMR": 18.1452,
-      "homonymCollisionFMR": 1.1905,
-      "unsafeAutomaticMatchRate": 4.5,
-      "multilingualAccuracy": 9.41,
-      "transliterationAccuracy": 24.1,
-      "p50LatencyMs": 9.1336,
-      "p95LatencyMs": 13.5346,
-      "p99LatencyMs": 16.0157
+      "retrievalRecall": 111.17,
+      "top1Accuracy": 40.69,
+      "top3Recall": 81.78,
+      "correctManualReviewRate": 100,
+      "unnecessaryManualReviewRate": 99.73,
+      "falseMatchRate": 0,
+      "highConfidenceFMR": 0,
+      "homonymCollisionFMR": 0,
+      "unsafeAutomaticMatchRate": 0,
+      "multilingualAccuracy": 14.12,
+      "transliterationAccuracy": 39.76,
+      "p50LatencyMs": 530.5592,
+      "p95LatencyMs": 941.063,
+      "p99LatencyMs": 3679.0946
     },
     "model_d_v4_hybrid": {
       "modelType": "V4",
       "totalQueries": 1000,
-      "retrievalRecall": 132.18,
-      "top1Accuracy": 60.11,
-      "top3Recall": 66.62,
-      "correctManualReviewRate": 90.48,
-      "unnecessaryManualReviewRate": 40.82,
+      "retrievalRecall": 111.17,
+      "top1Accuracy": 83.51,
+      "top3Recall": 90.03,
+      "correctManualReviewRate": 92.86,
+      "unnecessaryManualReviewRate": 26.73,
       "falseMatchRate": 0,
-      "highConfidenceFMR": 2.0161,
-      "homonymCollisionFMR": 9.5238,
-      "unsafeAutomaticMatchRate": 0.8,
-      "multilingualAccuracy": 15.29,
-      "transliterationAccuracy": 48.19,
-      "p50LatencyMs": 8.9356,
-      "p95LatencyMs": 13.2959,
-      "p99LatencyMs": 16.0496
+      "highConfidenceFMR": 0,
+      "homonymCollisionFMR": 7.1429,
+      "unsafeAutomaticMatchRate": 0.6,
+      "multilingualAccuracy": 32.94,
+      "transliterationAccuracy": 100,
+      "p50LatencyMs": 21.7523,
+      "p95LatencyMs": 92.0458,
+      "p99LatencyMs": 199.1079
     }
   }
 }
