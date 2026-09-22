@@ -283,6 +283,29 @@ async function seedInitialData(db: PGlite) {
       salt = EXCLUDED.salt;
   `, [citizenPass.hash, citizenPass.salt]);
 
+  // Seed Chiluveri Varshith User
+  await db.query(`
+    INSERT INTO auth.users (id, email)
+    VALUES ('00000000-0000-0000-0000-000000000002', 'chiluverivarshithsahs@gmail.com')
+    ON CONFLICT (id) DO NOTHING;
+  `);
+
+  await db.query(`
+    INSERT INTO users (id, name, email, phone, "passwordHash", salt, role)
+    VALUES (
+      'u_chiluveri_varshith_002',
+      'Chiluveri Varshith',
+      'chiluverivarshithsahs@gmail.com',
+      '9876543210',
+      $1,
+      $2,
+      'Applicant / Citizen'
+    )
+    ON CONFLICT (id) DO UPDATE SET
+      "passwordHash" = EXCLUDED."passwordHash",
+      salt = EXCLUDED.salt;
+  `, [citizenPass.hash, citizenPass.salt]);
+
   // Seed Government Employees & Auth Users
   const govPass = hashPassword("govsecure2026", "a1b2c3d4e5f60718293a4b5c6d7e8f90");
 
