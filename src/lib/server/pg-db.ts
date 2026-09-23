@@ -586,7 +586,12 @@ async function seedInitialData(db: PGlite) {
       ('d0000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'AADHAAR', '/vault/aadhaar.pdf', 'Aadhaar_Card_Verified.pdf', 'application/pdf', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'VERIFIED'),
       ('d0000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'INCOME_CERTIFICATE', '/vault/income.pdf', 'Income_Certificate_2025_26.pdf', 'application/pdf', 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb', 'VERIFIED'),
       ('d0000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001', 'MARKSHEET', '/vault/marksheet.pdf', 'Class_10_Matriculation_Memo.pdf', 'application/pdf', '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d', 'VERIFIED'),
-      ('d0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', 'CASTE_CERTIFICATE', '/vault/caste.pdf', 'OBC_Community_Certificate.pdf', 'application/pdf', '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6', 'VERIFIED')
+      ('d0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000001', 'CASTE_CERTIFICATE', '/vault/caste.pdf', 'OBC_Community_Certificate.pdf', 'application/pdf', '2e7d2c03a9507ae265ecf5b5356885a53393a2029d241394997265a1a25aefc6', 'VERIFIED'),
+      ('d0000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000001', 'COLLEGE_ID', '/vault/college_id.pdf', 'College_ID_Card.pdf', 'application/pdf', '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b', 'VERIFIED'),
+      ('d0000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000002', 'AADHAAR', '/vault/aadhaar_varshith.pdf', 'Aadhaar_Card_Varshith.pdf', 'application/pdf', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'VERIFIED'),
+      ('d0000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000002', 'INCOME_CERTIFICATE', '/vault/income_varshith.pdf', 'Income_Certificate_2025_26.pdf', 'application/pdf', 'ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb', 'VERIFIED'),
+      ('d0000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000002', 'COLLEGE_ID', '/vault/college_id_varshith.pdf', 'College_ID_VJIT.pdf', 'application/pdf', '1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b', 'VERIFIED'),
+      ('d0000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000002', 'MARKSHEET', '/vault/marksheet_varshith.pdf', 'Class_10_Matriculation_Memo.pdf', 'application/pdf', '3e23e8160039594a33894f6564e1b1348bbd7a0088d42c4acb73eeaed59c009d', 'VERIFIED')
     ON CONFLICT (id) DO NOTHING;
   `);
 

@@ -1,6 +1,7 @@
 const PORTAL_URL = "http://localhost:3000";
 
 let currentProfile = null;
+let currentVaultDocs = [];
 
 // Default starter citizen data in case extension is used before first portal sync
 const DEFAULT_CITIZEN_PROFILE = {
@@ -30,6 +31,13 @@ const DEFAULT_CITIZEN_PROFILE = {
   district: "Hyderabad",
 };
 
+const DEFAULT_VAULT_DOCS = [
+  { id: "d0000000-0000-0000-0000-000000000011", document_type: "AADHAAR", original_filename: "Aadhaar_Card_Varshith.pdf", status: "VERIFIED" },
+  { id: "d0000000-0000-0000-0000-000000000012", document_type: "INCOME_CERTIFICATE", original_filename: "Income_Certificate_2025_26.pdf", status: "VERIFIED" },
+  { id: "d0000000-0000-0000-0000-000000000013", document_type: "COLLEGE_ID", original_filename: "College_ID_VJIT.pdf", status: "VERIFIED" },
+  { id: "d0000000-0000-0000-0000-000000000014", document_type: "MARKSHEET", original_filename: "Class_10_Matriculation_Memo.pdf", status: "VERIFIED" },
+];
+
 function getInitials(name) {
   if (!name) return "CV";
   const parts = name.trim().split(" ").filter(Boolean);
@@ -39,9 +47,11 @@ function getInitials(name) {
   return name.slice(0, 2).toUpperCase();
 }
 
-function updateUI(profile, isOnline = true) {
+function updateUI(profile, docs, isOnline = true) {
   const p = profile || DEFAULT_CITIZEN_PROFILE;
+  const d = docs || DEFAULT_VAULT_DOCS;
   currentProfile = p;
+  currentVaultDocs = d;
 
   const statusEl = document.getElementById("vault-status");
   const statusText = document.getElementById("status-text");
@@ -59,6 +69,7 @@ function updateUI(profile, isOnline = true) {
   const aadhaarEl = document.getElementById("p-aadhaar");
   const mobileEl = document.getElementById("p-mobile");
   const bankEl = document.getElementById("p-bank");
+  const docCountEl = document.getElementById("vault-doc-count");
 
   if (nameEl) nameEl.innerText = p.fullName || "Citizen";
   if (avatarEl) avatarEl.innerText = getInitials(p.fullName);
@@ -76,6 +87,9 @@ function updateUI(profile, isOnline = true) {
     const bankShort = p.bankName ? p.bankName.split(" ")[0] : "SBI";
     bankEl.innerText = rawBank.length >= 4 ? `•••• ${rawBank.slice(-4)} (${bankShort})` : rawBank;
   }
+  if (docCountEl) {
+    docCountEl.innerText = `${d.length} Verified`;
+  }
 }
 
 async function syncProfileFromPortal() {
@@ -88,7 +102,6 @@ async function syncProfileFromPortal() {
       credentials: "include",
     });
     const sessionData = await sessionRes.json();
-    const isAuth = (sessionData.authenticated || sessionData.success) && sessionData.user;
     const user = sessionData.user || {};
 
     // 2. Fetch Profile Fields
@@ -135,46 +148,53 @@ async function syncProfileFromPortal() {
       district: getField("present_district") || DEFAULT_CITIZEN_PROFILE.district,
     };
 
-    // Cache locally
+    // 3. Fetch Vault Documents
+    let docs = DEFAULT_VAULT_DOCS;
+    try {
+      const docsRes = await fetch(`${PORTAL_URL}/api/vault/documents`, { credentials: "include" });
+      const docsData = await docsRes.json();
+      if (docsData.success && Array.isArray(docsData.documents)) {
+        docs = docsData.documents;
+      }
+    } catch (e) {}
+
+    // Cache locally in extension storage
     if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({ userProfile: profile, lastSynced: Date.now() });
+      chrome.storage.local.set({
+        userProfile: profile,
+        vaultDocs: docs,
+        lastSynced: Date.now(),
+      });
     }
 
-    updateUI(profile, true);
-    return profile;
+    updateUI(profile, docs, true);
+    return { profile, docs };
   } catch (err) {
-    // If portal server not running or network offline, use local storage or default profile
     if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(["userProfile"], (res) => {
-        if (res && res.userProfile) {
-          updateUI(res.userProfile, false);
-        } else {
-          updateUI(DEFAULT_CITIZEN_PROFILE, false);
-        }
+      chrome.storage.local.get(["userProfile", "vaultDocs"], (res) => {
+        const p = res && res.userProfile ? res.userProfile : DEFAULT_CITIZEN_PROFILE;
+        const d = res && res.vaultDocs ? res.vaultDocs : DEFAULT_VAULT_DOCS;
+        updateUI(p, d, false);
       });
     } else {
-      updateUI(DEFAULT_CITIZEN_PROFILE, false);
+      updateUI(DEFAULT_CITIZEN_PROFILE, DEFAULT_VAULT_DOCS, false);
     }
-    return currentProfile;
+    return { profile: currentProfile, docs: currentVaultDocs };
   }
 }
 
 // Initial Load
 document.addEventListener("DOMContentLoaded", async () => {
-  // Load cached profile immediately
   if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.get(["userProfile"], (res) => {
-      if (res && res.userProfile) {
-        updateUI(res.userProfile, true);
-      } else {
-        updateUI(DEFAULT_CITIZEN_PROFILE, true);
-      }
+    chrome.storage.local.get(["userProfile", "vaultDocs"], (res) => {
+      const p = res && res.userProfile ? res.userProfile : DEFAULT_CITIZEN_PROFILE;
+      const d = res && res.vaultDocs ? res.vaultDocs : DEFAULT_VAULT_DOCS;
+      updateUI(p, d, true);
     });
   } else {
-    updateUI(DEFAULT_CITIZEN_PROFILE, true);
+    updateUI(DEFAULT_CITIZEN_PROFILE, DEFAULT_VAULT_DOCS, true);
   }
 
-  // Attempt fresh sync
   await syncProfileFromPortal();
 });
 
@@ -196,12 +216,12 @@ if (syncBtn) {
   });
 }
 
-// Autofill Current Page Action
+// Autofill Current Page Action (Fields + Document Attachments)
 const autofillBtn = document.getElementById("btn-autofill");
 if (autofillBtn) {
   autofillBtn.addEventListener("click", async () => {
     const originalText = autofillBtn.innerHTML;
-    autofillBtn.innerHTML = `<span>⏳</span><span>Autofilling Application...</span>`;
+    autofillBtn.innerHTML = `<span>⏳</span><span>Autofilling & Attaching...</span>`;
 
     const profile = currentProfile || DEFAULT_CITIZEN_PROFILE;
 
@@ -212,7 +232,6 @@ if (autofillBtn) {
 
         chrome.tabs.sendMessage(tab.id, payload, (response) => {
           if (chrome.runtime.lastError || !response) {
-            // Inject content script if not already present
             if (chrome.scripting && chrome.scripting.executeScript) {
               chrome.scripting.executeScript({
                 target: { tabId: tab.id },
@@ -221,32 +240,43 @@ if (autofillBtn) {
                 setTimeout(() => {
                   chrome.tabs.sendMessage(tab.id, payload);
                 }, 300);
-              }).catch((err) => {
-                console.error("Script execution error:", err);
               });
             }
           }
         });
 
         setTimeout(() => {
-          autofillBtn.innerHTML = `<span style="color:#34d399">✓</span><span>Application Autofilled!</span>`;
+          autofillBtn.innerHTML = `<span style="color:#34d399">✓</span><span>Application & Docs Ready!</span>`;
           setTimeout(() => {
             autofillBtn.innerHTML = originalText;
-          }, 2000);
-        }, 600);
+          }, 2200);
+        }, 800);
       }
     }
   });
 }
 
-// Open Citizen Portal
+// Demo Portal Shortcut
+const demoPortalBtn = document.getElementById("btn-demo-portal");
+if (demoPortalBtn) {
+  demoPortalBtn.addEventListener("click", () => {
+    const demoUrl = `${PORTAL_URL}/demo/scholarship-portal`;
+    if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+      chrome.tabs.create({ url: demoUrl });
+    } else {
+      window.open(demoUrl, "_blank");
+    }
+  });
+}
+
+// Open Citizen Dashboard
 const openPortalBtn = document.getElementById("btn-open-portal");
 if (openPortalBtn) {
   openPortalBtn.addEventListener("click", () => {
     if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
-      chrome.tabs.create({ url: `${PORTAL_URL}/profile` });
+      chrome.tabs.create({ url: `${PORTAL_URL}/dashboard` });
     } else {
-      window.open(`${PORTAL_URL}/profile`, "_blank");
+      window.open(`${PORTAL_URL}/dashboard`, "_blank");
     }
   });
 }

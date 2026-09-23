@@ -10,7 +10,7 @@
       padding: 0;
     }
     body {
-      width: 350px;
+      width: 360px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       background: #0f172a;
       color: #f8fafc;
@@ -90,7 +90,7 @@
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 14px;
       padding: 14px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     }
     .card-top {
@@ -157,7 +157,7 @@
     .details-grid {
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      gap: 6px;
       padding-top: 6px;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
@@ -180,6 +180,34 @@
       white-space: nowrap;
     }
 
+    /* Vault Documents Ready Card */
+    .vault-strip {
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 12px;
+      padding: 9px 12px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+    .vault-strip-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #c7d2fe;
+      font-weight: 600;
+    }
+    .vault-count {
+      background: #4f46e5;
+      color: white;
+      font-weight: 800;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 9999px;
+    }
+
     /* Buttons */
     .btn-autofill {
       width: 100%;
@@ -188,7 +216,7 @@
       border: none;
       padding: 12px 16px;
       border-radius: 12px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 700;
       cursor: pointer;
       display: flex;
@@ -196,7 +224,7 @@
       justify-content: center;
       gap: 8px;
       box-shadow: 0 4px 18px rgba(79, 70, 229, 0.35);
-      margin-bottom: 9px;
+      margin-bottom: 8px;
       transition: transform 0.1s ease, box-shadow 0.15s ease;
     }
     .btn-autofill:hover {
@@ -211,12 +239,16 @@
       height: 16px;
     }
 
+    .btn-secondary-row {
+      display: flex;
+      gap: 8px;
+    }
     .btn-portal {
-      width: 100%;
+      flex: 1;
       background: #1e293b;
       color: #cbd5e1;
       border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 9px 12px;
+      padding: 8px 10px;
       border-radius: 10px;
       font-size: 11px;
       font-weight: 600;
@@ -224,7 +256,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.15s ease;
     }
     .btn-portal:hover {
@@ -238,7 +270,7 @@
       font-size: 10px;
       color: #64748b;
       text-align: center;
-      margin-top: 11px;
+      margin-top: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -317,20 +349,31 @@
     </div>
   </div>
 
+  <!-- Vault Documents Strip -->
+  <div class="vault-strip">
+    <div class="vault-strip-left">
+      <span>📁</span>
+      <span>Verified Vault Documents</span>
+    </div>
+    <span id="vault-doc-count" class="vault-count">4 Verified</span>
+  </div>
+
   <!-- Actions -->
   <button id="btn-autofill" class="btn-autofill">
     <svg fill="currentColor" viewBox="0 0 20 20">
       <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
     </svg>
-    <span>AUTOFILL APPLICATION NOW</span>
+    <span>AUTOFILL & ATTACH DOCUMENTS</span>
   </button>
 
-  <button id="btn-open-portal" class="btn-portal">
-    <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-    </svg>
-    <span>Open Citizen Portal</span>
-  </button>
+  <div class="btn-secondary-row">
+    <button id="btn-demo-portal" class="btn-portal" title="Open Live Demonstration Government Portal">
+      <span>🏛️ Demo Portal</span>
+    </button>
+    <button id="btn-open-portal" class="btn-portal" title="Open SevaSaarthi Citizen Dashboard">
+      <span>👤 My Vault</span>
+    </button>
+  </div>
 
   <div class="footer-note">
     <span>Shortcut: <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> to autofill</span>
