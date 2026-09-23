@@ -7,14 +7,14 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![PostgreSQL / PGlite](https://img.shields.io/badge/PostgreSQL-PGlite_WASM-336791?style=for-the-badge&logo=postgresql)](https://electric-sql.com/docs/reference/pglite)
-[![DPDP Act 2023 Compliant](https://img.shields.io/badge/Compliance-DPDP_Act_2023-059669?style=for-the-badge)](https://www.meity.gov.in/)
+[![DPDP Aligned](https://img.shields.io/badge/Privacy-DPDP--Aligned_Safeguards-059669?style=for-the-badge)](https://www.meity.gov.in/)
 [![Audited: 197/197 Passed](https://img.shields.io/badge/Phase_9.1_Audit-197%2F197_PASSED-success?style=for-the-badge)](docs/PHASE_9_1_FINAL_PRE_DEPLOYMENT_AUDIT.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 <p align="center">
   <b>SevaSaarthi & Sarkar Seva</b> is an authoritative, dual-platform digital governance infrastructure bridging citizen service discovery with government case operations.<br/>
   Featuring <b>strict dual-origin isolation (Port 3000 & Port 3001)</b>, an <b>advisory AI Workflow Router (Model 1)</b>, an <b>evidentiary Multilingual Entity Resolution Engine (Model 2 V4.2)</b>,<br/>
-  an <b>authoritative 12-stage state machine</b>, <b>verifiable DPDP Act 2023 consent capture</b>, and <b>cryptographic SHA-256 tamper-evident audit trails</b>.
+  an <b>authoritative 12-stage state machine</b>, <b>verifiable DPDP-aligned consent capture</b>, and <b>cryptographic SHA-256 tamper-evident audit trails</b>.
 </p>
 
 [Platform Overview](#-platform-overview) •
@@ -22,7 +22,7 @@
 [Dual-Platform Port Boundaries](#-dual-platform-origin-isolation) •
 [AI Models & Governance](#-ai-systems--statutory-governance) •
 [Orchestration State Machine](#-12-stage-orchestration-state-machine) •
-[DPDP Act Compliance & Security](#-dpdp-act-2023-consent--cryptographic-audit) •
+[DPDP-Aligned Privacy & Security](#-dpdp-aligned-consent--cryptographic-audit) •
 [Demo Credentials](#-demo-accounts--test-credentials) •
 [Quick Start](#-quick-start) •
 [Verification & Audit Suite](#-test--forensic-audit-suite)
@@ -168,11 +168,11 @@ OFFICER REVIEW (Prepared evidentiary brief & decision console)
 
 ---
 
-## 🛡️ DPDP Act 2023 Consent & Cryptographic Audit
+## 🛡️ DPDP-Aligned Consent & Cryptographic Audit
 
-### Privacy by Design (DPDP Act 2023 Compliance)
+### Privacy by Design (DPDP-Aligned Safeguards)
 1. **Section 6 Purpose-Limited Consent**: Every submission captures a digital consent certificate recording the exact purpose, timestamp, citizen UUID, and allowed data registries.
-2. **Strict Registry Whitelisting**: External connectors (UIDAI, CBDT, Land Records) will reject data retrieval requests unless backed by a validated, non-revoked consent token.
+2. **Strict Registry Whitelisting**: External connectors (UIDAI, CBDT, Land Records simulated interfaces) reject data retrieval requests unless backed by a validated, non-revoked consent token.
 3. **Citizen Rights**: Citizens can inspect active consent grants, view data access logs, and request revocation directly from their profile.
 
 ### Cryptographic Audit Trail (Product Rule 19)

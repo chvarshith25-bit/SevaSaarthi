@@ -22,7 +22,7 @@ import {
   jaroWinklerSimilarity,
 } from './similarity';
 import { CrossRegistryGraphCorroborator } from './graph';
-import { getAuthoritativeDb } from '../../pg-db';
+import { pgQuery } from '../../pg-db';
 
 export interface Model2V2Weights {
   version: string;
@@ -312,7 +312,6 @@ export class EntityResolutionEngineV2 {
       };
     }
 
-    const db = await getAuthoritativeDb();
     let candidateResults: CandidateMatchResult[] = [];
 
     const norm = normalizeName(input.name);
@@ -353,8 +352,7 @@ export class EntityResolutionEngineV2 {
 
       let querySql = `SELECT * FROM ${mapping.tableName} WHERE ${conditions.join(' AND ')} LIMIT 50`;
       try {
-        const res = await db.query(querySql, params);
-        const rows = res.rows as Record<string, any>[];
+        const rows = await pgQuery(querySql, params);
 
         for (const row of rows) {
           const candName = row[mapping.nameCol] || row.name || row.full_name || '';

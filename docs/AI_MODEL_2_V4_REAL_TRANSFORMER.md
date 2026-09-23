@@ -157,7 +157,7 @@ $$\text{V4 (Transformer Hybrid)} \xrightarrow{\text{Failure}} \text{V3.1 (Struct
 
 ---
 
-## 9. Security, Privacy & DPDP Act Compliance
+## 9. Security, Privacy & DPDP-Aligned Safeguards
 
 1. **Pre-condition Consent Gate:** Any resolution request without `consentVerified === true` is immediately rejected with a DPDP statutory violation exception.
 2. **Authorized Registry Boundary:** The engine only queries tables explicitly enumerated in `allowedRegistries`.

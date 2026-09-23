@@ -1,7 +1,7 @@
 # SevaSaarthi Chrome Extension: Production Deployment & Operation Guide
 
 **Document Reference:** `DOC-EXT-2026-PRODUCTION-DEPLOYMENT`  
-**Compliance Standard:** `Digital Personal Data Protection (DPDP) Act 2023 / Digital Public Infrastructure (DPI)`  
+**Privacy & Security Framework:** `DPDP-aligned privacy, consent and security safeguards / Digital Public Infrastructure (DPI)`  
 **Extension Version:** `1.2.0`  
 **Manifest Version:** `3`  
 **Validation Status:** `REAL CHROME EXTENSION VERIFIED` | `CONTROLLED DEMO PORTAL VERIFIED`

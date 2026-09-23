@@ -10,7 +10,7 @@
  */
 
 import { EntityResolutionInput, RegistryKey } from './types';
-import { getAuthoritativeDb } from '../../pg-db';
+import { pgQuery } from '../../pg-db';
 import { computeNameSimilarity } from './similarity';
 
 export const REGISTRY_TABLE_MAPPING: Record<
@@ -299,7 +299,6 @@ export async function retrieveAuthorizedCandidates(
     return [];
   }
 
-  const db = await getAuthoritativeDb();
   const tokenGroups = extractSearchTokenGroups(input.name);
   const uniqueRegistries = Array.from(new Set(input.allowedRegistries));
   const candidatePool: RetrievedCandidate[] = [];
@@ -407,8 +406,7 @@ export async function retrieveAuthorizedCandidates(
     `;
 
     try {
-      const res = await db.query(querySql, params);
-      const rows = res.rows as Record<string, any>[];
+      const rows = await pgQuery(querySql, params);
       for (const row of rows) {
         const candName = row[mapping.nameCol] || row.name || row.full_name || '';
         const nameSim = computeNameSimilarity(input.name, candName);

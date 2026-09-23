@@ -3,7 +3,7 @@
 **Document Reference:** `DOC-EXT-2026-REAL-AUTOFILL`  
 **Status:** `STATUS A: REAL DOCUMENT AUTOFILL WORKING`  
 **Classification:** `Production Architecture & Verification Record`  
-**Compliance Standard:** `Digital Personal Data Protection (DPDP) Act 2023 / Indian Digital Public Infrastructure (DPI)`
+**Privacy & Security Framework:** `DPDP-aligned privacy, consent and security safeguards / Indian Digital Public Infrastructure (DPI)`
 
 ---
 

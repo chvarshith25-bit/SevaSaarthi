@@ -3,7 +3,7 @@
 **Document Reference:** `DOC-EXT-2026-FINAL-VALIDATION`  
 **Execution Environment:** Chromium with Unpacked Extension (`extension/`) Runtime  
 **Test Standard:** Real DOM FileList Inspection & Cryptographic Vault Handshake  
-**Compliance Standard:** DPDP Act 2023 / Digital Public Infrastructure (DPI)  
+**Privacy & Security Framework:** DPDP-aligned privacy, consent and security safeguards / Digital Public Infrastructure (DPI)  
 **Date of Validation:** 2026-09-23  
 
 ---

@@ -18,7 +18,7 @@ import {
 } from './types';
 import { EntityResolutionEngine } from './engine';
 import { EntityResolutionEngineV3 } from './v3-engine';
-import { getAuthoritativeDb } from '../../pg-db';
+import { pgQuery } from '../../pg-db';
 
 export type DisagreementCategory =
   | 'A. V3.1 clearly better'
@@ -188,8 +188,7 @@ export class EntityResolutionShadowMatcher {
    * Persist telemetry metadata to model2_shadow_log.
    */
   public static async logShadowTelemetry(comp: Model2ShadowComparison): Promise<void> {
-    const db = await getAuthoritativeDb();
-    await db.query(
+    await pgQuery(
       `INSERT INTO model2_shadow_log (
         request_id,
         v1_model_version,

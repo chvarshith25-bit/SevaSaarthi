@@ -1,20 +1,60 @@
 import fs from "fs";
 import path from "path";
 import { PGlite } from "@electric-sql/pglite";
+import { Pool } from "pg";
 import crypto from "crypto";
 
 declare global {
   // eslint-disable-next-line no-var
+  var __formly_pg_pool: Pool | undefined;
+  // eslint-disable-next-line no-var
   var __formly_pglite: PGlite | undefined;
   // eslint-disable-next-line no-var
-  var __formly_pg_init_promise: Promise<PGlite> | undefined;
+  var __formly_pg_init_promise: Promise<PGlite | Pool> | undefined;
 }
 
 function cleanSqlForPglite(sql: string): string {
   return sql.replace(/create\s+extension\s+[^;]+;/gi, "-- stripped extension");
 }
 
-export async function getAuthoritativeDb(): Promise<PGlite> {
+export function isProductionDatabase(): boolean {
+  return process.env.DATABASE_MODE === "production" || !!process.env.DATABASE_URL;
+}
+
+export function getPostgresPool(): Pool {
+  if (process.env.DATABASE_MODE === "production" && !process.env.DATABASE_URL) {
+    throw new Error(
+      "[Database Security] DATABASE_MODE=production requires a valid DATABASE_URL (Supabase connection pooler). Ephemeral PGlite/in-memory storage is strictly prohibited in production."
+    );
+  }
+
+  if (!globalThis.__formly_pg_pool && process.env.DATABASE_URL) {
+    const isLocalhost =
+      process.env.DATABASE_URL.includes("localhost") ||
+      process.env.DATABASE_URL.includes("127.0.0.1");
+    globalThis.__formly_pg_pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: 10,
+      ssl: isLocalhost ? false : { rejectUnauthorized: false },
+    });
+  }
+  return globalThis.__formly_pg_pool!;
+}
+
+export async function getAuthoritativeDb(): Promise<PGlite | Pool> {
+  if (process.env.DATABASE_MODE === "production") {
+    if (!process.env.DATABASE_URL) {
+      throw new Error(
+        "[Database Security] DATABASE_MODE=production requires a valid DATABASE_URL (Supabase connection pooler). Ephemeral PGlite/in-memory storage is strictly prohibited in production."
+      );
+    }
+    return getPostgresPool();
+  }
+
+  if (process.env.DATABASE_URL) {
+    return getPostgresPool();
+  }
+
   if (globalThis.__formly_pglite) {
     try {
       await globalThis.__formly_pglite.query(`SELECT 1`);
@@ -725,7 +765,13 @@ async function seedInitialData(db: PGlite) {
 }
 
 export async function pgQuery<T = any>(sql: string, params: any[] = []): Promise<T[]> {
-  let db = await getAuthoritativeDb();
+  if (isProductionDatabase()) {
+    const pool = getPostgresPool();
+    const res = await pool.query(sql, params);
+    return res.rows as T[];
+  }
+
+  let db = (await getAuthoritativeDb()) as PGlite;
   try {
     const res = await db.query(sql, params);
     return res.rows as T[];
@@ -740,7 +786,7 @@ export async function pgQuery<T = any>(sql: string, params: any[] = []): Promise
     ) {
       console.error("[PGlite] Database corruption detected during pgQuery, automatically self-healing:", err);
       await resetAuthoritativeDb();
-      db = await getAuthoritativeDb();
+      db = (await getAuthoritativeDb()) as PGlite;
       const res = await db.query(sql, params);
       return res.rows as T[];
     }
@@ -749,7 +795,13 @@ export async function pgQuery<T = any>(sql: string, params: any[] = []): Promise
 }
 
 export async function pgExec(sql: string): Promise<void> {
-  let db = await getAuthoritativeDb();
+  if (isProductionDatabase()) {
+    const pool = getPostgresPool();
+    await pool.query(sql);
+    return;
+  }
+
+  let db = (await getAuthoritativeDb()) as PGlite;
   try {
     await db.exec(sql);
   } catch (err: any) {
@@ -763,7 +815,7 @@ export async function pgExec(sql: string): Promise<void> {
     ) {
       console.error("[PGlite] Database corruption detected during pgExec, automatically self-healing:", err);
       await resetAuthoritativeDb();
-      db = await getAuthoritativeDb();
+      db = (await getAuthoritativeDb()) as PGlite;
       await db.exec(sql);
       return;
     }
@@ -778,13 +830,12 @@ export async function pgTransitionApplicationStatus(
   actorId?: string,
   reason?: string
 ): Promise<string> {
-  const db = await getAuthoritativeDb();
   let appUuid = applicationId;
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(applicationId);
   if (!isUuid) {
-    const row = await db.query(`SELECT id FROM applications WHERE application_number = $1`, [applicationId]);
-    if (row.rows.length > 0) {
-      appUuid = (row.rows[0] as any).id;
+    const row = await pgQuery(`SELECT id FROM applications WHERE application_number = $1`, [applicationId]);
+    if (row.length > 0) {
+      appUuid = (row[0] as any).id;
     } else {
       return toStatus;
     }
@@ -794,8 +845,8 @@ export async function pgTransitionApplicationStatus(
   const isActorUuid = actorId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(actorId);
   if (!isActorUuid) {
     if (actorType === "EMPLOYEE") {
-      const emp = await db.query(`SELECT auth_user_id FROM employees WHERE employee_code = $1`, [actorId || 'OFF-PAN-7042']);
-      actorUuid = (emp.rows[0] as any)?.auth_user_id || "00000000-0000-0000-0000-000000007042";
+      const emp = await pgQuery(`SELECT auth_user_id FROM employees WHERE employee_code = $1`, [actorId || 'OFF-PAN-7042']);
+      actorUuid = (emp[0] as any)?.auth_user_id || "00000000-0000-0000-0000-000000007042";
     } else if (actorType === "CITIZEN") {
       actorUuid = "00000000-0000-0000-0000-000000000002";
     } else {
@@ -803,11 +854,11 @@ export async function pgTransitionApplicationStatus(
     }
   }
 
-  const res = await db.query(
+  const res = await pgQuery(
     `SELECT transition_application_status($1::uuid, $2, $3, $4::uuid, $5) as status`,
     [appUuid, toStatus, actorType, actorUuid, reason || "State transition"]
   );
-  return (res.rows[0] as any)?.status as string;
+  return (res[0] as any)?.status as string;
 }
 
 function isValidUuid(val?: string | null): boolean {
@@ -819,9 +870,8 @@ export async function resolveApplicationUuid(applicationId?: string | null): Pro
   if (!applicationId) return null;
   if (isValidUuid(applicationId)) return applicationId;
   try {
-    const db = await getAuthoritativeDb();
-    const row = await db.query(`SELECT id FROM applications WHERE application_number = $1`, [applicationId]);
-    if (row.rows.length > 0) return (row.rows[0] as any).id;
+    const row = await pgQuery(`SELECT id FROM applications WHERE application_number = $1`, [applicationId]);
+    if (row.length > 0) return (row[0] as any).id;
   } catch {}
   return null;
 }
@@ -830,12 +880,11 @@ export async function resolveActorUuid(actorType: string, actorId?: string | nul
   if (!actorId) return "00000000-0000-0000-0000-000000000001";
   if (isValidUuid(actorId)) return actorId;
   try {
-    const db = await getAuthoritativeDb();
     if (actorType === "EMPLOYEE") {
-      const emp = await db.query(`SELECT auth_user_id FROM employees WHERE employee_code = $1 OR email = $1`, [actorId]);
-      if (emp.rows.length > 0 && isValidUuid((emp.rows[0] as any).auth_user_id)) return (emp.rows[0] as any).auth_user_id;
+      const emp = await pgQuery(`SELECT auth_user_id FROM employees WHERE employee_code = $1 OR email = $1`, [actorId]);
+      if (emp.length > 0 && isValidUuid((emp[0] as any).auth_user_id)) return (emp[0] as any).auth_user_id;
     } else {
-      const u = await db.query(`
+      const u = await pgQuery(`
         SELECT au.id 
         FROM auth.users au 
         LEFT JOIN users u ON lower(au.email) = lower(u.email)
@@ -843,8 +892,8 @@ export async function resolveActorUuid(actorType: string, actorId?: string | nul
         LIMIT 1`,
         [actorId]
       );
-      if (u.rows.length > 0 && isValidUuid((u.rows[0] as any).id)) {
-        return (u.rows[0] as any).id;
+      if (u.length > 0 && isValidUuid((u[0] as any).id)) {
+        return (u[0] as any).id;
       }
     }
   } catch {}
@@ -863,11 +912,10 @@ export async function pgRecordAuditEvent(
   result?: string,
   metadata?: any
 ): Promise<string> {
-  const db = await getAuthoritativeDb();
   const actorUuid = await resolveActorUuid(actorType, actorId);
   const appUuid = await resolveApplicationUuid(applicationId);
   const consentUuid = isValidUuid(consentId) ? consentId : null;
-  const res = await db.query(
+  const res = await pgQuery(
     `SELECT record_audit_event($1, $2::uuid, $3, $4::uuid, $5, $6, $7, $8::uuid, $9, $10) as id`,
     [
       actorType,
@@ -882,10 +930,16 @@ export async function pgRecordAuditEvent(
       metadata ? JSON.stringify(metadata) : null,
     ]
   );
-  return (res.rows[0] as any)?.id as string;
+  return (res[0] as any)?.id as string;
 }
 
 export async function closeAuthoritativeDb(): Promise<void> {
+  if (globalThis.__formly_pg_pool) {
+    try {
+      await globalThis.__formly_pg_pool.end();
+    } catch {}
+    globalThis.__formly_pg_pool = undefined;
+  }
   if (globalThis.__formly_pglite) {
     try {
       await globalThis.__formly_pglite.close();
@@ -896,3 +950,4 @@ export async function closeAuthoritativeDb(): Promise<void> {
     globalThis.__formly_pg_init_promise = undefined;
   }
 }
+

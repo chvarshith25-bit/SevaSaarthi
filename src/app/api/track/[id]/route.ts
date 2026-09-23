@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getApplicationById, getAuditLogs } from "@/lib/server/db";
 import { authenticateSession } from "@/lib/server/db";
-import { getAuthoritativeDb } from "@/lib/server/pg-db";
+import { pgQuery } from "@/lib/server/pg-db";
 import { cookies } from "next/headers";
 
 export async function GET(
@@ -65,15 +65,14 @@ export async function GET(
 
     let aiAssistanceRecord = null;
     try {
-      const dbPg = await getAuthoritativeDb();
-      const aiRes = await dbPg.query(
+      const aiRes = await pgQuery(
         `SELECT assistance_type, explanation, recommended_actions
          FROM ai_case_assistance
          WHERE application_id = $1 AND review_status = 'APPROVED_FOR_DISPLAY'
          ORDER BY created_at DESC LIMIT 1`,
         [app.id]
       );
-      aiAssistanceRecord = aiRes.rows[0] || null;
+      aiAssistanceRecord = aiRes[0] || null;
     } catch {}
 
     const logs = await getAuditLogs(id);
