@@ -21,7 +21,10 @@ export default function ScholarshipPortalDemo() {
     email: "",
     income: "",
     college: "",
+    course: "",
+    rollNo: "",
     bankAccount: "",
+    ifsc: "",
     captcha: "",
   });
 
@@ -268,7 +271,39 @@ export default function ScholarshipPortalDemo() {
                   />
                 </div>
 
-                <div className="sm:col-span-2">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1" htmlFor="course_degree">
+                    Course / Degree Program *
+                  </label>
+                  <input
+                    id="course_degree"
+                    name="course_degree"
+                    type="text"
+                    required
+                    value={formData.course}
+                    onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                    placeholder="e.g. B.Tech Computer Science & Engineering"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1" htmlFor="roll_number">
+                    Student Roll Number / Registration No *
+                  </label>
+                  <input
+                    id="roll_number"
+                    name="roll_number"
+                    type="text"
+                    required
+                    value={formData.rollNo}
+                    onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })}
+                    placeholder="e.g. 22071A0589"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
                   <label className="block font-bold text-slate-700 mb-1" htmlFor="bank_account">
                     Bank Account Number *
                   </label>
@@ -281,6 +316,22 @@ export default function ScholarshipPortalDemo() {
                     onChange={(e) => setFormData({ ...formData, bankAccount: e.target.value })}
                     placeholder="38491029481"
                     className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1" htmlFor="bank_ifsc">
+                    Bank IFSC Code *
+                  </label>
+                  <input
+                    id="bank_ifsc"
+                    name="bank_ifsc"
+                    type="text"
+                    required
+                    value={formData.ifsc}
+                    onChange={(e) => setFormData({ ...formData, ifsc: e.target.value })}
+                    placeholder="e.g. SBIN0012948"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl font-mono uppercase text-slate-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                   />
                 </div>
               </div>

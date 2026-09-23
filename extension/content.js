@@ -347,7 +347,10 @@
       if (data.success && data.ticket) {
         return data;
       }
-    } catch (e) {}
+      console.warn("[SevaSaarthi] Ticket API returned non-success:", res.status, data);
+    } catch (e) {
+      console.error("[SevaSaarthi] requestDocumentTicket exception:", e);
+    }
     return null;
   }
 
@@ -358,7 +361,10 @@
       if (res.ok) {
         return await res.blob();
       }
-    } catch (e) {}
+      console.warn("[SevaSaarthi] export-blob API returned error:", res.status);
+    } catch (e) {
+      console.error("[SevaSaarthi] fetchDocumentBlob exception:", e);
+    }
     return null;
   }
 
@@ -585,6 +591,11 @@
   // 7. CORE EXECUTION ENGINE: FIELD AUTOFILL + REAL DOCUMENT ATTACHMENT
   // =========================================================================
   async function executeAutofill(passedProfile) {
+    const existingGate = document.getElementById("sevasaarthi-submission-gate");
+    if (existingGate) existingGate.remove();
+    const existingToast = document.getElementById("sevasaarthi-toast");
+    if (existingToast) existingToast.remove();
+
     let profile = passedProfile;
 
     // 1. Resolve Profile
@@ -756,14 +767,19 @@
         if (userApproved) {
           for (const item of matchPlan) {
             try {
+              console.log(`[SevaSaarthi] Requesting ticket for ${item.filename} (${item.requirementType})...`);
               // 1. Get single-use ticket
               const ticketRes = await requestDocumentTicket(item.docId, item.requirementType);
+              console.log(`[SevaSaarthi] Ticket response for ${item.filename}:`, ticketRes ? "Received Ticket" : "FAILED");
               if (ticketRes && ticketRes.ticket) {
                 // 2. Fetch binary stream into memory
+                console.log(`[SevaSaarthi] Fetching binary blob for ${item.filename}...`);
                 const blob = await fetchDocumentBlob(ticketRes.ticket);
+                console.log(`[SevaSaarthi] Blob result for ${item.filename}:`, blob ? `Blob size ${blob.size}B` : "FAILED");
                 if (blob) {
                   // 3. Attach using DataTransfer API
                   const res = await attachDocumentToFileControl(item.inputEl, blob, item.filename, item.mimeType);
+                  console.log(`[SevaSaarthi] Attach result for ${item.filename}:`, res);
                   if (res.success) {
                     attachedDocCount++;
                   }
