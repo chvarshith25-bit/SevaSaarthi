@@ -161,22 +161,74 @@ Synthetic demonstration documents contain generated sample attributes and must n
 
 ---
 
-## 8. Verification Matrix & Current Deployment Status
+## 8. Dual Platform Vercel Deployment & Database Architecture
+
+The SevaSaarthi repository supports running both the **Citizen Platform (SevaSaarthi)** and the **Government Operations Platform (Sarkar Seva)** as separate Vercel projects from a single codebase, controlled purely by environment variables.
+
+### Vercel Project Configurations
+
+```
++-----------------------------------------------------------------------------------------+
+|                                    SINGLE CODEBASE                                      |
+|                               (github.com/chvarshith25-bit/SevaSaarthi)                  |
++-----------------------------------------------------------------------------------------+
+                               |                                           |
+                               v                                           v
++---------------------------------------------+ +-----------------------------------------+
+|        VERCEL PROJECT 1: SEVASAARTHI        | |        VERCEL PROJECT 2: SARKAR SEVA    |
+|             (Citizen Platform)              | |             (Officer Platform)          |
+|                                             | |                                         |
+|  - Domain: sevasaarthi.gov.in               | |  - Domain: officer.sarkarseva.gov.in    |
+|  - PLATFORM=citizen                         | |  - PLATFORM=government                  |
+|  - Routes: /(citizen)/*, /api/*             | |  - Routes: /(government)/*, /api/*      |
+|  - Route Isolation: Handled by middleware   | |  - Route Isolation: Handled by middleware|
++---------------------------------------------+ +-----------------------------------------+
+                               |                                           |
+                               +---------------------+---------------------+
+                                                     |
+                                                     v
+                               +-------------------------------------------+
+                               |            SUPABASE POSTGRESQL            |
+                               |    - Persistent metadata & audit logs     |
+                               |    - Private document storage buckets     |
+                               |    - Append-only tamper-evident hashing   |
+                               +-------------------------------------------+
+```
+
+### Production Environment Variables
+
+| Variable | Platform | Required Value / Description |
+|:---|:---:|:---|
+| `PLATFORM` | Both | `citizen` for SevaSaarthi; `government` for Sarkar Seva. |
+| `DATABASE_MODE` | Both | `production` (enforces PostgreSQL/Supabase; forbids ephemeral storage). |
+| `DATABASE_URL` | Both | Transaction-pooled PostgreSQL connection URI (`postgres://...`). |
+| `NEXT_PUBLIC_SUPABASE_URL` | Both | Supabase project endpoint (`https://<project>.supabase.co`). |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`| Both | Public client anon key. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server Only | **Server-side only** elevated key for secure vault access and audit logging. |
+| `NEXT_PUBLIC_APP_URL` | Both | Active public URL (`https://sevasaarthi.gov.in` or `https://officer.sarkarseva.gov.in`). |
+| `VAULT_ENCRYPTION_KEY` | Server Only | 256-bit hexadecimal key for signing ephemeral single-use tickets. |
+
+---
+
+## 9. Verification Matrix & Deployment Scope Boundaries
 
 ```
 +----------------------------------------------------------------------------------------------------+
 |                                    CURRENT DEPLOYMENT STATUS                                       |
 |                                                                                                    |
-|  [✓] REAL CHROME EXTENSION VERIFIED                                                                |
+|  [✓] REAL CHROME EXTENSION VERIFIED (Chromium unpacked mode)                                       |
 |  [✓] CONTROLLED DEMO PORTAL VERIFIED (http://localhost:3000/demo/scholarship-portal)               |
 |  [✓] 24/24 Security & API Negative Tests Passed                                                    |
 |  [✓] 18/18 Live Playwright Browser Checks Passed                                                   |
 |  [✓] 0 TypeScript Compilation Errors                                                               |
+|  [✓] Dual Platform Middleware Separation Verified                                                 |
 +----------------------------------------------------------------------------------------------------+
 ```
 
-### What Remains for Live Third-Party Government Portals:
-While the extension has been verified on genuine DOM controls and the controlled demonstration portal, live external third-party government websites (e.g. NSP 2.0, NSDL Protean, DigiLocker) require:
-1. **Interactive Session Authentication:** User must be logged into SevaSaarthi in the same browser session so that cookies are shared.
-2. **Dynamic Portal DOM Evolution:** Third-party portals occasionally alter form field `id` and `name` attributes across annual scheme renewals; the semantic fallback classifier in `content.js` accommodates textual label changes, but periodic updates may be required.
-3. **Government Biometric / Aadhaar OTP Steps:** Certain portals mandate physical biometric finger scans or Aadhaar OTPs; the extension preserves the **Human-in-the-Loop** model and leaves interactive OTP/biometric verification steps to the citizen.
+### Realistic Scope Boundaries & Operating Prerequisites:
+1. **Target Portal Scope:** The Chrome extension and document attachment mechanism have been verified against the controlled scholarship demonstration portal (`/demo/scholarship-portal`) with real HTML5 file inputs and standard DOM events.
+2. **Dynamic External Portals:** Live external government portals (e.g., NSP 2.0, NSDL Protean) evolve DOM identifiers periodically. While the semantic classifier handles standard variations, custom or dynamic portal updates may require ongoing rule maintenance.
+3. **Session Authentication:** The extension requires an active, authenticated citizen session in the browser to communicate with `/api/vault/*`.
+4. **Human-in-the-Loop & Biometrics:** The extension automates field drafting and document attachment under explicit citizen consent; it does **not** bypass biometric scanners, SMS OTPs, or final citizen review. Final submission remains strictly in human hands.
+5. **No Claims of Official Legal Certification:** This software is engineered to align with DPDP principles through ephemeral tickets, zero disk persistence, and append-only audit logs. It does not claim formal third-party regulatory certification or universal compatibility across all proprietary web systems.
+

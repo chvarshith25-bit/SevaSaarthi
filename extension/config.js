@@ -39,48 +39,64 @@ const SEVASAARTHI_CONFIG = {
 };
 
 /**
- * Dynamically resolves the active SevaSaarthi Vault origin.
- * Priority:
- * 1. User/Admin custom origin in chrome.storage.local (if set)
- * 2. Localhost detection (if running on or connecting to local testbed)
- * 3. Default Production origin
+ * Dynamically resolves the active SevaSaarthi Vault origin with fail-closed security.
  */
 async function getSevaSaarthiOrigin() {
+  // 1. Check for valid user/admin configured origin
   if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
     try {
       const stored = await chrome.storage.local.get(["customApiOrigin"]);
       if (stored && stored.customApiOrigin) {
-        return stored.customApiOrigin.replace(/\/$/, "");
+        const candidate = stored.customApiOrigin.trim().replace(/\/$/, "");
+        try {
+          const parsed = new URL(candidate);
+          // In production, enforce HTTPS (allow HTTP only on local loopback)
+          if (parsed.protocol === "https:" || parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+            return candidate;
+          }
+        } catch {
+          console.warn("[SevaSaarthi Config] Invalid customApiOrigin rejected, failing closed to default origin.");
+        }
       }
     } catch (e) {}
   }
 
-  // Automatic local development detection
+  // 2. Automatic local development detection
   if (typeof window !== "undefined" && window.location) {
-    const host = window.location.hostname;
-    if (host === "localhost" || host === "127.0.0.1" || host.startsWith("192.168.")) {
+    const host = (window.location.hostname || "").toLowerCase();
+    if (host === "localhost" || host === "127.0.0.1") {
       return SEVASAARTHI_CONFIG.LOCAL_ORIGIN;
     }
   }
 
+  // 3. Fail-closed production origin
   return SEVASAARTHI_CONFIG.PRODUCTION_ORIGIN;
 }
 
 /**
- * Validates whether a target portal domain is authorized for document transfer.
+ * Validates whether a target portal domain is an authorized government/educational destination.
+ * Uses strict DNS boundary checking to prevent crafted domain bypasses.
  */
-function isTargetDomainAuthorized(hostname) {
+function isTargetDomainAuthorized(rawHostname) {
+  if (!rawHostname || typeof rawHostname !== "string") return false;
+  
+  // Clean hostname (strip port, trailing dots, convert to lowercase)
+  const hostname = rawHostname.split(":")[0].replace(/\.+$/, "").toLowerCase().trim();
   if (!hostname) return false;
-  const lowerHost = hostname.toLowerCase();
 
-  // Exact match
-  if (SEVASAARTHI_CONFIG.AUTHORIZED_TARGET_DOMAINS.includes(lowerHost)) {
+  // 1. Exact match against authorized portal whitelist
+  if (SEVASAARTHI_CONFIG.AUTHORIZED_TARGET_DOMAINS.includes(hostname)) {
     return true;
   }
 
-  // Suffix match for sovereign digital public infrastructure (.gov.in, .nic.in, etc.)
-  for (const suffix of SEVASAARTHI_CONFIG.AUTHORIZED_DOMAIN_SUFFIXES) {
-    if (lowerHost.endsWith(suffix)) {
+  // 2. Boundary-safe suffix matching for sovereign ccTLD domains (.gov.in, .nic.in, etc.)
+  for (const rawSuffix of SEVASAARTHI_CONFIG.AUTHORIZED_DOMAIN_SUFFIXES) {
+    const suffix = rawSuffix.toLowerCase();
+    const bareSuffix = suffix.startsWith(".") ? suffix.slice(1) : suffix;
+    const dotSuffix = suffix.startsWith(".") ? suffix : `.${suffix}`;
+
+    // Exact match or strict dot boundary match (prevents false positives like evilgov.in)
+    if (hostname === bareSuffix || hostname.endsWith(dotSuffix)) {
       return true;
     }
   }
