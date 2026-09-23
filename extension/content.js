@@ -18,20 +18,29 @@
     return;
   }
 
-  const SEVA_SAARTHI_ORIGIN = "http://localhost:3000";
+  async function getVaultOrigin() {
+    if (typeof getSevaSaarthiOrigin === "function") {
+      return await getSevaSaarthiOrigin();
+    }
+    return "http://localhost:3000";
+  }
+
   console.log("🇮🇳 [SevaSaarthi Extension] Content Engine Active on:", window.location.href);
 
   // If on SevaSaarthi app itself, automatically sync profile & vault metadata
-  if (window.location.origin === SEVA_SAARTHI_ORIGIN) {
-    syncLocalPortalProfile();
-  }
+  getVaultOrigin().then((origin) => {
+    if (window.location.origin === origin) {
+      syncLocalPortalProfile();
+    }
+  });
 
   async function syncLocalPortalProfile() {
     try {
-      const res = await fetch("/api/profile", { credentials: "include" });
+      const origin = await getVaultOrigin();
+      const res = await fetch(`${origin}/api/profile`, { credentials: "include" });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
-        const sessRes = await fetch("/api/auth/session", { credentials: "include" });
+        const sessRes = await fetch(`${origin}/api/auth/session`, { credentials: "include" });
         const sess = await sessRes.json();
         const user = sess.user || {};
 
@@ -285,7 +294,8 @@
 
     // 2. Fetch live from SevaSaarthi server
     try {
-      const res = await fetch(`${SEVA_SAARTHI_ORIGIN}/api/vault/documents`, {
+      const origin = await getVaultOrigin();
+      const res = await fetch(`${origin}/api/vault/documents`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -333,7 +343,8 @@
   // Request short-lived single-use ticket
   async function requestDocumentTicket(docId, docType) {
     try {
-      const res = await fetch(`${SEVA_SAARTHI_ORIGIN}/api/vault/ticket`, {
+      const origin = await getVaultOrigin();
+      const res = await fetch(`${origin}/api/vault/ticket`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -357,7 +368,8 @@
   // Fetch binary blob using ephemeral single-use ticket
   async function fetchDocumentBlob(ticket) {
     try {
-      const res = await fetch(`${SEVA_SAARTHI_ORIGIN}/api/vault/export-blob?ticket=${encodeURIComponent(ticket)}`);
+      const origin = await getVaultOrigin();
+      const res = await fetch(`${origin}/api/vault/export-blob?ticket=${encodeURIComponent(ticket)}`);
       if (res.ok) {
         return await res.blob();
       }
@@ -408,6 +420,14 @@
         )
         .join("");
 
+      const isAuthorizedDomain = typeof isTargetDomainAuthorized === "function"
+        ? isTargetDomainAuthorized(window.location.hostname)
+        : true;
+
+      const domainBadge = isAuthorizedDomain
+        ? `<span style="font-size: 10px; font-weight: 700; color: #047857; background: #d1fae5; padding: 2px 8px; border-radius: 9999px;">GOV / DPI PORTAL</span>`
+        : `<span style="font-size: 10px; font-weight: 700; color: #b45309; background: #fef3c7; padding: 2px 8px; border-radius: 9999px;">EXTERNAL DESTINATION</span>`;
+
       modal.innerHTML = `
         <div style="background: white; border-radius: 24px; max-width: 440px; width: 100%; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid #e2e8f0; animation: modalPop 0.2s ease;">
           <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
@@ -417,9 +437,17 @@
               <p style="font-size: 11px; color: #64748b; margin: 0;">DPDP Act 2023 Explicit Consent Gate</p>
             </div>
           </div>
+
+          <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase;">Destination Portal</div>
+              <div style="font-size: 12px; font-weight: 800; color: #0f172a; font-family: monospace;">${window.location.hostname}</div>
+            </div>
+            ${domainBadge}
+          </div>
           
           <p style="font-size: 12px; color: #334155; line-height: 1.5; margin-bottom: 14px;">
-            SevaSaarthi has matched <strong>${docList.length} verified vault documents</strong> for this government portal (<strong>${window.location.hostname}</strong>). Do you authorize secure in-memory attachment?
+            SevaSaarthi has matched <strong>${docList.length} verified vault documents</strong>. Do you authorize secure in-memory attachment for this portal?
           </p>
 
           <div style="max-height: 200px; overflow-y: auto; margin-bottom: 18px;">
@@ -608,7 +636,8 @@
 
     if (!profile) {
       try {
-        const res = await fetch(`${SEVA_SAARTHI_ORIGIN}/api/profile`, { credentials: "include" });
+        const origin = await getVaultOrigin();
+        const res = await fetch(`${origin}/api/profile`, { credentials: "include" });
         const json = await res.json();
         if (json && Array.isArray(json.data)) {
           profile = {};
@@ -843,9 +872,10 @@
   }
 
   // Floating Trigger Button
-  function injectFloatingTrigger() {
+  async function injectFloatingTrigger() {
     if (window !== window.top) return;
-    if (window.location.origin === SEVA_SAARTHI_ORIGIN && !window.location.pathname.includes("/demo/")) return;
+    const origin = await getVaultOrigin();
+    if (window.location.origin === origin && !window.location.pathname.includes("/demo/")) return;
     if (document.getElementById("sevasaarthi-floating-widget")) return;
 
     const widget = document.createElement("div");

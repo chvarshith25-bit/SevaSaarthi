@@ -136,6 +136,41 @@ export function generateSyntheticDocumentPdfBuffer(
   const issueDate = new Date().toISOString().split("T")[0];
 
   // Construct valid standard PDF 1.4 binary content
+  const streamBody = `BT
+/F1 16 Tf
+50 780 Td
+(GOVERNMENT OF INDIA - SEVASAARTHI DIGITAL VAULT) Tj
+/F1 12 Tf
+0 -25 Td
+(*** SYNTHETIC DEMONSTRATION DOCUMENT - NOT A REAL GOVERNMENT RECORD ***) Tj
+/F2 10 Tf
+0 -20 Td
+(Document Type: ${docTitle}) Tj
+0 -15 Td
+(Document Reference: ${filename}) Tj
+0 -15 Td
+(Issued To: ${citizenName} [Citizen ID: ${citizenId}]) Tj
+0 -15 Td
+(Verification Authority: SevaSaarthi Authoritative Digital Repository) Tj
+0 -15 Td
+(Status: STATUTORILY VERIFIED | Date of Issuance: ${issueDate}) Tj
+0 -25 Td
+(---------------------------------------------------------------------------------------) Tj
+/F2 10 Tf
+0 -20 Td
+(NOTICE: This synthetic document demonstrates autonomous vault autofill on sovereign portals.) Tj
+0 -15 Td
+(All attributes are synthetic demonstration data for evaluation and testing purposes only.) Tj
+0 -15 Td
+(Do not use as genuine government identity or financial documentation.) Tj
+/F1 11 Tf
+0 -35 Td
+(OFFICIAL EMBLEM / SEAL: [SEVASAARTHI DIGITAL SIGNATURE VERIFIED]) Tj
+/F2 8 Tf
+0 -300 Td
+(CONFIDENTIAL - AUTHORIZED CITIZEN TRANSFER ONLY. DPDP ACT 2023 COMPLIANT.) Tj
+ET`;
+
   const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -180,39 +215,10 @@ endobj
 endobj
 6 0 obj
 <<
-  /Length 720
+  /Length ${streamBody.length}
 >>
 stream
-BT
-/F1 18 Tf
-50 780 Td
-(GOVERNMENT OF INDIA - SEVASAARTHI DIGITAL VAULT) Tj
-/F1 14 Tf
-0 -30 Td
-(VERIFIED SYNTHETIC DOCUMENT: ${docTitle}) Tj
-/F2 10 Tf
-0 -25 Td
-(Document Reference: ${filename}) Tj
-0 -15 Td
-(Issued To: ${citizenName} [Citizen ID: ${citizenId}]) Tj
-0 -15 Td
-(Verification Authority: SevaSaarthi Authoritative Digital Repository) Tj
-0 -15 Td
-(Status: STATUTORILY VERIFIED | Date of Issuance: ${issueDate}) Tj
-0 -25 Td
-(---------------------------------------------------------------------------------------) Tj
-/F2 11 Tf
-0 -25 Td
-(This certified synthetic document demonstrates autonomous vault autofill on sovereign portals.) Tj
-0 -15 Td
-(All attributes have been verified through authoritative registry resolution engines.) Tj
-/F1 12 Tf
-0 -40 Td
-(OFFICIAL EMBLEM / SEAL: [SEVASAARTHI DIGITAL SIGNATURE VERIFIED]) Tj
-/F2 8 Tf
-0 -300 Td
-(CONFIDENTIAL - AUTHORIZED CITIZEN TRANSFER ONLY. DPDP ACT 2023 COMPLIANT.) Tj
-ET
+${streamBody}
 endstream
 endobj
 xref

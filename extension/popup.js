@@ -1,4 +1,9 @@
-const PORTAL_URL = "http://localhost:3000";
+async function getActivePortalUrl() {
+  if (typeof getSevaSaarthiOrigin === "function") {
+    return await getSevaSaarthiOrigin();
+  }
+  return "http://localhost:3000";
+}
 
 let currentProfile = null;
 let currentVaultDocs = [];
@@ -95,17 +100,18 @@ function updateUI(profile, docs, isOnline = true) {
 async function syncProfileFromPortal() {
   const statusText = document.getElementById("status-text");
   if (statusText) statusText.innerText = "Syncing...";
+  const portalUrl = await getActivePortalUrl();
 
   try {
     // 1. Fetch Session
-    const sessionRes = await fetch(`${PORTAL_URL}/api/auth/session`, {
+    const sessionRes = await fetch(`${portalUrl}/api/auth/session`, {
       credentials: "include",
     });
     const sessionData = await sessionRes.json();
     const user = sessionData.user || {};
 
     // 2. Fetch Profile Fields
-    const profileRes = await fetch(`${PORTAL_URL}/api/profile`, {
+    const profileRes = await fetch(`${portalUrl}/api/profile`, {
       credentials: "include",
     });
     const profileData = await profileRes.json();
@@ -259,8 +265,9 @@ if (autofillBtn) {
 // Demo Portal Shortcut
 const demoPortalBtn = document.getElementById("btn-demo-portal");
 if (demoPortalBtn) {
-  demoPortalBtn.addEventListener("click", () => {
-    const demoUrl = `${PORTAL_URL}/demo/scholarship-portal`;
+  demoPortalBtn.addEventListener("click", async () => {
+    const portalUrl = await getActivePortalUrl();
+    const demoUrl = `${portalUrl}/demo/scholarship-portal`;
     if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
       chrome.tabs.create({ url: demoUrl });
     } else {
@@ -272,11 +279,12 @@ if (demoPortalBtn) {
 // Open Citizen Dashboard
 const openPortalBtn = document.getElementById("btn-open-portal");
 if (openPortalBtn) {
-  openPortalBtn.addEventListener("click", () => {
+  openPortalBtn.addEventListener("click", async () => {
+    const portalUrl = await getActivePortalUrl();
     if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
-      chrome.tabs.create({ url: `${PORTAL_URL}/dashboard` });
+      chrome.tabs.create({ url: `${portalUrl}/dashboard` });
     } else {
-      window.open(`${PORTAL_URL}/dashboard`, "_blank");
+      window.open(`${portalUrl}/dashboard`, "_blank");
     }
   });
 }

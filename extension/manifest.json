@@ -29,7 +29,7 @@
         "*://*.hcaptcha.com/*",
         "*://challenges.cloudflare.com/*"
       ],
-      "js": ["content.js"],
+      "js": ["config.js", "content.js"],
       "run_at": "document_end",
       "all_frames": false
     }

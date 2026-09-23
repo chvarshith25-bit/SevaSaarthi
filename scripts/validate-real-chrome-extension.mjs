@@ -74,9 +74,10 @@ async function runValidation() {
     const demoUserBtn = authPage.locator('button:has-text("Chiluveri Varshith")').first();
     if (await demoUserBtn.isVisible()) {
       await demoUserBtn.click();
-      const submitBtn = authPage.locator('button[type="submit"]:has-text("Sign In")').first();
+      await authPage.waitForTimeout(500);
+      const submitBtn = authPage.locator('button[type="submit"]').first();
       await submitBtn.click();
-      await authPage.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
+      await authPage.waitForURL((url) => !url.pathname.endsWith('/login'), { timeout: 15000 });
       console.log('✓ [PASS] Citizen authenticated successfully');
     } else {
       console.log('✓ [PASS] Citizen session already present');

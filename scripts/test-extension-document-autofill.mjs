@@ -232,6 +232,30 @@ async function runLiveApiTests() {
     const replayRes = await fetch(`http://localhost:3000/api/vault/export-blob?ticket=${encodeURIComponent(ticketData.ticket)}`);
     assert(replayRes.status === 403, "Replay of consumed ticket returned HTTP 403 Forbidden (Single-use verified)");
 
+    // 4f. Unauthenticated access to /api/vault/documents fails closed (401)
+    const unauthDocsRes = await fetch("http://localhost:3000/api/vault/documents");
+    assert(unauthDocsRes.status === 401, "Unauthenticated request to /api/vault/documents strictly rejected with HTTP 401");
+
+    // 4g. Unauthenticated ticket request fails closed (401)
+    const unauthTicketRes = await fetch("http://localhost:3000/api/vault/ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ document_type: "AADHAAR" }),
+    });
+    assert(unauthTicketRes.status === 401, "Unauthenticated ticket request strictly rejected with HTTP 401");
+
+    // 4h. Requesting non-existent document returns 404
+    const nonExistentDocRes = await fetch("http://localhost:3000/api/vault/ticket", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ document_type: "NON_EXISTENT_DOCUMENT_TYPE_123" }),
+    });
+    assert(nonExistentDocRes.status === 404, "Ticket request for missing document type rejected with HTTP 404");
+
+    // 4i. Export blob without ticket fails closed (400)
+    const noTicketBlobRes = await fetch("http://localhost:3000/api/vault/export-blob");
+    assert(noTicketBlobRes.status === 400, "Export blob request without ticket rejected with HTTP 400");
+
     // -------------------------------------------------------------------------
     // SUMMARY
     // -------------------------------------------------------------------------
