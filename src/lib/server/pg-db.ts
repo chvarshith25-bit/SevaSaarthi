@@ -32,8 +32,19 @@ export function getPostgresPool(): Pool {
     const isLocalhost =
       process.env.DATABASE_URL.includes("localhost") ||
       process.env.DATABASE_URL.includes("127.0.0.1");
+
+    // Clean connection string so query params like sslmode=require don't force strict CA validation
+    const cleanConnectionString = process.env.DATABASE_URL
+      .replace(/[?&]sslmode=[^&]+/gi, "")
+      .replace(/\?$/, "");
+
+    if (!isLocalhost) {
+      // Allow connection to cloud database poolers with custom certificate chains
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    }
+
     globalThis.__formly_pg_pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString: cleanConnectionString,
       max: 10,
       ssl: isLocalhost ? false : { rejectUnauthorized: false },
     });
