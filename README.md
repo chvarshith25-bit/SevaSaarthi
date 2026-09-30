@@ -5,29 +5,44 @@
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![PostgreSQL / PGlite](https://img.shields.io/badge/PostgreSQL-PGlite_WASM-336791?style=for-the-badge&logo=postgresql)](https://electric-sql.com/docs/reference/pglite)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL_17-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com)
+[![Citizen Live](https://img.shields.io/badge/SevaSaarthi-Live_Citizen_Portal-0070F3?style=for-the-badge&logo=vercel)](https://seva-saarthi-roan.vercel.app)
+[![Government Live](https://img.shields.io/badge/SarkarSeva-Live_Government_Portal-F59E0B?style=for-the-badge&logo=vercel)](https://sarkarseva-three.vercel.app/login)
 [![DPDP Aligned](https://img.shields.io/badge/Privacy-DPDP--Aligned_Safeguards-059669?style=for-the-badge)](https://www.meity.gov.in/)
 [![Audited: 197/197 Passed](https://img.shields.io/badge/Phase_9.1_Audit-197%2F197_PASSED-success?style=for-the-badge)](docs/PHASE_9_1_FINAL_PRE_DEPLOYMENT_AUDIT.md)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 <p align="center">
   <b>SevaSaarthi & Sarkar Seva</b> is an authoritative, dual-platform digital governance infrastructure bridging citizen service discovery with government case operations.<br/>
-  Featuring <b>strict dual-origin isolation (Port 3000 & Port 3001)</b>, an <b>advisory AI Workflow Router (Model 1)</b>, an <b>evidentiary Multilingual Entity Resolution Engine (Model 2 V4.2)</b>,<br/>
+  Featuring <b>strict dual-origin platform isolation</b>, an <b>advisory AI Workflow Router (Model 1)</b>, an <b>evidentiary Multilingual Entity Resolution Engine (Model 2 V4.2)</b>,<br/>
   an <b>authoritative 12-stage state machine</b>, <b>verifiable DPDP-aligned consent capture</b>, and <b>cryptographic SHA-256 tamper-evident audit trails</b>.
 </p>
 
+[🌐 Live Production Deployments](#-live-production-deployments) •
 [Platform Overview](#-platform-overview) •
 [System Architecture](#-system-architecture) •
-[Dual-Platform Port Boundaries](#-dual-platform-origin-isolation) •
+[Dual-Platform Isolation](#-dual-platform-origin-isolation) •
 [AI Models & Governance](#-ai-systems--statutory-governance) •
-[Orchestration State Machine](#-12-stage-orchestration-state-machine) •
-[DPDP-Aligned Privacy & Security](#-dpdp-aligned-consent--cryptographic-audit) •
+[State Machine](#-12-stage-orchestration-state-machine) •
+[DPDP Privacy & Security](#-dpdp-aligned-consent--cryptographic-audit) •
 [Demo Credentials](#-demo-accounts--test-credentials) •
-[Quick Start](#-quick-start) •
-[Verification & Audit Suite](#-test--forensic-audit-suite)
+[Quick Start](#-quick-start)
 
 </div>
+
+---
+
+## 🌐 Live Production Deployments
+
+The application is deployed live in production on **Vercel** connected to a unified **Supabase PostgreSQL 17** database with connection pooling:
+
+| Platform | Live Deployment URL | Purpose |
+| :--- | :--- | :--- |
+| **🇮🇳 SevaSaarthi (Citizen Platform)** | **[https://seva-saarthi-roan.vercel.app](https://seva-saarthi-roan.vercel.app)** | Scheme discovery, smart application filing, vault document management, and status tracking |
+| **🏛️ Sarkar Seva (Government Operations)** | **[https://sarkarseva-three.vercel.app/login](https://sarkarseva-three.vercel.app/login)** | Statutory officer verification desk, triage queue, AI case brief, and cross-registry resolution |
+
+> **🔑 Live Demo Officer Credentials (Sarkar Seva):**
+> - **Officer ID / Email:** `sankeerthvss@gmail.com`
+> - **Password:** `1234567890` (or `Varshith@123`)
 
 ---
 
