@@ -1,0 +1,31 @@
+name: Keep-Alive (Prevent Supabase Pause & Vercel Cold Starts)
+
+on:
+  schedule:
+    # Runs every 6 hours (at 00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  ping-services:
+    name: Ping Formly Services & Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Sarkar Seva (Government Operations)
+        run: |
+          echo "Pinging Sarkar Seva Health API..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" https://sarkarseva-three.vercel.app/api/health)
+          echo "$RESPONSE"
+
+      - name: Ping Seva Saarthi (Citizen Platform)
+        run: |
+          echo "Pinging Seva Saarthi Health API..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" https://seva-saarthi-roan.vercel.app/api/health)
+          echo "$RESPONSE"
+
+      - name: Ping Supabase Database & REST API
+        run: |
+          echo "Pinging Supabase REST endpoint to keep project active..."
+          curl -s -o /dev/null -w "Supabase REST Status: %{http_code}\n" https://judyszuwpafqyeiqdubx.supabase.co/rest/v1/
