@@ -3,7 +3,7 @@ import fs from "fs";
 
 async function main() {
   const password = process.env.SUPABASE_DB_PASSWORD || process.env.DB_PASSWORD || "";
-  const dbUrl = process.env.DATABASE_URL || `postgres://postgres.owpxdieyxpkewsjwqatw:${encodeURIComponent(password)}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres`;
+  const dbUrl = process.env.DATABASE_URL || `postgres://postgres.judyszuwpafqyeiqdubx:${encodeURIComponent(password)}@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres`;
   const pool = new Pool({
     connectionString: dbUrl,
     ssl: { rejectUnauthorized: false },

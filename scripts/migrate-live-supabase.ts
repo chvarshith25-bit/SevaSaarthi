@@ -7,11 +7,11 @@ async function main() {
   console.log("   SEVASAARTHI SUPABASE LIVE DATABASE MIGRATION ENGINE   ");
   console.log("========================================================");
 
-  // Matched Supabase pooler connection string for project owpxdieyxpkewsjwqatw
+  // Matched Supabase pooler connection string for project judyszuwpafqyeiqdubx
   const password = process.env.SUPABASE_DB_PASSWORD || process.env.DB_PASSWORD || "";
-  const activeConnStr = process.env.DATABASE_URL || `postgres://postgres.owpxdieyxpkewsjwqatw:${encodeURIComponent(password)}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres`;
+  const activeConnStr = process.env.DATABASE_URL || `postgres://postgres.judyszuwpafqyeiqdubx:${encodeURIComponent(password)}@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres`;
 
-  console.log(`\nConnecting to Supabase Pooler (ap-northeast-2)...`);
+  console.log(`\nConnecting to Supabase Pooler (ap-northeast-1)...`);
   const pool = new Pool({
     connectionString: activeConnStr,
     ssl: { rejectUnauthorized: false },
